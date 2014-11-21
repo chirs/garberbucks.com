@@ -2,8 +2,7 @@
 import os
 import sys
 
-from custom_settings import DEBUG
-from settings import PROJECT_DIRNAME
+from settings import DEBUG
 
 
 

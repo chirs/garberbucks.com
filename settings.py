@@ -3,17 +3,14 @@ from os.path import join
 import socket
 
 from secret_settings import *
-from custom_settings import *
 
 from django.conf.global_settings import TEMPLATE_CONTEXT_PROCESSORS
 
 
+DEBUG = True
 
 PROJECT_DIR = "/home/chris/www/usmntstats"
 STATIC_URL = '/static/'
-
-
-#### Put this part anywhere else?
 
 
 
