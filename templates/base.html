@@ -50,32 +50,9 @@
 
     <div>
 
-               
       <div id="nav">
         <table>
-          <tr>
-            <td><a href="{% url 'scoreboard_today' %}">scores</a></td>
-            <td><a href="{% url 'team_index' %}">teams</a></td>
-            <td><a href="{% url 'person_index' %}">players</a></td>
-            <td><a href="{% url 'competition_index' %}">competitions</a></td>
-            <td id="more"><a href="">more</a></td>
-            <td><a href="{% url 'about_index' %}">about</a></td>
-            <td>
-              <form id="search_form" method="get" action="/search">
-                <input id="id_q" name="q" type="text" value="" placeholder="search" />
-                <span id="search_button"><a>?</a></span>
-                
-                {% comment %}
-                <div style="-webkit-transform: rotate(-45deg); 
-                            -moz-transform: rotate(-45deg); 
-                            -o-transform: rotate(-45deg);">
-                  &#9906;
-                </div>
-                {% endcomment %}
 
-              </form>
-            </td>
-          </tr>
         </table>
       </div>
 
@@ -86,23 +63,6 @@
 	<span id="subtitle">open source soccer statistics and information</span>
       </div>
     </div>
-
-
-    <div id="menu">
-      <ul>
-        <li><a title="Major League Soccer" href="{% url 'competition_detail' 'major-league-soccer' %}">MLS</a></li>
-        <li><a title="" href="{% url 'competition_detail' 'national-womens-soccer-league' %}">NWSL</a></li>
-        <li><a title="" href="{% url 'competition_detail' 'us-open-cup' %}">USOC</a></li>        
-        <li><a title="" href="{% url 'competition_detail' 'north-american-soccer-league-2011-' %}">NASL2</a></li>
-        <li><a title="" href="{% url 'team_detail' 'united-states' %}">USMNT</a></li>        
-        <li><a href="{% url 'competition_detail' 'liga-mx' %}">Mexico</a></li> 
-        <li></li>
-      </ul>
-
-      <ul>
-        <li><a title="" href="{% url 'competition_detail' 'north-american-soccer-league' %}">NASL</a></li>
-        <li><a title="" href="{% url 'competition_detail' 'american-soccer-league-1921-1933' %}">ASL</a></li>
-      </ul>
 
 
     </div>

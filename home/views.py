@@ -24,7 +24,7 @@ def homepage(request):
         'mls': mls,
         }
 
-    return render_to_response("homepage.html",
+    return render_to_response("home/homepage.html",
                               context,
                               context_instance=RequestContext(request))
         

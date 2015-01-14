@@ -9,7 +9,10 @@ admin.autodiscover()
 
 
 urlpatterns = patterns('',
-                       url(r"^$", "home.homepage", name="homepage"),
+
+                       url(r'^$', include('home.urls')),
+
+                       #url(r"^$", "home.homepage", name="homepage"),
 
                        #url(r'^sitemap\.xml$', 'django.contrib.sitemaps.views.sitemap', {'sitemaps': sitemaps}),                                                                     
 

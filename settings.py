@@ -60,16 +60,12 @@ ADMINS = (
 MANAGERS = ADMINS
 
 
-if DEBUG == True:
-    DB_NAME = 'soccerstats_dev'
-else:
-    DB_NAME = 'soccerstats'
+DB_NAME = 'soccerstats'
 
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-        #'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'NAME': DB_NAME,                      # Or path to database file if using sqlite3.
         'USER': 'soccerstats',                      # Not used with sqlite3.
         'PASSWORD': 'ymctas',                  # Not used with sqlite3.
