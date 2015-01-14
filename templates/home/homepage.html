@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+
+{% block extrahead %}
+{% endblock %}
+
+
+{% block content %}
+
+
+<div class="leftcol">
+
+      <h4>What is soccerstats.us?</h4>
+      <p>Soccerstats.us is a free open source database, written in python, that can be exported into any format.</p>
+
+        <ul>
+            <li><a href="http://github.com/soccerstatsus">repos</a> - see and edit open source data</li>
+            <li><a href="{% url 'about_news' %}">site news</a> - recent changes and additions</li>
+            <li><a href="/forum">forum</a> - discuss open source soccer data</li>
+            <li><a href="{% url 'about_build' %}">build database</a> - build a personal copy of the database</li>
+            <!--<li><a href="/api">api</a></li>-->
+        </ul>
+
+
+
+<h3>United States</h3>
+<h4>Division 1</h4>
+
+<ul>
+<li><a href="{% url 'competition_detail' 'major-league-soccer' %}">Major League Soccer</a></li>
+<li><a href="{% url 'competition_detail' 'north-american-soccer-league' %}">North American Soccer League</a></li>
+<li><a href="{% url 'competition_detail' 'american-soccer-league-1921-1933' %}">American Soccer League (1921-1933)</a></li>
+<li><a href="{% url 'competition_detail' 'american-league-of-professional-football' %}">American League of Professional Football</a></li>
+</ul>
+
+<h4>Minor Leagues</h4>
+
+<ul>
+<li><a href="{% url 'competition_detail' 'north-american-soccer-league-2011-' %}">North American Soccer League (2011-)</a></li>
+<li><a href="{% url 'competition_detail' 'usl-second-division' %}">USL Pro</a></li>
+<li><a href="{% url 'competition_detail' 'usl-premier-developmental-league' %}">USL PDL</a></li>
+<!--<li><a href="{% url 'competition_detail' 'national-premier-soccer-league' %}">NPSL</a></li>-->
+<li><a href="{% url 'competition_detail' 'usl-first-division' %}">USL First Division (1997-2009)</a></li>
+<li><a href="{% url 'competition_detail' 'american-professional-soccer-league' %}">American Professional Soccer League</a></li>
+<li><a href="{% url 'competition_detail' 'western-soccer-league' %}">Western Soccer League</a></li>
+<li><a href="{% url 'competition_detail' 'american-soccer-league-1933-1983' %}">American Soccer League (1933-1983)</a></li>
+<li><a href="{% url 'competition_detail' 'national-association-foot-ball-league' %}">National Association Foot Ball League</a></li>
+
+<li><a href="{% url 'competition_detail' 'mls-reserve-league' %}">MLS Reserve League</a></li>
+</ul>
+
+<h4>Cups</h4>
+
+<ul>
+<li><a href="{% url 'competition_detail' 'us-open-cup' %}">US Open Cup</a></li>
+<li><a href="{% url 'competition_detail' 'afa-cup' %}">AFA Cup</a></li>
+<li><a href="{% url 'competition_detail' 'lewis-cupp' %}">Lewis Cup</a></li>
+<li><a href="{% url 'competition_detail' 'national-amateur-cup' %}">National Amateur Cup</a></li>
+</ul>
+
+
+
+
+
+<h3>Indoor Soccer</h3>
+
+<ul>
+  <li><a href="{% url 'competition_detail' 'professional-arena-soccer-league' %}">Professional Arena Soccer League</a></li>
+  <li><a href="{% url 'competition_detail' 'major-indoor-soccer-league-2008-2014' %}">MISL (2008-2014)</a></li>
+  <li><a href="{% url 'competition_detail' 'major-indoor-soccer-league-2001-2008' %}">MISL (2001-2008)</a></li>
+  <li><a href="{% url 'competition_detail' 'national-professional-soccer-league-indoor' %}">National Professional Soccer League</a></li>
+  <li><a href="{% url 'competition_detail' 'continental-indoor-soccer-league' %}">Continental Indoor Soccer League</a></li>
+  <li><a href="{% url 'competition_detail' 'major-indoor-soccer-league-1978-1992' %}">MISL (1978-1992)</a></li>
+  <li><a href="{% url 'competition_detail' 'north-american-soccer-league-indoor' %}">NASL (indoor)</a></li>
+</ul>
+
+
+<h3>Women's Soccer</h3>
+
+
+<ul>
+  <!--<li><a href="{% url 'competition_detail' 'fifa-womens-world-cup' %}">FIFA Women's World Cup</a></li>-->
+  <li><a href="{% url 'competition_detail' 'national-womens-soccer-league' %}">National Women's Soccer League</a></li>
+  <li><a href="{% url 'competition_detail' 'womens-professional-soccer' %}">Women's Professional Soccer</li>
+  <li><a href="{% url 'competition_detail' 'womens-united-soccer-association' %}">Women's United Soccer Association</a></li>
+  <li><a href="{% url 'competition_detail' 'damallsvenskan' %}">Damallsvenskan</a></li>
+</ul>
+
+</div>
+
+
+<div class="rightcol">
+
+<h3>International</h3>
+
+<ul>
+  <li><a href="{% url 'competition_detail' 'fifa-world-cup' %}">FIFA World Cup</a></li>
+  <li><a href="{% url 'competition_detail' 'fifa-confederations-cup' %}">FIFA Confederations Cup</a></li>
+  <li><a href="{% url 'competition_detail' 'olympic-games' %}">Olympic Games</a></li>
+  <li><a href="{% url 'competition_detail' 'fifa-u-20-world-cup' %}">FIFA U-20 World Cup</a></li>
+  <li><a href="{% url 'competition_detail' 'fifa-u-17-world-cup' %}">FIFA U-17 World Cup</a></li>
+  <li><a href="{% url 'team_detail' 'united-states' %}">USMNT</a></li>
+  <!--<li><a href="{% url 'competition_detail' 'fifa-world-cup-qualifying-concacaf' %}">FIFA World Cup Qualifying (CONCACAF)</a></li>-->
+
+
+  <li><a href="{% url 'competition_detail' 'mundialito' %}">Mundialito</a></li>
+
+  <li><a href="{% url 'competition_detail' 'gold-cup' %}">Gold Cup</a></li>
+  <li><a href="{% url 'competition_detail' 'copa-libertadores' %}">Copa Libertadores</a></li>
+
+
+</ul>
+
+
+<h3>World</h3>
+
+<ul>
+  <li><a href="{% url 'competition_detail' 'fifa-club-world-cup' %}">FIFA Club World Cup</a></li>
+  <li><a href="{% url 'competition_detail' 'la-copita-del-mundo' %}">La Copita del Mundo</a></li>
+  <li><a href="{% url 'competition_detail' 'interamerican-cup' %}">Interamerican Cup</a></li>
+  <li><a href="{% url 'competition_detail' 'intercontinental-cup' %}">Intercontinental Cup</a></li>
+  <li><a href="{% url 'competition_detail' 'pan-pacific-championship' %}">Pan Pacific Championship</a></li>
+  <li><a href="{% url 'competition_detail' 'suruga-bank-championship' %}">SURUGA Bank Championship</a></li>
+  <li><a href="{% url 'competition_detail' 'international-soccer-league' %}">International Soccer League</a></li>
+</ul>
+
+
+<h3><a href="{% url 'confederation_detail' 'concacaf' %}">CONCACAF</a></h3>
+
+<ul>
+<li><a href="{% url 'competition_detail' 'concacaf-champions-league' %}">CONCACAF Champions' League</a></li>
+<li><a href="{% url 'competition_detail' 'liga-mx' %}">Liga MX</a></li>
+<li><a href="{% url 'competition_detail' 'primera-division-de-costa-rica' %}">Costa Rica</a></li>
+<li><a href="{% url 'competition_detail' 'liga-nacional-de-honduras' %}">Honduras</a></li>
+<li><a href="{% url 'competition_detail' 'liga-nacional-de-guatemala' %}">Guatemala</a></li>
+<li><a href="{% url 'competition_detail' 'liga-panamena-de-futbol' %}">Panama</a></li>
+<li><a href="{% url 'competition_detail' 'salvadoran-primera-division' %}">El Salvador</a></li>
+<li><a href="{% url 'competition_detail' 'nicaraguan-primera-division' %}">Nicaragua</a></li>
+<li><a href="{% url 'competition_detail' 'concacaf-giants-cup' %}">CONCACAF Giants Cup</a></li>
+<li><a href="{% url 'competition_detail' 'concacaf-cup-winners-cup' %}">CONCACAF Cup Winners Cup</a></li>
+<li><a href="{% url 'competition_detail' 'north-american-superliga' %}">North American SuperLiga</a></li>
+</ul>
+
+
+<h3><a href="{% url 'confederation_detail' 'conmebol' %}">CONMEBOL</a></h3>
+
+<ul>
+<li><a href="{% url 'competition_detail' 'copa-libertadores' %}">Copa Libertadores</a></li>
+<li><a href="{% url 'competition_detail' 'brasileirao' %}">Brasileirao</a></li>
+<li><a href="{% url 'competition_detail' 'argentine-primera-division' %}">Argentina</a></li>
+<li><a href="{% url 'competition_detail' 'uruguayan-primera-division' %}">Uruguay</a></li>
+<li><a href="{% url 'competition_detail' 'chilean-primera-division' %}">Chile</a></li>
+<li><a href="{% url 'competition_detail' 'categoria-primera-a' %}">Colombia</a></li>
+<li><a href="{% url 'competition_detail' 'ecuadorian-serie-a' %}">Ecuador</a></li>
+<li><a href="{% url 'competition_detail' 'peruvian-primera-division' %}">Peru</a></li>
+<li><a href="{% url 'competition_detail' 'paraguayan-primera-division' %}">Paraguay</a></li>
+
+<li><a href="{% url 'competition_detail' 'copa-conmebol' %}">Copa CONMEBOL</a></li>
+<li><a href="{% url 'competition_detail' 'copa-merconorte' %}">Copa Merconorte</a></li>
+<li><a href="{% url 'competition_detail' 'copa-mercosur' %}">Copa Mercosur</a></li>
+</ul>
+
+
+<h3><a href="{% url 'confederation_detail' 'uefa' %}">UEFA</a></h3>
+
+<ul>
+  <li><a href="{% url 'competition_detail' 'uefa-champions-league' %}">UEFA Champions League</a></li>
+  <li><a href="{% url 'competition_detail' 'premier-leagu' %}">Premier League</a></li>
+  <li><a href="{% url 'competition_detail' 'la-liga' %}">La Liga</a></li>
+  <li><a href="{% url 'competition_detail' '1-bundesliga' %}">1. Bundesliga</a></li>
+  <li><a href="{% url 'competition_detail' 'serie-a' %}">Serie A</a></li>
+  <li><a href="{% url 'competition_detail' 'ligue-1' %}">Ligue 1</a></li>
+
+  <li><a href="{% url 'competition_detail' 'russian-premier-league' %}">Russia</a></li>
+  <li><a href="{% url 'competition_detail' 'eredivisie' %}">Eredivisie</a></li>
+  <li><a href="{% url 'competition_detail' 'belgian-pro-league' %}">Belgium</a></li>
+  <li><a href="{% url 'competition_detail' 'primeira-liga' %}">Portugal</a></li>
+
+  <li><a href="{% url 'competition_detail' 'uefa-europa-league' %}">UEFA Europa League</a></li>
+  <li><a href="{% url 'competition_detail' 'uefa-super-cup' %}">UEFA Super Cup</a></li>
+
+</ul>
+
+
+
+<h3><a href="{% url 'confederation_detail' 'afc' %}">AFC</a></h3>
+
+<ul>
+  <li><a href="{% url 'competition_detail' 'afc-champions-league' %}">AFC Champions League</a></li>
+  <li><a href="{% url 'competition_detail' 'chinese-super-league' %}">Chinese Super League</a></li>
+  <li><a href="{% url 'competition_detail' 'j-league-division-1' %}">J. League</a></li>
+  <li><a href="{% url 'competition_detail' 'k-league' %}">K. League</a></li>
+  <li><a href="{% url 'competition_detail' 'hyundai-a-league' %}">A League</a></li>
+</ul>
+
+
+<h3><a href="{% url 'confederation_detail' 'ofc' %}">OFC</a></h3>
+<h3><a href="{% url 'confederation_detail' 'caf' %}">CAF</a></h3>
+
+</div>
+
+
+
+{% endblock %}

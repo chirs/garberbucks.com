@@ -1,0 +1,116 @@
+{% block doctype_tag %}<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+  "http://www.w3.org/TR/html4/loose.dtd">{% endblock %}
+
+<html>
+
+<head>
+  <title>{% block title %}All-time American soccer statistics{% endblock %} | SoccerStats.us </title>
+  <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+  <meta name="Description" content="{% block metadescription %}American soccer statistics from 1866 to 2013{% endblock %}">
+
+  <link rel="stylesheet" href="{{ STATIC_URL }}css/style.css" type="text/css" media="screen" >
+  {# <link rel="stylesheet" href="{{ STATIC_URL }}css/charts.css" type="text/css" media="screen" > #}
+
+  {# <link rel="stylesheet" href="{{ STATIC_URL }}css/jquery-ui.css" type="text/css" media="screen" > #}
+
+
+  <script type="text/javascript" src="{{ STATIC_URL }}js/jquery-1.8.3.js"></script>
+  {# <script type="text/javascript" src="{{ STATIC_URL }}js/jquery-ui.js"></script> #}
+  <script type="text/javascript" src="{{ STATIC_URL }}js/jquery.tablesorter.min.js"></script>
+
+  <script type="text/javascript" src="http://d3js.org/d3.v3.min.js"></script>
+
+  <script type="text/javascript" src="{{ STATIC_URL }}js/custom.js"></script>
+  {# <script type="text/javascript" src="{{ STATIC_URL }}js/charts.js"></script> #}
+
+  {% block extrahead %}{% endblock %}
+
+
+  {% if not debug_mode %}
+  <script type="text/javascript">
+
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-370829-4']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'stats.g.doubleclick.net/dc.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+
+
+  </script>
+  {% endif %}
+
+</head>
+
+<body>
+  <div class="wrap">
+
+    <div>
+
+               
+      <div id="nav">
+        <table>
+          <tr>
+            <td><a href="{% url 'scoreboard_today' %}">scores</a></td>
+            <td><a href="{% url 'team_index' %}">teams</a></td>
+            <td><a href="{% url 'person_index' %}">players</a></td>
+            <td><a href="{% url 'competition_index' %}">competitions</a></td>
+            <td id="more"><a href="">more</a></td>
+            <td><a href="{% url 'about_index' %}">about</a></td>
+            <td>
+              <form id="search_form" method="get" action="/search">
+                <input id="id_q" name="q" type="text" value="" placeholder="search" />
+                <span id="search_button"><a>?</a></span>
+                
+                {% comment %}
+                <div style="-webkit-transform: rotate(-45deg); 
+                            -moz-transform: rotate(-45deg); 
+                            -o-transform: rotate(-45deg);">
+                  &#9906;
+                </div>
+                {% endcomment %}
+
+              </form>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+
+
+      <div id="title">
+	<a href="/" id="maintitle">SoccerStats.us</a>
+	<span id="subtitle">open source soccer statistics and information</span>
+      </div>
+    </div>
+
+
+    <div id="menu">
+      <ul>
+        <li><a title="Major League Soccer" href="{% url 'competition_detail' 'major-league-soccer' %}">MLS</a></li>
+        <li><a title="" href="{% url 'competition_detail' 'national-womens-soccer-league' %}">NWSL</a></li>
+        <li><a title="" href="{% url 'competition_detail' 'us-open-cup' %}">USOC</a></li>        
+        <li><a title="" href="{% url 'competition_detail' 'north-american-soccer-league-2011-' %}">NASL2</a></li>
+        <li><a title="" href="{% url 'team_detail' 'united-states' %}">USMNT</a></li>        
+        <li><a href="{% url 'competition_detail' 'liga-mx' %}">Mexico</a></li> 
+        <li></li>
+      </ul>
+
+      <ul>
+        <li><a title="" href="{% url 'competition_detail' 'north-american-soccer-league' %}">NASL</a></li>
+        <li><a title="" href="{% url 'competition_detail' 'american-soccer-league-1921-1933' %}">ASL</a></li>
+      </ul>
+
+
+    </div>
+
+    <div id="content">
+      {% block content %}{% endblock %}
+    </div>
+
+  </div>
+</body>
+
