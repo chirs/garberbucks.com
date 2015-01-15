@@ -11,6 +11,7 @@ admin.autodiscover()
 urlpatterns = patterns('',
 
                        url(r'^$', include('home.urls')),
+                       url(r'^games/', include('games.urls')),
 
                        #url(r"^$", "home.homepage", name="homepage"),
 

@@ -60,7 +60,7 @@ ADMINS = (
 MANAGERS = ADMINS
 
 
-DB_NAME = 'soccerstats'
+DB_NAME = 'soccerstats_dev'
 
 
 DATABASES = {

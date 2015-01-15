@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+
+{% block extrahead %}
+{% endblock %}
+
+
+{% block content %}
+
+
+<div>
+
+<table>
+
+{% for game in games %}
+<tr>
+
+  <td>{{ game.date }}</td>
+  <td>{{ game.competition.abbreviation }}</td>
+
+  <td>{{ game.team1 }}</td>
+
+  <td>{{ game.team2 }}</td>
+
+  <td>{{ game.stadium }}</td>
+</tr>
+
+
+{% endfor %}
+
+</table>
+
+
+
+</div>
+
+
+
+
+{% endblock %}
