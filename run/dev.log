@@ -1,0 +1,251 @@
+[2015-01-16 01:13:17 +0000] [20986] [DEBUG] Current configuration:
+  worker_tmp_dir: None
+  umask: 0
+  forwarded_allow_ips: ['127.0.0.1']
+  logger_class: gunicorn.glogging.Logger
+  post_request: <function PostRequest.post_request at 0x7f9b125e0268>
+  cert_reqs: 0
+  daemon: False
+  default_proc_name: gunicorn
+  reload: False
+  secure_scheme_headers: {'X-FORWARDED-SSL': 'on', 'X-FORWARDED-PROTOCOL': 'ssl', 'X-FORWARDED-PROTO': 'https'}
+  keepalive: 2
+  paste: None
+  timeout: 30
+  loglevel: debug
+  django_settings: usmntstats.settings
+  ssl_version: 3
+  bind: ['127.0.0.1:29029']
+  user: 1000
+  logconfig: None
+  syslog_addr: udp://localhost:514
+  on_reload: <function OnReload.on_reload at 0x7f9b125db400>
+  when_ready: <function WhenReady.when_ready at 0x7f9b125db598>
+  debug: False
+  access_log_format: %(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"
+  nworkers_changed: <function NumWorkersChanged.nworkers_changed at 0x7f9b125e0598>
+  on_exit: <function OnExit.on_exit at 0x7f9b125e0730>
+  spew: False
+  proxy_protocol: False
+  worker_connections: 1000
+  graceful_timeout: 30
+  on_starting: <function OnStarting.on_starting at 0x7f9b125db268>
+  worker_exit: <function WorkerExit.worker_exit at 0x7f9b125e0400>
+  threads: 1
+  limit_request_field_size: 8190
+  errorlog: /home/chris/www/usmntstats/run/dev.log
+  config: None
+  check_config: False
+  max_requests: 0
+  ca_certs: None
+  worker_int: <function WorkerInt.worker_int at 0x7f9b125dbbf8>
+  suppress_ragged_eofs: True
+  limit_request_fields: 100
+  keyfile: None
+  post_fork: <function Postfork.post_fork at 0x7f9b125db8c8>
+  accesslog: None
+  do_handshake_on_connect: False
+  proc_name: None
+  preload_app: True
+  chdir: /home/chris/www/usmntstats
+  raw_env: []
+  ciphers: TLSv1
+  worker_abort: <function WorkerAbort.worker_abort at 0x7f9b125dbd90>
+  certfile: None
+  tmp_upload_dir: None
+  pythonpath: /home/chris/www
+  proxy_allow_ips: ['127.0.0.1']
+  backlog: 2048
+  pre_fork: <function Prefork.pre_fork at 0x7f9b125db730>
+  pre_exec: <function PreExec.pre_exec at 0x7f9b125dbf28>
+  worker_class: sync
+  limit_request_line: 4094
+  syslog: False
+  post_worker_init: <function PostWorkerInit.post_worker_init at 0x7f9b125dba60>
+  pre_request: <function PreRequest.pre_request at 0x7f9b125e0158>
+  statsd_host: None
+  pidfile: /home/chris/www/usmntstats/run/dev.pid
+  group: 1000
+  syslog_prefix: None
+  workers: 1
+  syslog_facility: user
+  enable_stdio_inheritance: False
+[2015-01-15 19:13:17 -0600] [20986] [INFO] Starting gunicorn 19.1.1
+[2015-01-15 19:13:18 -0600] [20986] [DEBUG] Arbiter booted
+[2015-01-15 19:13:18 -0600] [20986] [INFO] Listening at: http://127.0.0.1:29029 (20986)
+[2015-01-15 19:13:18 -0600] [20986] [INFO] Using worker: sync
+[2015-01-15 19:13:18 -0600] [20989] [INFO] Booting worker with pid: 20989
+[2015-01-15 19:13:18 -0600] [20986] [DEBUG] 1 workers
+[2015-01-15 19:13:27 -0600] [20989] [INFO] Worker exiting (pid: 20989)
+[2015-01-15 19:13:27 -0600] [20986] [DEBUG] 1 workers
+[2015-01-15 19:13:27 -0600] [20986] [INFO] Handling signal: int
+[2015-01-15 19:13:27 -0600] [20986] [INFO] Shutting down: Master
+[2015-01-16 01:13:50 +0000] [21046] [DEBUG] Current configuration:
+  limit_request_line: 4094
+  post_request: <function PostRequest.post_request at 0x7f903ad66268>
+  backlog: 2048
+  pre_exec: <function PreExec.pre_exec at 0x7f903ad5ff28>
+  proxy_protocol: False
+  on_starting: <function OnStarting.on_starting at 0x7f903ad5f268>
+  cert_reqs: 0
+  proc_name: None
+  user: 1000
+  spew: False
+  worker_connections: 1000
+  debug: False
+  reload: False
+  keyfile: None
+  worker_int: <function WorkerInt.worker_int at 0x7f903ad5fbf8>
+  threads: 1
+  keepalive: 2
+  when_ready: <function WhenReady.when_ready at 0x7f903ad5f598>
+  workers: 1
+  timeout: 30
+  proxy_allow_ips: ['127.0.0.1']
+  syslog: False
+  on_exit: <function OnExit.on_exit at 0x7f903ad66730>
+  raw_env: []
+  umask: 0
+  bind: ['127.0.0.1:29029']
+  accesslog: None
+  ssl_version: 3
+  suppress_ragged_eofs: True
+  worker_tmp_dir: None
+  tmp_upload_dir: None
+  do_handshake_on_connect: False
+  pythonpath: /home/chris/www
+  django_settings: usmntstats.settings
+  syslog_addr: udp://localhost:514
+  forwarded_allow_ips: ['127.0.0.1']
+  syslog_prefix: None
+  nworkers_changed: <function NumWorkersChanged.nworkers_changed at 0x7f903ad66598>
+  logconfig: None
+  graceful_timeout: 30
+  syslog_facility: user
+  check_config: False
+  pre_fork: <function Prefork.pre_fork at 0x7f903ad5f730>
+  worker_class: sync
+  on_reload: <function OnReload.on_reload at 0x7f903ad5f400>
+  config: None
+  post_fork: <function Postfork.post_fork at 0x7f903ad5f8c8>
+  certfile: None
+  preload_app: True
+  chdir: /home/chris
+  pidfile: /home/chris/www/usmntstats/run/dev.pid
+  group: 1000
+  paste: None
+  errorlog: /home/chris/www/usmntstats/run/dev.log
+  ca_certs: None
+  max_requests: 0
+  default_proc_name: gunicorn
+  limit_request_fields: 100
+  daemon: False
+  access_log_format: %(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"
+  loglevel: debug
+  logger_class: gunicorn.glogging.Logger
+  limit_request_field_size: 8190
+  enable_stdio_inheritance: False
+  post_worker_init: <function PostWorkerInit.post_worker_init at 0x7f903ad5fa60>
+  worker_abort: <function WorkerAbort.worker_abort at 0x7f903ad5fd90>
+  pre_request: <function PreRequest.pre_request at 0x7f903ad66158>
+  worker_exit: <function WorkerExit.worker_exit at 0x7f903ad66400>
+  secure_scheme_headers: {'X-FORWARDED-PROTOCOL': 'ssl', 'X-FORWARDED-SSL': 'on', 'X-FORWARDED-PROTO': 'https'}
+  ciphers: TLSv1
+  statsd_host: None
+[2015-01-15 19:13:50 -0600] [21046] [INFO] Starting gunicorn 19.1.1
+[2015-01-15 19:13:50 -0600] [21046] [DEBUG] Arbiter booted
+[2015-01-15 19:13:50 -0600] [21046] [INFO] Listening at: http://127.0.0.1:29029 (21046)
+[2015-01-15 19:13:50 -0600] [21046] [INFO] Using worker: sync
+[2015-01-15 19:13:50 -0600] [21049] [INFO] Booting worker with pid: 21049
+[2015-01-15 19:13:50 -0600] [21046] [DEBUG] 1 workers
+[2015-01-15 19:14:00 -0600] [21049] [INFO] Worker exiting (pid: 21049)
+[2015-01-15 19:14:00 -0600] [21046] [DEBUG] 1 workers
+[2015-01-15 19:14:00 -0600] [21046] [INFO] Handling signal: int
+[2015-01-15 19:14:00 -0600] [21046] [INFO] Shutting down: Master
+[2015-01-16 01:14:03 +0000] [21051] [DEBUG] Current configuration:
+  check_config: False
+  keyfile: None
+  on_starting: <function OnStarting.on_starting at 0x7f9f8401e268>
+  when_ready: <function WhenReady.when_ready at 0x7f9f8401e598>
+  pre_exec: <function PreExec.pre_exec at 0x7f9f8401ef28>
+  threads: 1
+  graceful_timeout: 30
+  post_request: <function PostRequest.post_request at 0x7f9f84025268>
+  worker_tmp_dir: None
+  group: 1000
+  forwarded_allow_ips: ['127.0.0.1']
+  ca_certs: None
+  do_handshake_on_connect: False
+  ciphers: TLSv1
+  on_exit: <function OnExit.on_exit at 0x7f9f84025730>
+  syslog_prefix: None
+  workers: 1
+  paste: None
+  proxy_protocol: False
+  worker_connections: 1000
+  bind: ['127.0.0.1:29092']
+  access_log_format: %(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"
+  syslog_addr: udp://localhost:514
+  proc_name: None
+  limit_request_fields: 100
+  errorlog: /home/chris/www/usmntstats/run/dev.log
+  limit_request_field_size: 8190
+  post_worker_init: <function PostWorkerInit.post_worker_init at 0x7f9f8401ea60>
+  limit_request_line: 4094
+  config: None
+  cert_reqs: 0
+  worker_int: <function WorkerInt.worker_int at 0x7f9f8401ebf8>
+  nworkers_changed: <function NumWorkersChanged.nworkers_changed at 0x7f9f84025598>
+  max_requests: 0
+  enable_stdio_inheritance: False
+  backlog: 2048
+  logger_class: gunicorn.glogging.Logger
+  suppress_ragged_eofs: True
+  debug: False
+  umask: 0
+  default_proc_name: gunicorn
+  worker_class: sync
+  pre_request: <function PreRequest.pre_request at 0x7f9f84025158>
+  chdir: /home/chris
+  keepalive: 2
+  logconfig: None
+  on_reload: <function OnReload.on_reload at 0x7f9f8401e400>
+  statsd_host: None
+  preload_app: True
+  daemon: False
+  raw_env: []
+  secure_scheme_headers: {'X-FORWARDED-PROTO': 'https', 'X-FORWARDED-PROTOCOL': 'ssl', 'X-FORWARDED-SSL': 'on'}
+  reload: False
+  user: 1000
+  pre_fork: <function Prefork.pre_fork at 0x7f9f8401e730>
+  accesslog: None
+  syslog: False
+  worker_abort: <function WorkerAbort.worker_abort at 0x7f9f8401ed90>
+  worker_exit: <function WorkerExit.worker_exit at 0x7f9f84025400>
+  tmp_upload_dir: None
+  certfile: None
+  post_fork: <function Postfork.post_fork at 0x7f9f8401e8c8>
+  spew: False
+  pidfile: /home/chris/www/usmntstats/run/dev.pid
+  syslog_facility: user
+  ssl_version: 3
+  pythonpath: /home/chris/www
+  proxy_allow_ips: ['127.0.0.1']
+  timeout: 30
+  django_settings: usmntstats.settings
+  loglevel: debug
+[2015-01-15 19:14:04 -0600] [21051] [INFO] Starting gunicorn 19.1.1
+[2015-01-15 19:14:04 -0600] [21051] [DEBUG] Arbiter booted
+[2015-01-15 19:14:04 -0600] [21051] [INFO] Listening at: http://127.0.0.1:29092 (21051)
+[2015-01-15 19:14:04 -0600] [21051] [INFO] Using worker: sync
+[2015-01-15 19:14:04 -0600] [21055] [INFO] Booting worker with pid: 21055
+[2015-01-15 19:14:04 -0600] [21051] [DEBUG] 1 workers
+[2015-01-15 19:14:05 -0600] [21055] [DEBUG] GET /
+[2015-01-15 19:14:06 -0600] [21055] [DEBUG] GET /static/css/style.css
+[2015-01-15 19:14:06 -0600] [21055] [DEBUG] GET /static/js/jquery-1.8.3.js
+[2015-01-15 19:14:06 -0600] [21055] [DEBUG] GET /static/js/jquery.tablesorter.min.js
+[2015-01-15 19:14:06 -0600] [21055] [DEBUG] GET /static/js/custom.js
+[2015-01-15 19:14:08 -0600] [21051] [DEBUG] 1 workers
+[2015-01-15 19:14:08 -0600] [21051] [INFO] Handling signal: int
+[2015-01-15 19:14:08 -0600] [21055] [INFO] Worker exiting (pid: 21055)
+[2015-01-15 19:14:08 -0600] [21051] [INFO] Shutting down: Master
