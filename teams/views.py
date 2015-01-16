@@ -15,7 +15,7 @@ def team_list(request):
     t = Team.objects.get(slug='united-states')
     games = Game.objects.team_filter(t)
 
-    opponents = set([e.team1 for e in games]) + set([e.team2 for e in games])
+    opponents = set([e.team1 for e in games]).union(set([e.team2 for e in games]))
 
     context = {
         'games': games,

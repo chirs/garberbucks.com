@@ -10,14 +10,18 @@
 
 <div>
 
+
+<h3>National teams</h3>
+
 <table>
 
-{% for stat in stats %}
+
+
+{% for team in teams %}
 <tr>
 
-  <td><a href="{% url 'bio_detail' stat.player.slug %}">{{ stat.player }}</a></td>
-  <td>{{ stat.games_played }}</td>
-  <td>{{ stat.goals }}</td>
+
+  <td><a href="{% url 'team_detail' team.id %}">{{ team.name }}</a></td>
 
 </tr>
 
@@ -26,6 +30,8 @@
 
 </table>
 
+
+<h3>other teams</h3>
 
 
 </div>

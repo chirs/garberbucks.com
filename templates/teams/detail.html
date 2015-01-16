@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+
+{% block extrahead %}
+{% endblock %}
+
+
+{% block content %}
+
+
+<div>
+
+
+<h3>{{ t2 }}</h3>
+
+</div>
+
+<table>
+{% for game in games %}
+<tr>
+<td>{{ game }}</td>
+</tr>
+{% endfor %}
+</table>
+
+
+
+
+{% endblock %}

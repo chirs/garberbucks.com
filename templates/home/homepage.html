@@ -10,23 +10,26 @@
 
 <div>
 
-      <h4>What is usmntstats.com</h4>
-      <p>Usmntstats.com is a free open source database, written in python, that can be exported into any format.</p>
-
-        <ul>
-            <li><a href="http://github.com/soccerstatsus">repos</a> - see and edit open source data</li>
-            <li><a href="/forum">forum</a> - discuss open source soccer data</li>
-            <!--<li><a href="/api">api</a></li>-->
-        </ul>
-
-
 
 <h3><a href="{% url 'game_list' %}">games</a></h3>
 <h3><a href="{% url 'stat_list' %}">stats</a></h3>
 <h3><a href="{% url 'bio_list' %}">players</a></h3>
 <h3>coaches</h3>
-<h3>opponents</h3>
+<h3><a href="{% url 'team_list' %}">opponents</a></h3>
 <h3><a href="{% url 'stadium_list' %}">stadiums</a></h3>
+
+
+
+
+<h4>What is usmntstats.com</h4>
+<p>Usmntstats.com is a free open source database, written in python, that can be exported into any format.</p>
+
+<ul>
+  <li><a href="http://github.com/soccerstatsus">repos</a> - see and edit open source data</li>
+  <li><a href="/forum">forum</a> - discuss open source soccer data</li>
+  <!--<li><a href="/api">api</a></li>-->
+</ul>
+
 
 
 </div>
