@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+
+{% block extrahead %}
+{% endblock %}
+
+
+{% block content %}
+
+
+<div>
+
+{{ bio }}
+
+{{ stat.games_played }}
+{{ stat.games_started }}
+{{ stat.minutes }}
+{{ stat.goals }}
+
+
+<table>
+
+{% for gx in gs %}
+<tr>
+<td><a href="{% url 'game_detail' gx.game.id %}">{{ gx.game.date }}</a></td>
+</tr>
+{% endfor %}
+</table>
+
+
+<table>
+{% for stat in stats %}
+<tr>
+  <td>{{ stat.season.name }}</td>
+  <td>{{ stat.competition.name }}</td>
+  <td>{{ stat.games_played }}</td>
+  <td>{{ stat.goals }}</td>
+</tr>
+{% endfor %}  
+</table>
+
+
+
+
+</div>
+
+
+
+
+{% endblock %}

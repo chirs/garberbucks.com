@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+
+{% block extrahead %}
+{% endblock %}
+
+
+{% block content %}
+
+
+<div>
+
+<table>
+
+{% for stat in stats %}
+<tr>
+
+  <td><a href="{% url 'bio_detail' stat.player.slug %}">{{ stat.player }}</a></td>
+  <td>{{ stat.games_played }}</td>
+  <td>{{ stat.goals }}</td>
+
+</tr>
+
+
+{% endfor %}
+
+</table>
+
+
+
+</div>
+
+
+
+
+{% endblock %}
