@@ -3,4 +3,4 @@
 custom_settings.py
 secret_settings.py
 run/dev.pid
-run/dev.pid
+run/dev.log
