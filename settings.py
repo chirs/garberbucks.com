@@ -2,7 +2,7 @@ import os
 from os.path import join
 import socket
 
-from secret_settings import *
+from usmntstats.secret_settings import *
 
 from django.conf.global_settings import TEMPLATE_CONTEXT_PROCESSORS
 
