@@ -10,14 +10,45 @@
 
 <div>
 
-{{ bio }}
-
-{{ stat.games_played }}
-{{ stat.games_started }}
-{{ stat.minutes }}
-{{ stat.goals }}
+<h2>{{ bio }}</h2>
 
 
+{% if bio.birthdate %}
+<h4>born {{ bio.birthdate }}</h4>
+{% endif %}
+
+{% if bio.birthplace %}
+<h4>in {{ bio.birthplace }}</h4>
+{% endif %}
+
+{% if bio.deathdate %}
+<h4>died {{ bio.deathdate }}</h4>
+{% endif %}
+
+{% if bio.deathplace %}}</h4>
+<h4>in {{ bio.deathplace }
+{% endif %}
+
+
+<table>
+
+<thead>
+  <tr>
+
+  <th>gp</th>
+  <th>gs</th>
+  <th>min</th>
+  <th>g</th>
+</tr>
+
+<tr>
+  <td>{{ stat.games_played }}</td>
+  <td>{{ stat.games_started }}</td>
+  <td>{{ stat.minutes }}</td>
+  <td>{{ stat.goals }}</td>
+</tr>
+
+</thead>
 <table>
 
 {% for gx in gs %}
@@ -29,10 +60,20 @@
 
 
 <table>
+
+<thead>
+  <tr>
+    <th>season</th>
+    <th>competition</th>
+    <th>gp</th>
+    <th>g</th>
+  </tr>
+</thead>
+
 {% for stat in stats %}
 <tr>
   <td>{{ stat.season.name }}</td>
-  <td>{{ stat.competition.name }}</td>
+  <td><a href="{% url 'competition_detail' stat.competition.slug %}">{{ stat.competition }}</a></td>
   <td>{{ stat.games_played }}</td>
   <td>{{ stat.goals }}</td>
 </tr>

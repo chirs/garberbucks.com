@@ -11,11 +11,13 @@ admin.autodiscover()
 urlpatterns = patterns('',
 
                        url(r'^$', include('home.urls')),
-                       url(r'^games/', include('games.urls')),
-                       url(r'^stats/', include('stats.urls')),
                        url(r'^bios/', include('bios.urls')),
-                       url(r'^teams/', include('teams.urls')),
+                       url(r'^competitions/', include('competitions.urls')),
+                       url(r'^games/', include('games.urls')),
                        url(r'^stadiums/', include('stadiums.urls')),
+                       url(r'^stats/', include('stats.urls')),
+                       url(r'^teams/', include('teams.urls')),
+
 
                        #url(r"^$", "home.homepage", name="homepage"),
 

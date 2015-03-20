@@ -20,7 +20,7 @@
 <h3><a href="{% url 'team_detail' game.team2.id %}">{{ game.team2 }}</a></h3>
 
 {% if game.stadium %}
-<h3><a href="{% url 'stadium_detail' game.stadium.id %}">{{ game.stadium }}</h3>
+<h3><a href="{% url 'stadium_detail' game.stadium.id %}">{{ game.stadium }}</a></h3>
 {% else %}
 <h3>{{ game.city }}</h3>
 {% endif %}
@@ -55,7 +55,7 @@
   <tr>
 
     {% if a.player %}
-    <td><a href="{% url 'bio_detail' a.player.slug %}">{{ a.player }}</a></td>
+    <td>{{ a.player }}</td>
     {% else %}
     <td class="greybg"></td>
     {% endif %}
