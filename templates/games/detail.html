@@ -13,16 +13,119 @@
 
 <h3>{{ game.date }}</h3>
 
-<h3>{{ game.team1 }}</h3>
+<h3><a href="{% url 'team_detail' game.team1.id %}">{{ game.team1 }}</a></h3>
 
 <h3>{{ game.score_or_result }}</h3>
 
-<h3>{{ game.team2 }}</h3>
+<h3><a href="{% url 'team_detail' game.team2.id %}">{{ game.team2 }}</a></h3>
 
-<h3>{{ game.stadium }}</h3>
+{% if game.stadium %}
+<h3><a href="{% url 'stadium_detail' game.stadium.id %}">{{ game.stadium }}</h3>
+{% else %}
+<h3>{{ game.city }}</h3>
+{% endif %}
 
 
 </div>
+
+
+
+<table id="game_lineup">
+  <tr>
+
+    <th>{{ game.team1_original_name }}</th>
+    <th>g</th>
+    <th>a</th>
+    <th>on</th>
+    <th>off</th>
+    <th>min</th>
+
+    <th>{{ game.team2_original_name }}</th>
+    <th>g</th>    
+    <th>a</th>    
+    <th>on</th>
+    <th>off</th>
+    <th>min</th>
+
+  </tr>
+
+  {% with minutes=game.minutes %}
+
+  {% for a,b in game.zipped_gamestats %}
+  <tr>
+
+    {% if a.player %}
+    <td><a href="{% url 'bio_detail' a.player.slug %}">{{ a.player }}</a></td>
+    {% else %}
+    <td class="greybg"></td>
+    {% endif %}
+
+    {% if a %}
+
+    <td>{{ a.goals }}</td>
+
+    {% if a.assists %}
+    <td>{{ a.assists }}</td>
+    {% else %}
+    <td></td>
+    {% endif %}
+
+    <td>{{ a.on }}</td>
+
+    {% if a.off == minutes %}
+    <td class="greybg">{{ a.off }}</td>
+    {% else %}
+    <td>{{ a.off }}</td>
+    {% endif %}
+
+    <td>{{ a.minutes }}</td>
+
+    {% else %}
+
+    <td class="greybg"></td>
+    <td class="greybg"></td>
+    <td class="greybg"></td>
+    <td class="greybg"></td>
+    <td class="greybg"></td>
+    {% endif %}
+
+
+    {% if b.player %}
+    <td><a href="{% url 'bio_detail' b.player.slug %}">{{ b.player }}</a></td>
+    {% else %}
+    <td class="greybg"></td>
+    {% endif %}
+
+    {% if b %}
+    <td>{{ b.goals }}</td>
+    <td>{{ b.assists }}</td>
+
+
+    <td>{{ b.on }}</td>
+
+    {% if b.off == minutes %}
+    <td class="greybg">{{ b.off }}</td>
+    {% else %}
+    <td>{{ b.off }}</td>
+    {% endif %}
+
+    <td>{{ b.minutes }}</td>
+
+    {% else %}
+    <td class="greybg"></td>
+    <td class="greybg"></td>
+    <td class="greybg"></td>
+    <td class="greybg"></td>
+    <td class="greybg"></td>
+    {% endif %}
+
+  </tr>
+  {% endfor %}
+
+{% endwith %}
+
+</table>
+
 
 
 

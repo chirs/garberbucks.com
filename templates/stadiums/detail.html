@@ -10,20 +10,24 @@
 
 <div>
 
+<h3>{{ stadium }}</h3>
 
-<h3>{{ t2 }}</h3>
 
-</div>
 
-<h4>Games played</h4>
 
 <table>
-{% for game in games %}
+
+{% for game in stadium.game_set.all %}
 <tr>
-<td>{{ game }}</td>
+<td><a href="{% url 'game_detail' game.id %}">{{ game }}</a></td>
 </tr>
 {% endfor %}
+
 </table>
+
+
+
+</div>
 
 
 

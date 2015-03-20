@@ -12,17 +12,36 @@
 
 <table>
 
+<th>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</th>
+
 {% for game in games %}
 <tr>
 
   <td>{{ game.date }}</td>
+
   <td>{{ game.competition.abbreviation }}</td>
+  {# <td><a href="{% url competition_detail' game.competition.id %}">{{ game.competition.abbreviation }}</a></td> #}
 
   <td>{{ game.team1 }}</td>
 
+  <td><a href="{% url 'game_detail' game.id %}">{{ game.score_or_result }}</td>
+
   <td>{{ game.team2 }}</td>
 
-  <td>{{ game.stadium }}</td>
+  {% if game.stadium %}
+  <td><a href="{% url 'stadium_detail' game.stadium.id %}">{{ game.stadium }}</a></td>
+  {% else %}
+  <td>{{ game.city }}</td>
+  {% endif %}
+
+
 </tr>
 
 

@@ -34,7 +34,7 @@ def stadium_detail(request, stadium_id):
         'stadium': stadium,
         }
 
-    return render_to_response("games/detail.html",
+    return render_to_response("stadiums/detail.html",
                               context,
                               context_instance=RequestContext(request))
 
