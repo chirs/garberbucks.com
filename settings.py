@@ -32,6 +32,7 @@ else:
 
 PRODUCTION_SITES = (
     "bert",
+    "oscar",
 )
 
 
@@ -135,7 +136,12 @@ TEMPLATE_DIRS = (
 
 FIXTURE_DIR = "%s/fixtures" % PROJECT_DIR,
 
-ALLOWED_HOSTS = ['.soccerstats.us']
+ALLOWED_HOSTS = [
+    '.soccerstats.us',
+    #'.garberbucks.com',
+    'garberbucks.com',
+    'www.garberbucks.com',
+]
 
 INSTALLED_APPS = (
     'django.contrib.auth',
