@@ -10,6 +10,7 @@
     {% if league %}<th scope="col" class="num">clubs</th>{% endif %}
     <th scope="col" class="num">total pay</th>
     {% if league %}<th scope="col" class="num">average team payroll</th>{% endif %}
+    {% if league %}<th scope="col" class="num">median team payroll</th>{% endif %}
     <th scope="col">highest paid</th>
     <th scope="col" class="num">pay</th>
   </tr>
@@ -36,7 +37,9 @@
   {% if league %}
   {% if season.team_average is not None %}
   <td class="num">{{ season.team_average|dollars }}{% if season.period != 'year' %} a {{ season.period }}{% endif %}</td>
+  <td class="num">{{ season.team_median|dollars }}{% if season.period != 'year' %} a {{ season.period }}{% endif %}</td>
   {% else %}
+  {% include "gap.html" with num=True title="no clubs on record" %}
   {% include "gap.html" with num=True title="no clubs on record" %}
   {% endif %}
   {% endif %}
@@ -50,6 +53,6 @@
 
 <p class="table-legend">Pay is guaranteed compensation where the source gives it and base
 salary where it does not. Total pay sums it across every player on record that season.
-{% if league %}Average team payroll is the pay of the players listed with a club, split evenly
-across the clubs. A club with fewer than eleven players on record is an expansion side signing
-ahead of its first season, and is left out of both.{% endif %}</p>
+{% if league %}Team payroll is the pay of the players listed with a club: the average splits it
+evenly across the clubs, and the median is the club in the middle. A club with fewer than eleven
+players on record is an expansion side signing ahead of its first season, and is left out.{% endif %}</p>

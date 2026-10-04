@@ -1,18 +1,24 @@
-{% if panels %}
+{% if lines %}
 <figure class="chart">
 <svg viewBox="0 0 {{ width }} {{ height }}" role="img" aria-label="{{ label }}">
-  {% for p in panels %}
-  <text class="label name" x="{{ left }}" y="{{ p.title_y }}">{{ p.name }}</text>
-  {% for t in p.ticks %}
+  {% for line in lines %}
+  <line class="line {{ line.css }}" x1="{{ line.legend.x1|floatformat:1 }}" x2="{{ line.legend.x2|floatformat:1 }}" y1="{{ legend_y }}" y2="{{ legend_y }}"/>
+  <circle class="dot {{ line.css }}" cx="{{ line.legend.dot|floatformat:1 }}" cy="{{ legend_y }}" r="4"/>
+  <text class="label" x="{{ line.legend.text_x|floatformat:1 }}" y="{{ legend_y }}" dy="4">{{ line.legend.text }}</text>
+  {% endfor %}
+  {% for t in ticks %}
   <line class="grid" x1="{{ left }}" x2="{{ right_edge }}" y1="{{ t.y|floatformat:1 }}" y2="{{ t.y|floatformat:1 }}"/>
-  <text x="{{ left|add:"-8" }}" y="{{ t.y|floatformat:1 }}" dy="4" text-anchor="end">{{ t.text }}</text>
+  <text x="{{ left|add:"-8" }}" y="{{ t.y|floatformat:1 }}" dy="4" text-anchor="end">{{ t.left }}</text>
+  {% if t.right %}<text x="{{ right_edge|add:"8" }}" y="{{ t.y|floatformat:1 }}" dy="4">{{ t.right }}</text>{% endif %}
   {% endfor %}
-  <line class="axis" x1="{{ left }}" x2="{{ right_edge }}" y1="{{ p.base|floatformat:1 }}" y2="{{ p.base|floatformat:1 }}"/>
-  <path class="line" d="{{ p.path }}"/>
-  {% for pt in p.points %}
-  <a href="{{ pt.url }}"><circle class="dot" cx="{{ pt.x|floatformat:1 }}" cy="{{ pt.y|floatformat:1 }}" r="4"/><circle class="hit" cx="{{ pt.x|floatformat:1 }}" cy="{{ pt.y|floatformat:1 }}" r="12"><title>{{ pt.title }}</title></circle></a>
+  <line class="axis" x1="{{ left }}" x2="{{ right_edge }}" y1="{{ base }}" y2="{{ base }}"/>
+  {% for line in lines %}
+  <path class="line {{ line.css }}" d="{{ line.path }}"/>
   {% endfor %}
-  <text class="label value" x="{{ p.end.x|floatformat:1 }}" y="{{ p.end.y|floatformat:1 }}" dy="4">{{ p.end.text }}</text>
+  {% for line in lines %}
+  {% for pt in line.points %}
+  <a href="{{ pt.url }}"><circle class="dot {{ line.css }}" cx="{{ pt.x|floatformat:1 }}" cy="{{ pt.y|floatformat:1 }}" r="4"/><circle class="hit" cx="{{ pt.x|floatformat:1 }}" cy="{{ pt.y|floatformat:1 }}" r="9"><title>{{ pt.title }}</title></circle></a>
+  {% endfor %}
   {% endfor %}
   {% for l in labels %}
   <text x="{{ l.x|floatformat:1 }}" y="{{ label_y }}" text-anchor="middle">{{ l.text }}</text>

@@ -197,9 +197,9 @@ def test_compact_money():
     assert compact(0) == '$0'
 
 
-def summary(season, total, team_average=None, period='year'):
+def summary(season, total, team_average=None, team_median=None, period='year'):
     return {'season': season, 'period': period, 'total': total, 'team_average': team_average,
-            'competition__slug': 'major-league-soccer'}
+            'team_median': team_median, 'competition__slug': 'major-league-soccer'}
 
 
 def test_latest_run_stops_at_a_missing_season():
@@ -216,24 +216,41 @@ def test_no_chart_for_fewer_than_three_seasons():
     assert payroll_chart([summary('2025', 1), summary('2026', 2)]) == {}
 
 
-def test_chart_draws_the_average_only_where_clubs_are_on_record():
-    seasons = [summary('2004', 10), summary('2005', 20), summary('2006', 30, 3),
-               summary('2007', 40, 4), summary('2008', 50, 5)]
+def test_chart_draws_team_payroll_only_where_clubs_are_on_record():
+    seasons = [summary('2004', 100), summary('2005', 200), summary('2006', 300, 30, 20),
+               summary('2007', 400, 40, 30), summary('2008', 500, 50, 60)]
     chart = payroll_chart(seasons)
 
-    league, average = chart['panels']
+    league, average, median = chart['lines']
+    assert [line['css'] for line in chart['lines']] == ['league', 'average', 'median']
     assert len(league['points']) == 5
-    assert len(average['points']) == 3
-    assert league['end']['text'] == '$50'
+    assert len(average['points']) == len(median['points']) == 3
     assert 'no clubs before 2006' in chart['caption']
     # One unbroken line each: a single move-to.
-    assert league['path'].count('M') == 1
-    assert average['path'].count('M') == 1
+    assert all(line['path'].count('M') == 1 for line in chart['lines'])
 
 
-def test_chart_has_one_panel_when_no_clubs_are_on_record():
+def test_chart_scales_each_side_to_its_own_measure():
+    seasons = [summary('2006', 300, 30, 20), summary('2007', 400, 40, 30),
+               summary('2008', 630, 50, 60)]
+    chart = payroll_chart(seasons)
+
+    top = chart['ticks'][-1]
+    assert top['left'] == '$800'      # the league reaches 630
+    assert top['right'] == '$60'      # the median reaches 60, past the average
+    # Both scales are cut into the same intervals, so one set of gridlines serves both.
+    assert len(chart['ticks']) == 5
+    # The league and the average both sit on their own scale: 630 of 800, 50 of 60.
+    league, average, median = chart['lines']
+    assert league['points'][-1]['y'] > median['points'][-1]['y']
+    assert 'left scale' in league['legend']['text']
+    assert 'right scale' in median['legend']['text']
+
+
+def test_chart_has_no_right_scale_when_no_clubs_are_on_record():
     chart = payroll_chart([summary(s, 10) for s in ('2004', '2005', '2006')])
-    assert [p['name'] for p in chart['panels']] == ['League payroll']
+    assert [line['name'] for line in chart['lines']] == ['League payroll']
+    assert all(t['right'] == '' for t in chart['ticks'])
 
 
 def squad(competition, team, season, n, each):
@@ -250,9 +267,11 @@ def test_league_page_charts_payroll_and_averages_it_by_club(client, mls, galaxy)
     html = client.get('/c/major-league-soccer/').content.decode()
 
     assert '<svg' in html
-    assert 'League payroll' in html and 'Average team payroll' in html
+    assert 'League payroll, left scale' in html
+    assert 'Average team payroll, right scale' in html
+    assert 'Median team payroll, right scale' in html
     assert '$4,400,000' in html      # the league: 11 x 300k + 11 x 100k
-    assert '$2,200,000' in html      # split across two clubs
+    assert '$2,200,000' in html      # split across two clubs; with two, the median is the same
     assert 'href="/c/major-league-soccer/2008/"' in html
 
 
@@ -282,3 +301,16 @@ def test_a_league_that_does_not_exist_is_not_found(client, db):
 
 def test_home_links_each_season_to_its_league(client, season_2007):
     assert 'href="/c/major-league-soccer/"' in client.get('/').content.decode()
+
+
+def test_median_team_payroll_is_the_club_in_the_middle(client, mls, galaxy):
+    fire = Team.objects.create(name='Chicago Fire', slug='chicago-fire')
+    crew = Team.objects.create(name='Columbus Crew', slug='columbus-crew')
+    squad(mls, galaxy, '2007', 11, 1000000)
+    squad(mls, fire, '2007', 11, 200000)
+    squad(mls, crew, '2007', 11, 100000)
+
+    html = client.get('/c/major-league-soccer/').content.decode()
+
+    assert '$4,766,667' in html      # the average, pulled up by the Galaxy
+    assert '$2,200,000' in html      # the median: the Fire

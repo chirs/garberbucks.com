@@ -1,8 +1,8 @@
 """
-Inline-SVG charts, one series in the site's accent, as soccerstats.us draws
-them (../s2/competitions/templatetags/charts.py). The Python here does the
-geometry; the template emits the markup. Every chart is followed by a table
-carrying the same numbers, so nothing is only readable from the picture.
+Inline-SVG charts, drawn the way soccerstats.us draws them
+(../s2/competitions/templatetags/charts.py). The Python here does the geometry;
+the template emits the markup. Every chart is followed by a table carrying the
+same numbers, so nothing is only readable from the picture.
 """
 
 import math
@@ -13,11 +13,11 @@ from django.urls import reverse
 register = template.Library()
 
 WIDTH = 960
-LEFT, RIGHT = 64, 70   # gutters: tick labels on the left, the end value on the right
-PANEL_H = 170
-TITLE_H = 26           # room above each panel for its name
-GAP = 26               # between panels
-LABEL_H = 30           # season labels under the last panel
+LEFT, RIGHT = 64, 64   # gutters: the league scale on the left, the club scale on the right
+TOP = 40               # the legend sits above the plot
+PLOT_H = 300
+LABEL_H = 30           # season labels under the plot
+INTERVALS = 4          # both scales are cut into the same intervals, so they share gridlines
 
 
 def compact(value):
@@ -29,11 +29,11 @@ def compact(value):
     return '$%d' % value
 
 
-def nice_step(maximum, target_ticks=4):
-    """A clean tick step (1, 2, 2.5, 5 x 10^k) giving about target_ticks lines."""
-    raw = maximum / target_ticks
+def nice_step(maximum, intervals=INTERVALS):
+    """The smallest clean step that reaches maximum in the given number of intervals."""
+    raw = maximum / intervals
     magnitude = 10 ** math.floor(math.log10(raw))
-    for m in (1, 2, 2.5, 5, 10):
+    for m in (1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10):
         if m * magnitude >= raw:
             return m * magnitude
 
@@ -53,64 +53,72 @@ def latest_run(seasons):
     return run
 
 
-def panel(name, rows, key, xs, top):
-    """One measure over the run: gridlines, a line broken where a season has no value, a point per season."""
-    values = [float(r[key]) if r[key] is not None else None for r in rows]
-    ceiling = max(v for v in values if v is not None)
-    step = nice_step(ceiling)
-    y_max = step * math.ceil(ceiling / step)
-    plot_top = top + TITLE_H
-    base = plot_top + PANEL_H
-    scale = PANEL_H / y_max
-
+def series(name, css, rows, key, xs, base, step):
+    """One measure over the run: a line broken where a season has no value, a point per season."""
+    scale = PLOT_H / (step * INTERVALS)
     path, points, drawing = [], [], False
-    for row, x, value in zip(rows, xs, values):
-        if value is None:
+    for row, x in zip(rows, xs):
+        if row[key] is None:
             drawing = False
             continue
+        value = float(row[key])
         y = base - value * scale
         path.append('%s%.1f,%.1f' % ('L' if drawing else 'M', x, y))
         drawing = True
         points.append({
             'x': x, 'y': y,
             'url': reverse('season_detail', args=[row['competition__slug'], row['season']]),
-            'title': '%s: $%s' % (row['season'], format(round(value), ',')),
+            'title': '%s %s: $%s' % (row['season'], name.lower(), format(round(value), ',')),
         })
-
-    return {
-        'name': name,
-        'title_y': top + 14,
-        'base': base,
-        'ticks': [{'y': base - i * step * scale, 'text': compact(i * step)}
-                  for i in range(round(y_max / step) + 1)],
-        'path': ''.join(path),
-        'points': points,
-        # Only the latest value is written on the chart; the rest are a hover or the table away.
-        'end': {'x': points[-1]['x'] + 10, 'y': points[-1]['y'],
-                'text': compact([v for v in values if v is not None][-1])},
-    }
+    return {'name': name, 'css': css, 'path': ''.join(path), 'points': points}
 
 
 @register.inclusion_tag("money/_payroll_chart.html")
 def payroll_chart(seasons):
     """
-    League payroll and average team payroll by season, as two panels on one
-    season axis. They share no y-axis: at thirty clubs the average is a
-    thirtieth of the total and would lie flat along the baseline.
+    League payroll against the left scale; average and median team payroll
+    against the right. At thirty clubs a club's payroll is a thirtieth of the
+    league's and would lie flat along the baseline of a shared scale, so each
+    side has its own, and the legend says which line reads against which.
     """
     rows = latest_run(seasons)
     if len(rows) < 3:
         return {}
 
-    slot = (WIDTH - LEFT - RIGHT) / (len(rows) - 1)
+    base = TOP + PLOT_H
+    right_edge = WIDTH - RIGHT
+    slot = (right_edge - LEFT) / (len(rows) - 1)
     xs = [LEFT + i * slot for i in range(len(rows))]
 
-    panels = [panel('League payroll', rows, 'total', xs, 0)]
+    league_step = nice_step(max(float(r['total']) for r in rows))
+    lines = [series('League payroll', 'league', rows, 'total', xs, base, league_step)]
+    lines[0]['scale'] = 'left scale'
+
     with_teams = [r for r in rows if r['team_average'] is not None]
+    team_step = None
     if len(with_teams) >= 3:
-        panels.append(panel('Average team payroll', rows, 'team_average', xs,
-                            TITLE_H + PANEL_H + GAP))
-    height = panels[-1]['base'] + LABEL_H
+        team_step = nice_step(max(float(max(r['team_average'], r['team_median']))
+                                  for r in with_teams))
+        for name, css, key in (('Average team payroll', 'average', 'team_average'),
+                               ('Median team payroll', 'median', 'team_median')):
+            line = series(name, css, rows, key, xs, base, team_step)
+            line['scale'] = 'right scale'
+            lines.append(line)
+
+    ticks = []
+    for i in range(INTERVALS + 1):
+        ticks.append({
+            'y': base - i * PLOT_H / INTERVALS,
+            'left': compact(i * league_step),
+            'right': compact(i * team_step) if team_step else '',
+        })
+
+    # The legend runs along the top: a sample of each line, its name, its scale.
+    x = LEFT
+    for line in lines:
+        line['legend'] = {'x1': x, 'x2': x + 28, 'dot': x + 14, 'text_x': x + 36,
+                          'text': '%s, %s' % (line['name'], line['scale'])}
+        x += 36 + len(line['legend']['text']) * 6.3 + 28
 
     every = max(1, math.ceil(44 / slot))  # label spacing so four-digit years never touch
     # Count back from the latest season, so the year the eye lands on is always named.
@@ -118,25 +126,32 @@ def payroll_chart(seasons):
               for i, (r, x) in enumerate(zip(rows, xs)) if (len(rows) - 1 - i) % every == 0]
 
     first, last = rows[0]['season'], rows[-1]['season']
-    caption = ('League payroll is the pay of every player on record that season. '
-               'Average team payroll is the pay of the players listed with a club, '
-               'split evenly across the clubs that have a squad on record.')
-    if len(panels) > 1 and with_teams[0] is not rows[0]:
-        caption += (' The record names no clubs before %s, so the average starts there.'
-                    % with_teams[0]['season'])
+    caption = ('League payroll, read against the left scale, is the pay of every '
+               'player on record that season.')
+    if team_step:
+        caption += (' Team payroll, read against the right scale, is the pay of the players '
+                    'listed with a club: the average splits it evenly across the clubs that '
+                    'have a squad on record, and the median is the club in the middle. Where '
+                    'the lines cross means nothing; the two scales are unrelated.')
+        if with_teams[0] is not rows[0]:
+            caption += (' The record names no clubs before %s, so team payroll starts there.'
+                        % with_teams[0]['season'])
     if len(rows) < len(seasons):
         caption += (' Seasons outside the unbroken run of %s–%s are in the table only.'
                     % (first, last))
     caption += ' Hover or focus a point for its figure.'
 
     return {
-        'panels': panels,
+        'lines': lines,
+        'ticks': ticks,
         'labels': labels,
-        'label_y': height - 10,
+        'legend_y': 14,
+        'label_y': base + LABEL_H - 10,
         'width': WIDTH,
-        'height': height,
+        'height': base + LABEL_H,
         'left': LEFT,
-        'right_edge': WIDTH - RIGHT,
-        'label': 'League payroll and average team payroll by season, %s to %s' % (first, last),
+        'right_edge': right_edge,
+        'base': base,
+        'label': 'League payroll and team payroll by season, %s to %s' % (first, last),
         'caption': caption,
     }

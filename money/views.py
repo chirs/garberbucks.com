@@ -1,4 +1,5 @@
 from collections import defaultdict
+from statistics import median
 
 from django.db.models import Count, Sum
 from django.http import Http404
@@ -43,6 +44,7 @@ def season_summaries(salaries):
         season['top'] = top[key]
         season['teams'] = len(clubs[key])
         season['team_average'] = sum(clubs[key]) / len(clubs[key]) if clubs[key] else None
+        season['team_median'] = median(clubs[key]) if clubs[key] else None
 
     return seasons
 
