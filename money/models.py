@@ -18,7 +18,7 @@ class Salary(models.Model):
     competition = models.ForeignKey(Competition, on_delete=models.CASCADE)
     season = models.CharField(max_length=255)
 
-    position = models.CharField(max_length=20, blank=True)
+    position = models.CharField(max_length=50, blank=True)
 
     base = models.DecimalField(max_digits=15, decimal_places=2)
     guaranteed = models.DecimalField(max_digits=15, decimal_places=2, null=True)
