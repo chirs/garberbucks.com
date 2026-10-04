@@ -1,0 +1,26 @@
+{% if lines %}
+<figure class="chart">
+<svg viewBox="0 0 {{ width }} {{ height }}" role="img" aria-label="{{ label }}">
+  {% for line in lines %}{% if line.legend %}
+  <line class="line {{ line.css }}" x1="{{ line.legend.x1|floatformat:1 }}" x2="{{ line.legend.x2|floatformat:1 }}" y1="{{ legend_y }}" y2="{{ legend_y }}"/>
+  <circle class="dot {{ line.css }}" cx="{{ line.legend.dot|floatformat:1 }}" cy="{{ legend_y }}" r="4"/>
+  <text class="label" x="{{ line.legend.text_x|floatformat:1 }}" y="{{ legend_y }}" dy="4">{{ line.name }}</text>
+  {% endif %}{% endfor %}
+  {% for t in ticks %}
+  <line class="grid" x1="{{ left }}" x2="{{ right_edge }}" y1="{{ t.y|floatformat:1 }}" y2="{{ t.y|floatformat:1 }}"/>
+  <text x="{{ left|add:"-8" }}" y="{{ t.y|floatformat:1 }}" dy="4" text-anchor="end">{{ t.text }}</text>
+  {% endfor %}
+  <line class="axis" x1="{{ left }}" x2="{{ right_edge }}" y1="{{ base }}" y2="{{ base }}"/>
+  {% for line in lines %}
+  <path class="line {{ line.css }}" d="{{ line.path }}"/>
+  {% endfor %}
+  {% for line in lines %}{% for pt in line.points %}
+  <circle class="dot {{ line.css }}" cx="{{ pt.x|floatformat:1 }}" cy="{{ pt.y|floatformat:1 }}" r="4" tabindex="0"><title>{{ pt.title }}</title></circle>
+  {% endfor %}{% endfor %}
+  {% for l in labels %}
+  <text x="{{ l.x|floatformat:1 }}" y="{{ label_y }}" text-anchor="middle">{{ l.text }}</text>
+  {% endfor %}
+</svg>
+<figcaption>{{ caption }}</figcaption>
+</figure>
+{% endif %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load charts money_tags %}
+
+{% block title %}Team valuations{% endblock %}
+{% block metadescription %}What MLS clubs are worth, by Forbes's and Sportico's estimates, year by year{% endblock %}
+
+{% block content %}
+
+<h1>Team valuations</h1>
+
+<p class="prose">What each club is worth, as Forbes and Sportico estimate it: {{ lists }} published
+lists, from Forbes's first in 2008. They measure different things. Forbes values the team alone,
+leaving out stadiums and real estate; Sportico includes the team's real estate and related
+businesses, so it runs higher for clubs that own their grounds. Neither is a sale price.</p>
+
+{% value_chart series "Average MLS team value by year, Forbes and Sportico" %}
+
+{% for grid in grids %}
+<h2>{{ grid.publisher }}</h2>
+
+<table class="wide">
+<thead>
+  <tr>
+    <th scope="col">team</th>
+    {% for season in grid.seasons %}<th scope="col" class="num">{{ season }}</th>{% endfor %}
+  </tr>
+</thead>
+<tbody>
+{% for team, cells in grid.rows %}
+<tr>
+  <td><a href="{{ team.get_absolute_url }}">{{ team.name }}</a></td>
+  {% for v in cells %}
+  {% if v %}
+  <td class="num" title="No. {{ v.rank }}, ${{ v.value|floatformat:0 }}">{{ v.value|millions }}</td>
+  {% else %}
+  {% include "gap.html" with num=True title="not on this list" %}
+  {% endif %}
+  {% endfor %}
+</tr>
+{% endfor %}
+<tr class="total">
+  <td>average</td>
+  {% for a in grid.averages %}<td class="num">{{ a|millions }}</td>{% endfor %}
+</tr>
+</tbody>
+</table>
+{% endfor %}
+
+<p class="table-legend">Values in millions of dollars; hover a figure for the team's rank on that
+list. A club is missing from a list until it has played a full season. Forbes published no MLS list
+in 2009–2012, 2014 or 2020–2022, and Sportico none in 2023. The sources for each list are on each
+club's page.</p>
+
+{% endblock %}

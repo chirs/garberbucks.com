@@ -73,3 +73,31 @@ class Sponsorship(models.Model):
         if self.start:
             return '%s–' % self.start
         return ''
+
+
+class Valuation(models.Model):
+    """
+    A team's value on a published list, as the publisher estimated it. Forbes
+    values the team alone; Sportico includes its real estate and related
+    businesses, so the two are not the same measure.
+    """
+
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE)
+    publisher = models.CharField(max_length=50)
+    season = models.IntegerField()
+
+    rank = models.IntegerField()
+    value = models.BigIntegerField()
+    revenue = models.BigIntegerField(null=True)
+    operating_income = models.BigIntegerField(null=True)
+
+    published = models.CharField(max_length=10, blank=True) # 2018-11-14, or 2008-09
+    revenue_season = models.IntegerField(null=True)
+    sources = models.TextField(blank=True) # urls, one per line
+
+    class Meta:
+        ordering = ('publisher', 'season', 'rank')
+
+    def __str__(self):
+        return "%s %s: %s %s" % (self.publisher, self.season, self.team, self.value)

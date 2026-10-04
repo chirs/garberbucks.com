@@ -5,7 +5,7 @@ import pytest
 
 from bios.models import Bio
 from build import load
-from money.models import Salary, Sponsorship
+from money.models import Salary, Sponsorship, Valuation
 from teams.models import Team
 
 
@@ -36,10 +36,11 @@ def salary(**kw):
 
 @pytest.fixture
 def mongo(monkeypatch):
-    def use(salaries, bios=(), sponsorships=()):
+    def use(salaries, bios=(), sponsorships=(), valuations=()):
         db = FakeDB(
             salaries=salaries,
             sponsorships=list(sponsorships),
+            valuations=list(valuations),
             bios=list(bios),
             competitions=[{'name': 'Major League Soccer', 'abbreviation': 'MLS'}],
         )
@@ -125,3 +126,25 @@ def test_loads_sponsorships_and_their_clubs(mongo):
     assert bmo.currency == 'CAD'
     assert bmo.source_list() == ['https://a.example', 'https://b.example']
     assert Sponsorship.objects.get(sponsor='Adidas').team is None
+
+
+@pytest.mark.django_db
+def test_loads_valuations(mongo):
+    mongo([salary()], valuations=[
+        {'team': 'Chivas USA', 'competition': 'Major League Soccer', 'publisher': 'Forbes',
+         'season': '2013', 'rank': 19, 'value': 64000000, 'revenue': 15000000,
+         'operating_income': -5500000, 'published': '2013-11-20', 'revenue_season': '2012',
+         'sources': ['https://a.example']},
+        {'team': 'LA Galaxy', 'competition': 'Major League Soccer', 'publisher': 'Sportico',
+         'season': '2021', 'rank': 2, 'value': 835000000, 'revenue': None,
+         'operating_income': None, 'published': None, 'revenue_season': None, 'sources': []},
+    ])
+    load.load()
+
+    chivas = Valuation.objects.select_related('team').get(publisher='Forbes')
+    assert chivas.team.slug == 'chivas-usa'     # a club with no salaries still loads
+    assert chivas.season == 2013 and chivas.revenue_season == 2012
+    assert chivas.operating_income == -5500000
+    galaxy = Valuation.objects.get(publisher='Sportico')
+    assert galaxy.revenue is None and galaxy.published == '' and galaxy.revenue_season is None
+    assert galaxy.team_id == Salary.objects.get().team_id

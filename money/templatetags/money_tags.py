@@ -11,3 +11,15 @@ def dollars(value, currency='USD'):
     Canadian dollars say so: C$27,000,000.
     """
     return '%s$%s' % ('C' if currency == 'CAD' else '', intcomma(round(value)))
+
+
+@register.filter
+def millions(value):
+    """
+    Dollars in millions, for tables too wide for whole figures: 330000000 -> $330M,
+    1350000000 -> $1,350M, -2000000 -> -$2M.
+    """
+    sign = '-' if value < 0 else ''
+    m = abs(value) / 1e6
+    text = intcomma(round(m)) if m >= 10 or m == round(m) else ('%.1f' % m)
+    return '%s$%sM' % (sign, text)

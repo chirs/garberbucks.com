@@ -21,7 +21,9 @@ LABEL_H = 30           # season labels under the last panel
 
 
 def compact(value):
-    """A dollar figure short enough for an axis: $631M, $2.5M, $500K."""
+    """A dollar figure short enough for an axis: $1.5B, $631M, $2.5M, $500K."""
+    if value >= 1e9:
+        return '$%sB' % ('%.2f' % (value / 1e9)).rstrip('0').rstrip('.')
     if value >= 1e6:
         return '$%sM' % ('%.1f' % (value / 1e6)).rstrip('0').rstrip('.')
     if value >= 1e3:
@@ -171,4 +173,61 @@ def payroll_chart(seasons):
         'right_edge': WIDTH - RIGHT,
         'label': 'League payroll and team payroll by season, %s to %s' % (first, last),
         'caption': caption,
+    }
+
+
+@register.inclusion_tag("money/_value_chart.html")
+def value_chart(series, label):
+    """
+    Values by year on one scale, one line per series: [(name, css, {year: dollars})].
+    The axis runs year by year; a line joins only consecutive years, so a year
+    with no list is a break, not an interpolation.
+    """
+    series = [(name, css, points) for name, css, points in series if points]
+    years = sorted({y for _, _, points in series for y in points})
+    if len(years) < 2:
+        return {}
+
+    first, last = years[0], years[-1]
+    top, height = HEAD_H, HEAD_H + PANEL_H
+    base = top + PANEL_H
+    slot = (WIDTH - LEFT - RIGHT) / (last - first)
+    x = lambda year: LEFT + (year - first) * slot
+
+    ceiling = max(v for _, _, points in series for v in points.values())
+    step = nice_step(ceiling)
+    y_max = step * math.ceil(ceiling / step)
+    scale = PANEL_H / y_max
+
+    lines = []
+    for name, css, points in series:
+        path, dots = [], []
+        for year in sorted(points):
+            px, py = x(year), base - points[year] * scale
+            path.append('%s%.1f,%.1f' % ('L' if year - 1 in points else 'M', px, py))
+            dots.append({'x': px, 'y': py, 'title': '%s %s: $%s' % (year, name, format(round(points[year]), ','))})
+        lines.append({'name': name, 'css': css, 'path': ''.join(path), 'points': dots})
+
+    if len(lines) > 1:
+        lx = LEFT
+        for line in lines:
+            line['legend'] = {'x1': lx, 'x2': lx + 28, 'dot': lx + 14, 'text_x': lx + 36}
+            lx += 36 + len(line['name']) * 6.3 + 24
+
+    every = max(1, math.ceil(44 / slot))
+    return {
+        'lines': lines,
+        'ticks': [{'y': base - i * step * scale, 'text': compact(i * step)}
+                  for i in range(round(y_max / step) + 1)],
+        'labels': [{'x': x(y), 'text': y} for y in range(last, first - 1, -every)],
+        'legend_y': 14,
+        'base': base,
+        'label_y': height + LABEL_H - 10,
+        'width': WIDTH,
+        'height': height + LABEL_H,
+        'left': LEFT,
+        'right_edge': WIDTH - RIGHT,
+        'label': label,
+        'caption': '%s. A line joins only consecutive years, so a year with no list is a gap. '
+                   'Hover or focus a point for its figure.' % label,
     }

@@ -5,9 +5,9 @@ import pytest
 from bios.models import Bio
 from competitions.models import Competition
 from money.coverage import season_ranges
-from money.models import Salary, Sponsorship
-from money.templatetags.charts import compact, latest_run, payroll_chart
-from money.templatetags.money_tags import dollars
+from money.models import Salary, Sponsorship, Valuation
+from money.templatetags.charts import compact, latest_run, payroll_chart, value_chart
+from money.templatetags.money_tags import dollars, millions
 from teams.models import Team
 
 GAP = '&mdash;'
@@ -199,6 +199,8 @@ def test_compact_money():
     assert compact(20000000) == '$20M'
     assert compact(500000) == '$500K'
     assert compact(0) == '$0'
+    assert compact(1e9) == '$1B'
+    assert compact(1.35e9) == '$1.35B'
 
 
 def summary(season, total, team_average=None, team_median=None, period='year'):
@@ -401,3 +403,58 @@ def test_team_page_lists_its_sponsorships(client, mls, galaxy):
 
 def test_team_page_without_sponsorships_has_no_section(client, season_2007):
     assert 'Sponsorships</h2>' not in client.get('/teams/la-galaxy/').content.decode()
+
+
+def test_millions():
+    assert millions(330000000) == '$330M'
+    assert millions(1350000000) == '$1,350M'
+    assert millions(-2000000) == '-$2M'
+    assert millions(2200000) == '$2.2M'
+
+
+def test_value_chart_breaks_the_line_at_a_missing_year():
+    chart = value_chart([('Forbes', 'average', {2008: 37e6, 2013: 103e6, 2015: 157e6, 2016: 185e6})], 'x')
+    (line,) = chart['lines']
+    assert len(line['points']) == 4
+    assert line['path'].count('M') == 3     # 2008 alone, 2013 alone, 2015-2016 joined
+    assert 'legend' not in line
+
+
+def test_value_chart_needs_two_years():
+    assert value_chart([('Forbes', 'average', {2026: 1e9})], 'x') == {}
+
+
+def valuation(team, competition, publisher, season, value, rank=1, **kw):
+    return Valuation.objects.create(team=team, competition=competition, publisher=publisher,
+                                    season=season, value=value, rank=rank, **kw)
+
+
+def test_valuations_page_tables_each_publisher(client, mls, galaxy):
+    fire = Team.objects.create(name='Chicago Fire', slug='chicago-fire')
+    valuation(galaxy, mls, 'Forbes', 2018, 320000000, 1)
+    valuation(fire, mls, 'Forbes', 2018, 245000000, 2)
+    valuation(galaxy, mls, 'Forbes', 2019, 480000000, 1)
+    valuation(galaxy, mls, 'Sportico', 2026, 1170000000, 1)
+
+    html = client.get('/valuations/').content.decode()
+
+    assert html.index('<h2>Forbes</h2>') < html.index('<h2>Sportico</h2>')
+    assert '$320M' in html and '$1,170M' in html
+    assert '$282M' in html                       # the 2018 Forbes average, 282.5 rounded to even
+    assert 'title="not on this list">&mdash;' in html   # the Fire in 2019
+    assert '<svg' in html and 'Forbes, average team' in html
+    assert '3 published' in html
+
+
+def test_team_page_lists_its_valuations(client, mls, galaxy):
+    valuation(galaxy, mls, 'Forbes', 2018, 320000000, 2, revenue=63000000, operating_income=6000000,
+              sources='https://a.example')
+    valuation(galaxy, mls, 'Forbes', 2019, 480000000, 2)
+
+    html = client.get('/teams/la-galaxy/').content.decode()
+
+    assert '<h2>Valuations</h2>' in html
+    assert '$320,000,000' in html and '$63,000,000' in html
+    assert 'title="not given">&mdash;' in html
+    assert 'href="https://a.example">1</a>' in html
+    assert '<svg' in html

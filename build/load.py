@@ -5,7 +5,7 @@ from django.template.defaultfilters import slugify
 
 from bios.models import Bio
 from competitions.models import Competition
-from money.models import Salary, Sponsorship
+from money.models import Salary, Sponsorship, Valuation
 from teams.models import Team
 
 connection = pymongo.MongoClient()
@@ -20,14 +20,17 @@ def load():
     """
     salaries = list(soccer_db.salaries.find())
     sponsorships = list(soccer_db.sponsorships.find())
+    valuations = list(soccer_db.valuations.find())
 
-    competitions = load_competitions({e['competition'] for e in salaries + sponsorships})
+    competitions = load_competitions({e['competition'] for e in salaries + sponsorships + valuations})
     teams = load_teams({e['team'] for e in salaries if e['team']} |
-                       {e['club'] for e in sponsorships if e['club']})
+                       {e['club'] for e in sponsorships if e['club']} |
+                       {e['team'] for e in valuations})
     bios = load_bios({e['name'] for e in salaries})
 
     load_salaries(salaries, competitions, teams, bios)
     load_sponsorships(sponsorships, competitions, teams)
+    load_valuations(valuations, competitions, teams)
 
 
 def load_competitions(names):
@@ -114,3 +117,23 @@ def load_sponsorships(sponsorships, competitions, teams):
             sources='\n'.join(e['sources']),
             )
         for e in sponsorships)
+
+
+def load_valuations(valuations, competitions, teams):
+    print("loading {} valuations".format(len(valuations)))
+
+    Valuation.objects.bulk_create(
+        Valuation(
+            team_id=teams[e['team']],
+            competition_id=competitions[e['competition']],
+            publisher=e['publisher'],
+            season=int(e['season']),
+            rank=e['rank'],
+            value=e['value'],
+            revenue=e['revenue'],
+            operating_income=e['operating_income'],
+            published=e['published'] or '',
+            revenue_season=int(e['revenue_season']) if e['revenue_season'] else None,
+            sources='\n'.join(e['sources']),
+            )
+        for e in valuations)

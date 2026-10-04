@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404, render
 
 from bios.models import Bio
 from competitions.models import Competition
-from money.models import PAY, Salary, Sponsorship
+from money.models import PAY, Salary, Sponsorship, Valuation
 from teams.models import Team
 
 
@@ -137,6 +137,9 @@ def team_detail(request, slug):
         'team': team,
         'seasons': season_summaries(Salary.objects.filter(team=team)),
         'sponsorships': list(Sponsorship.objects.filter(team=team).order_by('kind', 'start')),
+        'valuations': list(Valuation.objects.filter(team=team).order_by('-season', 'publisher')),
+        'value_series': [(p, css, {v.season: v.value for v in Valuation.objects.filter(team=team, publisher=p)})
+                         for p, css in PUBLISHERS],
         }
     return render(request, "money/team.html", context)
 
@@ -203,3 +206,53 @@ def sponsorships_index(request):
         'with_figure': deals.exclude(annual=None, total=None).count(),
         }
     return render(request, "money/sponsorships.html", context)
+
+
+PUBLISHERS = (('Forbes', 'average'), ('Sportico', 'median'))
+
+
+def valuation_grid(valuations):
+    """
+    For one publisher: the seasons it published, and a row per team holding its
+    value in each, None where the team is not on that list.
+    """
+    seasons = sorted({v.season for v in valuations})
+    by_team = defaultdict(dict)
+    teams = {}
+    for v in valuations:
+        by_team[v.team_id][v.season] = v
+        teams[v.team_id] = v.team
+    latest = seasons[-1] if seasons else None
+    rows = sorted(by_team.items(),
+                  key=lambda kv: (-(kv[1][latest].value if latest in kv[1] else 0), teams[kv[0]].name))
+    return seasons, [(teams[t], [cells.get(s) for s in seasons]) for t, cells in rows]
+
+
+def valuations_index(request):
+    """
+    Every published valuation: the league's average by year, and each team's
+    value on each list.
+    """
+    valuations = list(Valuation.objects.select_related('team').order_by('season', 'rank'))
+
+    series = []
+    grids = []
+    for publisher, css in PUBLISHERS:
+        mine = [v for v in valuations if v.publisher == publisher]
+        if not mine:
+            continue
+        by_season = defaultdict(list)
+        for v in mine:
+            by_season[v.season].append(v.value)
+        series.append(('%s, average team' % publisher, css,
+                       {s: sum(vs) / len(vs) for s, vs in by_season.items()}))
+        seasons, rows = valuation_grid(mine)
+        grids.append({'publisher': publisher, 'seasons': seasons, 'rows': rows,
+                      'averages': [sum(by_season[s]) / len(by_season[s]) for s in seasons]})
+
+    context = {
+        'series': series,
+        'grids': grids,
+        'lists': len({(v.publisher, v.season) for v in valuations}),
+        }
+    return render(request, "money/valuations.html", context)

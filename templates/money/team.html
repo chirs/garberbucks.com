@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load charts money_tags %}
 
 {% block title %}{{ team.name }} payroll{% endblock %}
 {% block metadescription %}What {{ team.name }} paid its players, season by season{% endblock %}
@@ -13,6 +14,51 @@ games, rosters and history are at <a href="{{ team.soccerstats_url }}">soccersta
 <h2>Seasons on record</h2>
 
 {% include "money/_seasons.html" %}
+
+{% if valuations %}
+<h2>Valuations</h2>
+
+{% value_chart value_series "Estimated value by year" %}
+
+<table class="wide">
+<thead>
+  <tr>
+    <th scope="col">season</th>
+    <th scope="col">publisher</th>
+    <th scope="col" class="num">rank</th>
+    <th scope="col" class="num">value</th>
+    <th scope="col" class="num">revenue</th>
+    <th scope="col" class="num">operating income</th>
+    <th scope="col">sources</th>
+  </tr>
+</thead>
+<tbody>
+{% for v in valuations %}
+<tr>
+  <td>{{ v.season }}</td>
+  <td>{{ v.publisher }}</td>
+  <td class="num">{{ v.rank }}</td>
+  <td class="num">{{ v.value|dollars }}</td>
+  {% if v.revenue is not None %}
+  <td class="num">{{ v.revenue|dollars }}</td>
+  {% else %}
+  {% include "gap.html" with num=True title="not given" %}
+  {% endif %}
+  {% if v.operating_income is not None %}
+  <td class="num">{{ v.operating_income|dollars }}</td>
+  {% else %}
+  {% include "gap.html" with num=True title="not given" %}
+  {% endif %}
+  <td>{% for url in v.sources.split %}<a href="{{ url }}">{{ forloop.counter }}</a>{% if not forloop.last %} {% endif %}{% endfor %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+<p class="table-legend">Estimates, not sale prices. Forbes values the team alone, its revenue and
+operating income are for the season before the list; Sportico includes the team's real estate and
+related businesses. <a href="{% url 'valuations_index' %}">Every club's valuations</a>.</p>
+{% endif %}
 
 {% if sponsorships %}
 <h2>Sponsorships</h2>

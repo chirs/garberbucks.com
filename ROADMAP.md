@@ -59,6 +59,11 @@ Open work only; completed items are removed as they land (see git history).
 
 - [ ] Transaction rules: the salary budget, designated players, allocation
   money, the U22 initiative. Define them in prose first, then model them.
-- [ ] Team valuations and expansion fees.
-- [ ] Owners and their net worth.
+- [ ] Ownership history: every club's owners and stakes, with sale prices,
+  built on `soccerdata/data/jobs/usa/d1/mls/owner` (2013, no prices).
+- [ ] Expansion fees, from $10M in the 2000s to San Diego's $500M.
+- [ ] Owners' net worth.
+- [ ] Forbes's MLS valuations before 2008 and for 2014, if any were published;
+  Sportico's 2023, if it exists. Forbes 2008 and 2019 come from write-ups of the
+  lists, not Forbes's own pages; replace them if the tables turn up.
 - [ ] Other leagues: Liga MX, NASL, ASL, ALPF, then the big European five.
