@@ -68,4 +68,8 @@ To ship the local `garberbucks_dev` database along with the current master:
 
     ./upload.sh
 
+To do the whole thing in one shot (mongo build -> postgres build -> ship):
+
+    ./deploy.sh
+
 Request errors go to `journalctl -u garberbucks` on bert.
