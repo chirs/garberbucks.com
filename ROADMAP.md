@@ -47,6 +47,17 @@ Open work only; completed items are removed as they land (see git history).
   Jonathan Pérez to Nashville, Nicolás Dubersarsky, Djé D'Avilla, Sanabria.
 - [ ] Sell-on clauses and the money they later paid (Aaronson, Pepi, Reynolds).
 
+## Sponsorships
+
+- [ ] Load `money_data/sponsorships/`: a parser in `parse`, the mongo build, a
+  model, and pages by club. The data is a first pass of 47 deals and is not on
+  the site.
+- [ ] Fill the gaps: naming-rights and shirt deals before about 2015, the
+  undisclosed current deals (Q2, Subaru, Carvana, Target, Yeti, Nationwide),
+  sleeve patches, training grounds.
+- [ ] Media rights (Apple's $250M a year, the earlier ESPN/Fox/Univision deals)
+  in a file of their own.
+
 ## Beyond salaries
 
 - [ ] Transaction rules: the salary budget, designated players, allocation
