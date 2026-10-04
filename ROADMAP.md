@@ -41,8 +41,8 @@ Open work only; completed items are removed as they land (see git history).
   `Transfer` model, and pages by season, club and player. The data is a first
   pass of 181 reported fees and is not on the site.
 - [ ] Widen the first pass. It only holds deals whose fee is stated in the
-  `oneonta` news archive, which is thin before 2025: Davies to Bayern, Almirón
-  to Newcastle and most of 2015–2021 are missing.
+  `oneonta` news archive, which holds MLSsoccer.com only from 2024: most of
+  2015–2021 is missing. Backfilling MLSsoccer.com further (2013 on) would fill it.
 - [ ] Deals passed over because the article did not name the other club:
   Jonathan Pérez to Nashville, Nicolás Dubersarsky, Djé D'Avilla, Sanabria.
 - [ ] Sell-on clauses and the money they later paid (Aaronson, Pepi, Reynolds).
