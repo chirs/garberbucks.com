@@ -8,9 +8,10 @@ register = template.Library()
 def dollars(value, currency='USD'):
     """
     Whole dollars with thousands separators: 5500000.08 -> $5,500,000.
-    Canadian dollars say so: C$27,000,000.
+    Canadian dollars say so: C$27,000,000. A loss puts its sign first: -$2,000,000.
     """
-    return '%s$%s' % ('C' if currency == 'CAD' else '', intcomma(round(value)))
+    sign = '-' if value < 0 else ''
+    return '%s%s$%s' % (sign, 'C' if currency == 'CAD' else '', intcomma(round(abs(value))))
 
 
 @register.filter

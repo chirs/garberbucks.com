@@ -5,7 +5,7 @@ from django.template.defaultfilters import slugify
 
 from bios.models import Bio
 from competitions.models import Competition
-from money.models import Salary, Sponsorship, Valuation
+from money.models import ExpansionFee, Operator, Sale, Salary, Sponsorship, Valuation
 from teams.models import Team
 
 connection = pymongo.MongoClient()
@@ -21,16 +21,22 @@ def load():
     salaries = list(soccer_db.salaries.find())
     sponsorships = list(soccer_db.sponsorships.find())
     valuations = list(soccer_db.valuations.find())
+    operators = list(soccer_db.operators.find())
+    sales = list(soccer_db.sales.find())
+    fees = list(soccer_db.expansion_fees.find())
+    ownership = operators + sales + fees
 
-    competitions = load_competitions({e['competition'] for e in salaries + sponsorships + valuations})
+    competitions = load_competitions({e['competition'] for e in salaries + sponsorships + valuations + ownership})
     teams = load_teams({e['team'] for e in salaries if e['team']} |
                        {e['club'] for e in sponsorships if e['club']} |
-                       {e['team'] for e in valuations})
+                       {e['team'] for e in valuations} |
+                       {e['club'] for e in ownership})
     bios = load_bios({e['name'] for e in salaries})
 
     load_salaries(salaries, competitions, teams, bios)
     load_sponsorships(sponsorships, competitions, teams)
     load_valuations(valuations, competitions, teams)
+    load_ownership(operators, sales, fees, competitions, teams)
 
 
 def load_competitions(names):
@@ -137,3 +143,22 @@ def load_valuations(valuations, competitions, teams):
             sources='\n'.join(e['sources']),
             )
         for e in valuations)
+
+
+def load_ownership(operators, sales, fees, competitions, teams):
+    print("loading {} operators, {} sales, {} expansion fees".format(len(operators), len(sales), len(fees)))
+
+    def common(e):
+        return {'team_id': teams[e['club']], 'competition_id': competitions[e['competition']],
+                'note': e['note'], 'sources': '\n'.join(e['sources'])}
+
+    Operator.objects.bulk_create(
+        Operator(operator=e['operator'], start=e['start'], end=e['end'], **common(e))
+        for e in operators)
+    Sale.objects.bulk_create(
+        Sale(year=e['year'], seller=e['seller'], buyer=e['buyer'], stake=e['stake'] or '',
+             price=e['price'], valuation=e['valuation'], **common(e))
+        for e in sales)
+    ExpansionFee.objects.bulk_create(
+        ExpansionFee(awarded=e['awarded'], first_season=e['first_season'], fee=e['fee'], **common(e))
+        for e in fees)

@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404, render
 
 from bios.models import Bio
 from competitions.models import Competition
-from money.models import PAY, Salary, Sponsorship, Valuation
+from money.models import PAY, ExpansionFee, Operator, Sale, Salary, Sponsorship, Valuation
 from teams.models import Team
 
 
@@ -138,6 +138,9 @@ def team_detail(request, slug):
         'seasons': season_summaries(Salary.objects.filter(team=team)),
         'sponsorships': list(Sponsorship.objects.filter(team=team).order_by('kind', 'start')),
         'valuations': list(Valuation.objects.filter(team=team).order_by('-season', 'publisher')),
+        'operators': list(Operator.objects.filter(team=team).order_by('start')),
+        'sales': list(Sale.objects.filter(team=team).order_by('year')),
+        'expansion_fee': ExpansionFee.objects.filter(team=team).first(),
         'value_series': [(p, css, {v.season: v.value for v in Valuation.objects.filter(team=team, publisher=p)})
                          for p, css in PUBLISHERS],
         }
@@ -256,3 +259,16 @@ def valuations_index(request):
         'lists': len({(v.publisher, v.season) for v in valuations}),
         }
     return render(request, "money/valuations.html", context)
+
+
+def ownership_index(request):
+    """
+    What clubs have paid to join the league, what they have sold for, and who
+    has run each of them.
+    """
+    context = {
+        'fees': list(ExpansionFee.objects.select_related('team')),
+        'sales': list(Sale.objects.select_related('team')),
+        'operators': list(Operator.objects.select_related('team')),
+        }
+    return render(request, "money/ownership.html", context)

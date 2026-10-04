@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load money_tags %}
+
+{% block title %}Ownership{% endblock %}
+{% block metadescription %}What MLS clubs paid to join the league, what they have sold for, and who has run them{% endblock %}
+
+{% block content %}
+
+<h1>Ownership</h1>
+
+<p class="prose">What it has cost to own an MLS club: the fee each paid the league to join, what
+clubs and stakes in them have sold for, and who has run each one. The figures are as reported,
+mostly by the business press; owners rarely announce them.</p>
+
+<h2>Expansion fees</h2>
+
+<table class="wide">
+<thead>
+  <tr>
+    <th scope="col">club</th>
+    <th scope="col">awarded</th>
+    <th scope="col">first season</th>
+    <th scope="col" class="num">fee</th>
+    <th scope="col">note</th>
+    <th scope="col">sources</th>
+  </tr>
+</thead>
+<tbody>
+{% for f in fees %}
+<tr>
+  <td><a href="{{ f.team.get_absolute_url }}">{{ f.team.name }}</a></td>
+  <td>{{ f.awarded }}</td>
+  <td>{{ f.first_season }}</td>
+  {% if f.fee is not None %}<td class="num">{{ f.fee|dollars }}</td>{% else %}{% include "gap.html" with num=True title="not reported" %}{% endif %}
+  <td class="note">{{ f.note }}</td>
+  <td>{% for url in f.source_list %}<a href="{{ url }}">{{ forloop.counter }}</a>{% if not forloop.last %} {% endif %}{% endfor %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+<p class="table-legend">The ten clubs that began play in 1996 were run by investor-operators who
+paid no expansion fee, and are not listed.</p>
+
+<h2>Sales</h2>
+
+{% include "money/_sales.html" with club=True %}
+
+<p class="table-legend">Price is what was paid for the stake; club valued at is what the deal valued
+the whole club at. A sale that included a stadium, real estate or a sister club says so in the note.</p>
+
+<h2>Operators</h2>
+
+{% include "money/_operators.html" with club=True %}
+
+{% endblock %}

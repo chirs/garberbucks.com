@@ -1,0 +1,32 @@
+{% load money_tags %}
+{# One row per sale. club=False leaves out the club column, on a club's own page. #}
+<table class="wide">
+<thead>
+  <tr>
+    <th scope="col">year</th>
+    {% if club %}<th scope="col">club</th>{% endif %}
+    <th scope="col">seller</th>
+    <th scope="col">buyer</th>
+    <th scope="col">stake</th>
+    <th scope="col" class="num">price</th>
+    <th scope="col" class="num">club valued at</th>
+    <th scope="col">note</th>
+    <th scope="col">sources</th>
+  </tr>
+</thead>
+<tbody>
+{% for sale in sales %}
+<tr>
+  <td>{{ sale.year }}</td>
+  {% if club %}<td><a href="{{ sale.team.get_absolute_url }}">{{ sale.team.name }}</a></td>{% endif %}
+  <td>{{ sale.seller }}</td>
+  <td>{{ sale.buyer }}</td>
+  {% if sale.stake %}<td>{{ sale.stake }}</td>{% else %}{% include "gap.html" %}{% endif %}
+  {% if sale.price is not None %}<td class="num">{{ sale.price|dollars }}</td>{% else %}{% include "gap.html" with num=True title="not reported" %}{% endif %}
+  {% if sale.valuation is not None %}<td class="num">{{ sale.valuation|dollars }}</td>{% else %}{% include "gap.html" with num=True title="not reported" %}{% endif %}
+  <td class="note">{{ sale.note }}</td>
+  <td>{% for url in sale.source_list %}<a href="{{ url }}">{{ forloop.counter }}</a>{% if not forloop.last %} {% endif %}{% endfor %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>

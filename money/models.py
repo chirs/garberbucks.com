@@ -101,3 +101,61 @@ class Valuation(models.Model):
 
     def __str__(self):
         return "%s %s: %s %s" % (self.publisher, self.season, self.team, self.value)
+
+
+class Sourced(models.Model):
+    """A record with a free-text note and the urls it comes from, one per line."""
+
+    note = models.TextField(blank=True)
+    sources = models.TextField(blank=True)
+
+    class Meta:
+        abstract = True
+
+    def source_list(self):
+        return self.sources.split()
+
+
+class Operator(Sourced):
+    """Who ran a club, and when. An empty end is the current operator."""
+
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE)
+    operator = models.CharField(max_length=300)
+    start = models.IntegerField(null=True)
+    end = models.IntegerField(null=True)
+
+    class Meta:
+        ordering = ('team__name', 'start')
+
+
+class Sale(Sourced):
+    """
+    A club, or a stake in one, changing hands. Price is what was paid for the
+    stake; valuation what the deal valued the whole club at.
+    """
+
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE)
+    year = models.IntegerField()
+    seller = models.CharField(max_length=300)
+    buyer = models.CharField(max_length=300)
+    stake = models.CharField(max_length=100, blank=True)
+    price = models.BigIntegerField(null=True)
+    valuation = models.BigIntegerField(null=True)
+
+    class Meta:
+        ordering = ('year', 'team__name')
+
+
+class ExpansionFee(Sourced):
+    """What a club paid the league to join."""
+
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE)
+    awarded = models.IntegerField()
+    first_season = models.IntegerField()
+    fee = models.BigIntegerField(null=True)
+
+    class Meta:
+        ordering = ('awarded', 'first_season')

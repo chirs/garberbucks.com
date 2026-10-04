@@ -5,7 +5,7 @@ import pytest
 
 from bios.models import Bio
 from build import load
-from money.models import Salary, Sponsorship, Valuation
+from money.models import ExpansionFee, Operator, Sale, Salary, Sponsorship, Valuation
 from teams.models import Team
 
 
@@ -36,11 +36,14 @@ def salary(**kw):
 
 @pytest.fixture
 def mongo(monkeypatch):
-    def use(salaries, bios=(), sponsorships=(), valuations=()):
+    def use(salaries, bios=(), sponsorships=(), valuations=(), operators=(), sales=(), fees=()):
         db = FakeDB(
             salaries=salaries,
             sponsorships=list(sponsorships),
             valuations=list(valuations),
+            operators=list(operators),
+            sales=list(sales),
+            expansion_fees=list(fees),
             bios=list(bios),
             competitions=[{'name': 'Major League Soccer', 'abbreviation': 'MLS'}],
         )
@@ -148,3 +151,20 @@ def test_loads_valuations(mongo):
     galaxy = Valuation.objects.get(publisher='Sportico')
     assert galaxy.revenue is None and galaxy.published == '' and galaxy.revenue_season is None
     assert galaxy.team_id == Salary.objects.get().team_id
+
+
+@pytest.mark.django_db
+def test_loads_ownership(mongo):
+    common = {'competition': 'Major League Soccer', 'note': '', 'sources': ['https://a.example']}
+    mongo([salary()],
+          operators=[dict(common, club='Miami Fusion', operator='Ken Horowitz', start=1997, end=2001)],
+          sales=[dict(common, club='LA Galaxy', year=1998, seller='Major League Soccer',
+                      buyer='Anschutz Entertainment Group', stake=None, price=26000000, valuation=None)],
+          fees=[dict(common, club='Miami Fusion', awarded=1997, first_season=1998, fee=20000000)])
+    load.load()
+
+    assert Operator.objects.get().team.slug == 'miami-fusion'
+    sale = Sale.objects.get()
+    assert sale.price == 26000000 and sale.valuation is None and sale.stake == ''
+    assert sale.team_id == Salary.objects.get().team_id
+    assert ExpansionFee.objects.get().fee == 20000000

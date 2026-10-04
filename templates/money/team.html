@@ -13,7 +13,12 @@ games, rosters and history are at <a href="{{ team.soccerstats_url }}">soccersta
 
 <h2>Seasons on record</h2>
 
+{% if seasons %}
 {% include "money/_seasons.html" %}
+{% else %}
+<p class="prose">No salaries are on record for {{ team.name }}. The record runs MLS 1996 and
+2004 on; a club from outside those years has none yet.</p>
+{% endif %}
 
 {% if valuations %}
 <h2>Valuations</h2>
@@ -58,6 +63,27 @@ games, rosters and history are at <a href="{{ team.soccerstats_url }}">soccersta
 <p class="table-legend">Estimates, not sale prices. Forbes values the team alone, its revenue and
 operating income are for the season before the list; Sportico includes the team's real estate and
 related businesses. <a href="{% url 'valuations_index' %}">Every club's valuations</a>.</p>
+{% endif %}
+
+{% if operators or sales or expansion_fee %}
+<h2>Ownership</h2>
+
+{% if expansion_fee %}
+<p class="prose">{{ team.name }} joined the league in {{ expansion_fee.first_season }}{% if expansion_fee.fee is not None %}
+for an expansion fee of {{ expansion_fee.fee|dollars }}{% endif %}, awarded in {{ expansion_fee.awarded }}.{% if expansion_fee.note %}
+Note: {{ expansion_fee.note }}.{% endif %}</p>
+{% endif %}
+
+{% if operators %}
+{% include "money/_operators.html" with club=False %}
+{% endif %}
+
+{% if sales %}
+{% include "money/_sales.html" with club=False %}
+{% endif %}
+
+<p class="table-legend"><a href="{% url 'ownership_index' %}">Every club's ownership, sales and
+expansion fees</a>.</p>
 {% endif %}
 
 {% if sponsorships %}

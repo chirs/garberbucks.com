@@ -1,0 +1,25 @@
+{# One row per operator. club=False leaves out the club column, on a club's own page. #}
+<table class="wide">
+<thead>
+  <tr>
+    {% if club %}<th scope="col">club</th>{% endif %}
+    <th scope="col">operator</th>
+    <th scope="col">from</th>
+    <th scope="col">to</th>
+    <th scope="col">note</th>
+    <th scope="col">sources</th>
+  </tr>
+</thead>
+<tbody>
+{% for o in operators %}
+<tr{% if club and not forloop.first %}{% ifchanged o.team_id %} class="group-start"{% endifchanged %}{% endif %}>
+  {% if club %}<td>{% ifchanged o.team_id %}<a href="{{ o.team.get_absolute_url }}">{{ o.team.name }}</a>{% endifchanged %}</td>{% endif %}
+  <td>{{ o.operator }}</td>
+  {% if o.start %}<td>{{ o.start }}</td>{% else %}{% include "gap.html" %}{% endif %}
+  <td>{% if o.end %}{{ o.end }}{% else %}present{% endif %}</td>
+  <td class="note">{{ o.note }}</td>
+  <td>{% for url in o.source_list %}<a href="{{ url }}">{{ forloop.counter }}</a>{% if not forloop.last %} {% endif %}{% endfor %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>

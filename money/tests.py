@@ -5,7 +5,7 @@ import pytest
 from bios.models import Bio
 from competitions.models import Competition
 from money.coverage import season_ranges
-from money.models import Salary, Sponsorship, Valuation
+from money.models import ExpansionFee, Operator, Sale, Salary, Sponsorship, Valuation
 from money.templatetags.charts import compact, latest_run, payroll_chart, value_chart
 from money.templatetags.money_tags import dollars, millions
 from teams.models import Team
@@ -28,6 +28,10 @@ def test_season_ranges_of_nothing():
 def test_dollars_rounds_to_whole_dollars():
     assert dollars(Decimal('5500000.08')) == '$5,500,000'
     assert dollars(Decimal('25')) == '$25'
+
+
+def test_dollars_puts_a_loss_sign_first():
+    assert dollars(-16000000) == '-$16,000,000'
 
 
 def test_dollars_marks_canadian_dollars():
@@ -458,3 +462,44 @@ def test_team_page_lists_its_valuations(client, mls, galaxy):
     assert 'title="not given">&mdash;' in html
     assert 'href="https://a.example">1</a>' in html
     assert '<svg' in html
+
+
+@pytest.fixture
+def chicago(mls):
+    fire = Team.objects.create(name='Chicago Fire', slug='chicago-fire')
+    ExpansionFee.objects.create(team=fire, competition=mls, awarded=1997, first_season=1998,
+                                fee=5000000, sources='https://a.example')
+    Operator.objects.create(team=fire, competition=mls, operator='Anschutz Entertainment Group',
+                            start=1997, end=2007)
+    Operator.objects.create(team=fire, competition=mls, operator='Joe Mansueto', start=2019, end=None)
+    Sale.objects.create(team=fire, competition=mls, year=2019, seller='Andrew Hauptman',
+                        buyer='Joe Mansueto', stake='51%', price=204000000, valuation=400000000,
+                        sources='https://b.example')
+    Sale.objects.create(team=fire, competition=mls, year=2018, seller='Andrew Hauptman',
+                        buyer='Joe Mansueto', stake='49%')
+    return fire
+
+
+def test_ownership_page(client, chicago):
+    html = client.get('/ownership/').content.decode()
+
+    assert html.index('<h2>Expansion fees</h2>') < html.index('<h2>Sales</h2>') < html.index('<h2>Operators</h2>')
+    assert '$5,000,000' in html and '$204,000,000' in html and '$400,000,000' in html
+    assert html.index('>2018<') < html.index('>2019<')
+    assert 'present' in html
+    assert 'title="not reported">&mdash;' in html
+    assert 'href="https://b.example">1</a>' in html
+
+
+def test_team_page_shows_ownership(client, chicago):
+    html = client.get('/teams/chicago-fire/').content.decode()
+
+    assert '<h2>Ownership</h2>' in html
+    assert 'joined the league in 1998' in html and 'expansion fee of $5,000,000' in html
+    assert 'Joe Mansueto' in html
+    assert '>club<' not in html
+
+
+def test_team_page_for_a_club_with_no_salaries(client, chicago):
+    html = client.get('/teams/chicago-fire/').content.decode()
+    assert 'No salaries are on record for Chicago Fire' in html

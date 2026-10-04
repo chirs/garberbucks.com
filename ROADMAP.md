@@ -59,9 +59,11 @@ Open work only; completed items are removed as they land (see git history).
 
 - [ ] Transaction rules: the salary budget, designated players, allocation
   money, the U22 initiative. Define them in prose first, then model them.
-- [ ] Ownership history: every club's owners and stakes, with sale prices,
-  built on `soccerdata/data/jobs/usa/d1/mls/owner` (2013, no prices).
-- [ ] Expansion fees, from $10M in the 2000s to San Diego's $500M.
+- [ ] Ownership: more sales with figures (Seattle's 2019 group and its 2026
+  raise, Portland, Minnesota's partners, LAFC's earlier stake sales, Nashville's
+  minority investors), exact dates rather than years, and stakes for the
+  operators file.
+- [ ] Ownership before MLS: the NASL and ASL clubs' owners and sale prices.
 - [ ] Owners' net worth.
 - [ ] Forbes's MLS valuations before 2008 and for 2014, if any were published;
   Sportico's 2023, if it exists. Forbes 2008 and 2019 come from write-ups of the
