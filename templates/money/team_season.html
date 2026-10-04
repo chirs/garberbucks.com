@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load humanize money_tags %}
+
+{% block title %}{{ team.name }} salaries, {{ season }}{% endblock %}
+{% block metadescription %}What every {{ team.name }} player on record was paid in {{ season }}{% endblock %}
+
+{% block content %}
+
+<p class="season-nav">
+<a href="{% url 'team_detail' team.slug %}">{{ team.name }}</a>
+<a href="{% url 'season_detail' competition.slug season %}">{{ competition.name }}, {{ season }}</a>
+</p>
+
+<h1>{{ team.name }} salaries, {{ season }}</h1>
+
+<p class="prose">{{ salaries|length|intcomma }} player{{ salaries|length|pluralize }} on record, paid
+{{ total|dollars }}{% if period != 'year' %} a {{ period }}{% endif %} in all.</p>
+
+<h2>Players</h2>
+
+{% include "money/_salaries.html" %}
+
+{% endblock %}

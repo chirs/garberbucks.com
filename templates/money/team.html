@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}{{ team.name }} payroll{% endblock %}
+{% block metadescription %}What {{ team.name }} paid its players, season by season{% endblock %}
+
+{% block content %}
+
+<h1>{{ team.name }} payroll</h1>
+
+<p class="prose">What {{ team.name }} paid its players in each season on record. The club's
+games, rosters and history are at <a href="{{ team.soccerstats_url }}">soccerstats.us</a>.</p>
+
+<h2>Seasons on record</h2>
+
+{% include "money/_seasons.html" %}
+
+{% endblock %}

@@ -1,0 +1,39 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>{% block title %}{% endblock %} | Garberbucks</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="{% block metadescription %}What American soccer players are paid{% endblock %}">
+
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=1" media="screen">
+</head>
+
+<body>
+
+  <header id="site-header">
+    <div class="header-inner">
+      <a href="{% url 'index' %}" id="maintitle">Garberbucks</a>
+      <nav id="nav">
+        <a href="{% url 'index' %}">salaries</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer id="site-footer">
+    <div class="footer-inner">
+      <span>Garberbucks &mdash; the money in American soccer</span>
+      <span>Salaries on record:
+        {% for competition, seasons in coverage %}{{ competition }} {{ seasons }}{% if not forloop.last %}; {% endif %}{% empty %}none yet{% endfor %}.
+        Everything else about these players and teams is at <a href="https://soccerstats.us">soccerstats.us</a>.</span>
+    </div>
+  </footer>
+
+</body>
+
+</html>

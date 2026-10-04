@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Soccer salaries{% endblock %}
+
+{% block content %}
+
+<h1>Soccer salaries</h1>
+
+<p class="prose">What American soccer players have been paid, as their union and the press
+published it. The record is incomplete, and the seasons below are all of it so far.</p>
+
+<h2>Seasons on record</h2>
+
+{% include "money/_seasons.html" %}
+
+{% endblock %}

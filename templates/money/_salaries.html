@@ -1,0 +1,58 @@
+{% load money_tags %}
+{# One row per salary. by="season" leads with the season, otherwise with the player. #}
+<table>
+
+<thead>
+  <tr>
+    {% if by == 'season' %}
+    <th scope="col">season</th>
+    {% else %}
+    <th scope="col">player</th>
+    {% endif %}
+    {% if cols.team %}<th scope="col">team</th>{% endif %}
+    {% if cols.position %}<th scope="col">position</th>{% endif %}
+    <th scope="col" class="num">base</th>
+    {% if cols.guaranteed %}<th scope="col" class="num">guaranteed</th>{% endif %}
+  </tr>
+</thead>
+
+<tbody>
+{% for salary in salaries %}
+<tr>
+  {% if by == 'season' %}
+  <td><a href="{% url 'season_detail' salary.competition.slug salary.season %}">{{ salary.season }}</a></td>
+  {% else %}
+  <td><a href="{{ salary.person.get_absolute_url }}">{{ salary.person.name }}</a></td>
+  {% endif %}
+  {% if cols.team %}
+  {% if salary.team %}
+  <td><a href="{% url 'team_season_detail' salary.team.slug salary.season %}">{{ salary.team.name }}</a></td>
+  {% else %}
+  {% include "gap.html" with title="listed without a club" %}
+  {% endif %}
+  {% endif %}
+  {% if cols.position %}
+  {% if salary.position %}
+  <td>{{ salary.position }}</td>
+  {% else %}
+  {% include "gap.html" %}
+  {% endif %}
+  {% endif %}
+  <td class="num">{{ salary.base|dollars }}{% if salary.period != 'year' %} a {{ salary.period }}{% endif %}</td>
+  {% if cols.guaranteed %}
+  {% if salary.guaranteed is not None %}
+  <td class="num">{{ salary.guaranteed|dollars }}</td>
+  {% else %}
+  {% include "gap.html" with num=True %}
+  {% endif %}
+  {% endif %}
+</tr>
+{% endfor %}
+</tbody>
+
+</table>
+
+{% if cols.guaranteed %}
+<p class="table-legend">Base is base salary. Guaranteed adds signing and guaranteed bonuses,
+annualized over the length of the contract, as the players' union reports them.</p>
+{% endif %}

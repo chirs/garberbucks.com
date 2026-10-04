@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}{{ bio.name }} salary{% endblock %}
+{% block metadescription %}What {{ bio.name }} was paid, season by season{% endblock %}
+
+{% block content %}
+
+<h1>{{ bio.name }}</h1>
+
+<p class="prose">{% if bio.birthdate %}Born <time datetime="{{ bio.birthdate|date:'Y-m-d' }}">{{ bio.birthdate|date:'F j, Y' }}</time>{% if bio.nationality %}, {{ bio.nationality }}{% endif %}.
+{% elif bio.nationality %}{{ bio.nationality }}.
+{% endif %}Career record at <a href="{{ bio.soccerstats_url }}">soccerstats.us</a>.</p>
+
+<h2>Salary by season</h2>
+
+{% include "money/_salaries.html" with by="season" %}
+
+{% endblock %}

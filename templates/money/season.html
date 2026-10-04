@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load humanize money_tags %}
+
+{% block title %}{{ competition.name }} salaries, {{ season }}{% endblock %}
+{% block metadescription %}What every {{ competition.name }} player on record was paid in {{ season }}{% endblock %}
+
+{% block content %}
+
+<p class="season-nav">
+{% if previous %}<a href="{% url 'season_detail' competition.slug previous %}">&larr; {{ previous }}</a>{% endif %}
+{% if next %}<a href="{% url 'season_detail' competition.slug next %}">{{ next }} &rarr;</a>{% endif %}
+</p>
+
+<h1>{{ competition.name }} salaries, {{ season }}</h1>
+
+<p class="prose">{{ salaries|length|intcomma }} player{{ salaries|length|pluralize }} on record, paid
+{{ total|dollars }}{% if period != 'year' %} a {{ period }}{% endif %} in all.
+{% if sources %}Source: {% for source in sources %}{{ source|urlize }}{% if not forloop.last %}; {% endif %}{% endfor %}.{% else %}The source of these figures was not recorded.{% endif %}
+{% if not cols.team %}Clubs are not transcribed for this season.{% endif %}</p>
+
+{% if teams %}
+<h2>Payroll by team</h2>
+
+<table class="narrow">
+
+<thead>
+  <tr>
+    <th scope="col">team</th>
+    <th scope="col" class="num">players</th>
+    <th scope="col" class="num">payroll</th>
+  </tr>
+</thead>
+
+<tbody>
+{% for team in teams %}
+<tr>
+  <td><a href="{% url 'team_season_detail' team.team__slug season %}">{{ team.team__name }}</a></td>
+  <td class="num">{{ team.players }}</td>
+  <td class="num">{{ team.total|dollars }}{% if period != 'year' %} a {{ period }}{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody>
+
+</table>
+{% endif %}
+
+<h2>Players</h2>
+
+{% include "money/_salaries.html" %}
+
+{% endblock %}

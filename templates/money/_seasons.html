@@ -1,0 +1,36 @@
+{% load humanize money_tags %}
+{# One row per season, from views.season_summaries. team is set on a team's page. #}
+<table>
+
+<thead>
+  <tr>
+    <th scope="col">season</th>
+    {% if not team %}<th scope="col">competition</th>{% endif %}
+    <th scope="col" class="num">players</th>
+    <th scope="col" class="num">total pay</th>
+    <th scope="col">highest paid</th>
+    <th scope="col" class="num">pay</th>
+  </tr>
+</thead>
+
+<tbody>
+{% for season in seasons %}
+<tr>
+  {% if team %}
+  <td><a href="{% url 'team_season_detail' team.slug season.season %}">{{ season.season }}</a></td>
+  {% else %}
+  <td><a href="{% url 'season_detail' season.competition__slug season.season %}">{{ season.season }}</a></td>
+  <td>{{ season.competition__name }}</td>
+  {% endif %}
+  <td class="num">{{ season.players|intcomma }}</td>
+  <td class="num">{{ season.total|dollars }}{% if season.period != 'year' %} a {{ season.period }}{% endif %}</td>
+  <td><a href="{{ season.top.person.get_absolute_url }}">{{ season.top.person.name }}</a></td>
+  <td class="num">{{ season.top.pay|dollars }}{% if season.period != 'year' %} a {{ season.period }}{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody>
+
+</table>
+
+<p class="table-legend">Pay is guaranteed compensation where the source gives it and base
+salary where it does not. Total pay sums it across every player on record that season.</p>
