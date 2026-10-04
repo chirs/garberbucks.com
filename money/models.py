@@ -19,6 +19,7 @@ class Salary(models.Model):
     season = models.CharField(max_length=255)
 
     position = models.CharField(max_length=50, blank=True)
+    position_group = models.CharField(max_length=50, blank=True)
 
     base = models.DecimalField(max_digits=15, decimal_places=2)
     guaranteed = models.DecimalField(max_digits=15, decimal_places=2, null=True)

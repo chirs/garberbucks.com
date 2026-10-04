@@ -25,7 +25,8 @@ class FakeDB:
 
 
 def salary(**kw):
-    e = {'name': 'David Beckham', 'team': 'LA Galaxy', 'position': 'M',
+    e = {'name': 'David Beckham', 'team': 'LA Galaxy', 'position': 'Midfielder',
+         'position_group': 'Midfielder',
          'base': '5500000.08', 'guaranteed': '6500000.04',
          'competition': 'Major League Soccer', 'season': '2007',
          'source': 'MLS Players Union', 'period': 'year'}
@@ -61,11 +62,12 @@ def test_loads_a_salary_with_its_person_team_and_competition(mongo):
     assert s.base == Decimal('5500000.08')
     assert s.guaranteed == Decimal('6500000.04')
     assert s.source == 'MLS Players Union'
+    assert s.position_group == 'Midfielder'
 
 
 @pytest.mark.django_db
 def test_missing_team_guaranteed_and_source_stay_missing(mongo):
-    mongo([salary(team=None, guaranteed=None, source=None, position='')])
+    mongo([salary(team=None, guaranteed=None, source=None, position='', position_group='')])
     load.load()
 
     s = Salary.objects.get()

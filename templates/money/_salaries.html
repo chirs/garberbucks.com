@@ -33,7 +33,7 @@
   {% endif %}
   {% if cols.position %}
   {% if salary.position %}
-  <td>{{ salary.position }}</td>
+  <td{% if salary.position_group and salary.position_group != salary.position %} title="{{ salary.position_group }}"{% endif %}>{{ salary.position }}</td>
   {% else %}
   {% include "gap.html" %}
   {% endif %}

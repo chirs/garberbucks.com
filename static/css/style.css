@@ -208,16 +208,14 @@ figure.chart figcaption { font-size: .9em; color: var(--ink-soft); margin-top: 6
 .chart text.label { fill: var(--ink); font-size: 12px; }
 .chart .grid { stroke: var(--hairline); stroke-width: 1; }
 .chart .axis { stroke: var(--ink-soft); stroke-width: 1; }
-/* The league is the accent. The two club measures read against the other scale,
-   so they are ink, not a second hue, and the median is dashed and hollow: no line
-   is told from another by color alone. */
+/* One hue throughout. Where two lines share a panel the second is dashed and
+   hollow, so they are never told apart by color alone. */
+.chart text.name { font-weight: 600; }
 .chart .line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
-.chart .line.average, .chart .line.median { stroke: var(--ink); }
 .chart .line.median { stroke-dasharray: 5 4; stroke-linecap: butt; }
 /* A surface ring lifts each point off the line it sits on. */
 .chart .dot { fill: var(--accent); stroke: #fff; stroke-width: 2; }
-.chart .dot.average { fill: var(--ink); }
-.chart .dot.median { fill: #fff; stroke: var(--ink); stroke-width: 1.5; }
+.chart .dot.median { fill: #fff; stroke: var(--accent); stroke-width: 1.5; }
 /* The point is small; what the pointer has to find is not. */
 .chart .hit { fill: transparent; }
 .chart a:hover .dot, .chart a:focus-visible .dot { r: 6px; }

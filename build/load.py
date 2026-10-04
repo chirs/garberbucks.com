@@ -83,6 +83,7 @@ def load_salaries(salaries, competitions, teams, bios):
             competition_id=competitions[e['competition']],
             season=e['season'],
             position=e['position'],
+            position_group=e['position_group'],
             base=e['base'],
             guaranteed=e['guaranteed'],
             period=e['period'],

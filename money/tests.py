@@ -216,41 +216,36 @@ def test_no_chart_for_fewer_than_three_seasons():
     assert payroll_chart([summary('2025', 1), summary('2026', 2)]) == {}
 
 
-def test_chart_draws_team_payroll_only_where_clubs_are_on_record():
+def test_chart_puts_league_and_team_payroll_in_their_own_panels():
     seasons = [summary('2004', 100), summary('2005', 200), summary('2006', 300, 30, 20),
-               summary('2007', 400, 40, 30), summary('2008', 500, 50, 60)]
+               summary('2007', 400, 40, 30), summary('2008', 630, 50, 60)]
     chart = payroll_chart(seasons)
 
-    league, average, median = chart['lines']
-    assert [line['css'] for line in chart['lines']] == ['league', 'average', 'median']
-    assert len(league['points']) == 5
-    assert len(average['points']) == len(median['points']) == 3
+    league, team = chart['panels']
+    assert [line['css'] for line in league['lines']] == ['league']
+    assert [line['css'] for line in team['lines']] == ['average', 'median']
+    assert len(league['lines'][0]['points']) == 5
+    assert all(len(line['points']) == 3 for line in team['lines'])
     assert 'no clubs before 2006' in chart['caption']
     # One unbroken line each: a single move-to.
-    assert all(line['path'].count('M') == 1 for line in chart['lines'])
+    assert all(line['path'].count('M') == 1 for p in chart['panels'] for line in p['lines'])
+    # Each panel is scaled to its own measures; the team panel holds the median too.
+    assert league['ticks'][-1]['text'] == '$800'
+    assert team['ticks'][-1]['text'] == '$60'
+    # Only the panel with two lines needs a legend.
+    assert 'legend' not in league['lines'][0]
+    assert all('legend' in line for line in team['lines'])
 
 
-def test_chart_scales_each_side_to_its_own_measure():
-    seasons = [summary('2006', 300, 30, 20), summary('2007', 400, 40, 30),
-               summary('2008', 630, 50, 60)]
-    chart = payroll_chart(seasons)
-
-    top = chart['ticks'][-1]
-    assert top['left'] == '$800'      # the league reaches 630
-    assert top['right'] == '$60'      # the median reaches 60, past the average
-    # Both scales are cut into the same intervals, so one set of gridlines serves both.
-    assert len(chart['ticks']) == 5
-    # The league and the average both sit on their own scale: 630 of 800, 50 of 60.
-    league, average, median = chart['lines']
-    assert league['points'][-1]['y'] > median['points'][-1]['y']
-    assert 'left scale' in league['legend']['text']
-    assert 'right scale' in median['legend']['text']
+def test_chart_ends_do_not_overprint():
+    seasons = [summary(s, 100, 50, 50) for s in ('2006', '2007', '2008')]
+    first, second = payroll_chart(seasons)['panels'][1]['ends']
+    assert second['y'] - first['y'] >= 14
 
 
-def test_chart_has_no_right_scale_when_no_clubs_are_on_record():
+def test_chart_has_one_panel_when_no_clubs_are_on_record():
     chart = payroll_chart([summary(s, 10) for s in ('2004', '2005', '2006')])
-    assert [line['name'] for line in chart['lines']] == ['League payroll']
-    assert all(t['right'] == '' for t in chart['ticks'])
+    assert [p['name'] for p in chart['panels']] == ['League payroll']
 
 
 def squad(competition, team, season, n, each):
@@ -267,9 +262,8 @@ def test_league_page_charts_payroll_and_averages_it_by_club(client, mls, galaxy)
     html = client.get('/c/major-league-soccer/').content.decode()
 
     assert '<svg' in html
-    assert 'League payroll, left scale' in html
-    assert 'Average team payroll, right scale' in html
-    assert 'Median team payroll, right scale' in html
+    assert 'League payroll' in html
+    assert 'Average club' in html and 'Median club' in html
     assert '$4,400,000' in html      # the league: 11 x 300k + 11 x 100k
     assert '$2,200,000' in html      # split across two clubs; with two, the median is the same
     assert 'href="/c/major-league-soccer/2008/"' in html
@@ -314,3 +308,15 @@ def test_median_team_payroll_is_the_club_in_the_middle(client, mls, galaxy):
 
     assert '$4,766,667' in html      # the average, pulled up by the Galaxy
     assert '$2,200,000' in html      # the median: the Fire
+
+
+def test_a_role_shows_its_group_on_hover(client, mls, galaxy):
+    pay('Maya Yoshida', mls, '2024', 500000, 500000, galaxy,
+        position='Center-back', position_group='Defender')
+    pay('Riqui Puig', mls, '2024', 2000000, 2000000, galaxy,
+        position='Midfielder', position_group='Midfielder')
+
+    html = client.get('/c/major-league-soccer/2024/').content.decode()
+
+    assert '<td title="Defender">Center-back</td>' in html
+    assert '<td>Midfielder</td>' in html
