@@ -14,7 +14,8 @@
 <h1>{{ team.name }} salaries, {{ season }}</h1>
 
 <p class="prose">{{ salaries|length|intcomma }} player{{ salaries|length|pluralize }} on record, paid
-{{ total|dollars }}{% if period != 'year' %} a {{ period }}{% endif %} in all.</p>
+{{ total|dollars }}{% if period != 'year' %} a {{ period }}{% endif %} in all{% if salaries|length > 1 %}:
+an average of {{ average|dollars }}, and a median of {{ median|dollars }}{% endif %}.</p>
 
 <h2>Players</h2>
 

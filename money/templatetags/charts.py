@@ -114,8 +114,8 @@ def panel(name, rows, measures, xs, top):
 @register.inclusion_tag("money/_payroll_chart.html")
 def payroll_chart(seasons):
     """
-    League payroll above; average and median team payroll below, on one scale
-    of their own. A club's payroll is a thirtieth of the league's, so a shared
+    League payroll, then average and median team payroll, then average and
+    median player pay, each panel on a scale of its own. A club's payroll is a thirtieth of the league's, so a shared
     scale would flatten it against the baseline, and two scales on one plot
     would set the lines beside each other as if they could be compared.
     """
@@ -132,7 +132,11 @@ def payroll_chart(seasons):
         panels.append(panel('Team payroll', rows,
                             [('Average club', 'average', 'team_average'),
                              ('Median club', 'median', 'team_median')],
-                            xs, HEAD_H + PANEL_H + GAP))
+                            xs, panels[-1]['base'] + GAP))
+    panels.append(panel('Player pay', rows,
+                        [('Average player', 'average', 'player_average'),
+                         ('Median player', 'median', 'player_median')],
+                        xs, panels[-1]['base'] + GAP))
     height = panels[-1]['base'] + LABEL_H
 
     every = max(1, math.ceil(44 / slot))  # label spacing so four-digit years never touch
@@ -142,13 +146,16 @@ def payroll_chart(seasons):
 
     first, last = rows[0]['season'], rows[-1]['season']
     caption = 'League payroll is the pay of every player on record that season.'
-    if len(panels) > 1:
+    if len(with_teams) >= 3:
         caption += (' Team payroll is the pay of the players listed with a club: the average '
                     'splits it evenly across the clubs that have a squad on record, and the '
-                    'median is the club in the middle. The two panels have their own scales.')
+                    'median is the club in the middle.')
         if with_teams[0] is not rows[0]:
             caption += (' The record names no clubs before %s, so team payroll starts there.'
                         % with_teams[0]['season'])
+    caption += (' Player pay is over every player on record; the median is the player in '
+                'the middle, and the gap below the average is how far a few large salaries '
+                'pull it up. Each panel has its own scale.')
     if len(rows) < len(seasons):
         caption += (' Seasons outside the unbroken run of %s–%s are in the table only.'
                     % (first, last))

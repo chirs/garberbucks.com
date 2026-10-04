@@ -15,7 +15,8 @@
 <h1>{{ competition.name }} salaries, {{ season }}</h1>
 
 <p class="prose">{{ salaries|length|intcomma }} player{{ salaries|length|pluralize }} on record, paid
-{{ total|dollars }}{% if period != 'year' %} a {{ period }}{% endif %} in all.
+{{ total|dollars }}{% if period != 'year' %} a {{ period }}{% endif %} in all{% if salaries|length > 1 %}:
+an average of {{ average|dollars }}, and a median of {{ median|dollars }}{% endif %}.
 {% if sources %}Source: {% for source in sources %}{{ source|urlize }}{% if not forloop.last %}; {% endif %}{% endfor %}.{% else %}The source of these figures was not recorded.{% endif %}
 {% if not cols.team %}Clubs are not transcribed for this season.{% endif %}</p>
 

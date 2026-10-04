@@ -1,6 +1,6 @@
 {% load humanize money_tags %}
 {# One row per season, from views.season_summaries. team is set on a team's page, league on a league's. #}
-<table>
+<table{% if league %} class="wide"{% endif %}>
 
 <thead>
   <tr>
@@ -11,6 +11,8 @@
     <th scope="col" class="num">total pay</th>
     {% if league %}<th scope="col" class="num">average team payroll</th>{% endif %}
     {% if league %}<th scope="col" class="num">median team payroll</th>{% endif %}
+    {% if league %}<th scope="col" class="num">average salary</th>{% endif %}
+    {% if league %}<th scope="col" class="num">median salary</th>{% endif %}
     <th scope="col">highest paid</th>
     <th scope="col" class="num">pay</th>
   </tr>
@@ -42,6 +44,8 @@
   {% include "gap.html" with num=True title="no clubs on record" %}
   {% include "gap.html" with num=True title="no clubs on record" %}
   {% endif %}
+  <td class="num">{{ season.player_average|dollars }}{% if season.period != 'year' %} a {{ season.period }}{% endif %}</td>
+  <td class="num">{{ season.player_median|dollars }}{% if season.period != 'year' %} a {{ season.period }}{% endif %}</td>
   {% endif %}
   <td><a href="{{ season.top.person.get_absolute_url }}">{{ season.top.person.name }}</a></td>
   <td class="num">{{ season.top.pay|dollars }}{% if season.period != 'year' %} a {{ season.period }}{% endif %}</td>
@@ -55,4 +59,6 @@
 salary where it does not. Total pay sums it across every player on record that season.
 {% if league %}Team payroll is the pay of the players listed with a club: the average splits it
 evenly across the clubs, and the median is the club in the middle. A club with fewer than eleven
-players on record is an expansion side signing ahead of its first season, and is left out.{% endif %}</p>
+players on record is an expansion side signing ahead of its first season, and is left out.
+Average and median salary are over every player on record that season; where the record is a
+partial list (1996's 46 players, 2004's 165), they describe the players listed, not the league.{% endif %}</p>

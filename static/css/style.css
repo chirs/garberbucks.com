@@ -182,6 +182,11 @@ table td a:focus-visible {
     outline-offset: 1px;
 }
 
+/* A table with more columns than the page is wide scrolls inside itself, so a
+   row still reads across on one line rather than wrapping its names. */
+table.wide { display: block; overflow-x: auto; }
+table.wide td { white-space: nowrap; }
+
 /* Money and counts sit right so the digits line up by place. */
 .num { text-align: right; white-space: nowrap; }
 

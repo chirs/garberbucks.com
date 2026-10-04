@@ -20,7 +20,7 @@ SQUAD = 11
 def season_summaries(salaries):
     """
     One row per competition, season and pay period: how many players and
-    clubs, what they were paid in all, and who was paid most.
+    clubs, what they were paid in all and on average, and who was paid most.
     """
     fields = ('competition_id', 'season', 'period')
 
@@ -35,6 +35,10 @@ def season_summaries(salaries):
         if club['players'] >= SQUAD:
             clubs[tuple(club[f] for f in fields)].append(club['total'])
 
+    pay = defaultdict(list)
+    for *key, value in salaries.annotate(pay=PAY).values_list(*fields, 'pay'):
+        pay[tuple(key)].append(value)
+
     top = (salaries.annotate(pay=PAY).select_related('person')
            .order_by(*fields, '-pay').distinct(*fields))
     top = {tuple(getattr(s, f) for f in fields): s for s in top}
@@ -45,6 +49,8 @@ def season_summaries(salaries):
         season['teams'] = len(clubs[key])
         season['team_average'] = sum(clubs[key]) / len(clubs[key]) if clubs[key] else None
         season['team_median'] = median(clubs[key]) if clubs[key] else None
+        season['player_average'] = season['total'] / season['players']
+        season['player_median'] = median(pay[key])
 
     return seasons
 
@@ -113,6 +119,8 @@ def season_detail(request, competition_slug, season):
         'cols': columns(salaries),
         'teams': teams,
         'total': sum(s.pay for s in salaries),
+        'average': sum(s.pay for s in salaries) / len(salaries),
+        'median': median(s.pay for s in salaries),
         'period': salaries[0].period,
         'sources': sorted(set(s.source for s in salaries if s.source)),
         }
@@ -154,6 +162,8 @@ def team_season_detail(request, slug, season):
         'salaries': salaries,
         'cols': cols,
         'total': sum(s.pay for s in salaries),
+        'average': sum(s.pay for s in salaries) / len(salaries),
+        'median': median(s.pay for s in salaries),
         'period': salaries[0].period,
         }
     return render(request, "money/team_season.html", context)

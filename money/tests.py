@@ -199,7 +199,8 @@ def test_compact_money():
 
 def summary(season, total, team_average=None, team_median=None, period='year'):
     return {'season': season, 'period': period, 'total': total, 'team_average': team_average,
-            'team_median': team_median, 'competition__slug': 'major-league-soccer'}
+            'team_median': team_median, 'player_average': total / 10, 'player_median': total / 20,
+            'competition__slug': 'major-league-soccer'}
 
 
 def test_latest_run_stops_at_a_missing_season():
@@ -221,7 +222,8 @@ def test_chart_puts_league_and_team_payroll_in_their_own_panels():
                summary('2007', 400, 40, 30), summary('2008', 630, 50, 60)]
     chart = payroll_chart(seasons)
 
-    league, team = chart['panels']
+    league, team, player = chart['panels']
+    assert [line['css'] for line in player['lines']] == ['average', 'median']
     assert [line['css'] for line in league['lines']] == ['league']
     assert [line['css'] for line in team['lines']] == ['average', 'median']
     assert len(league['lines'][0]['points']) == 5
@@ -245,7 +247,7 @@ def test_chart_ends_do_not_overprint():
 
 def test_chart_has_one_panel_when_no_clubs_are_on_record():
     chart = payroll_chart([summary(s, 10) for s in ('2004', '2005', '2006')])
-    assert [p['name'] for p in chart['panels']] == ['League payroll']
+    assert [p['name'] for p in chart['panels']] == ['League payroll', 'Player pay']
 
 
 def squad(competition, team, season, n, each):
@@ -320,3 +322,20 @@ def test_a_role_shows_its_group_on_hover(client, mls, galaxy):
 
     assert '<td title="Defender">Center-back</td>' in html
     assert '<td>Midfielder</td>' in html
+
+
+def test_league_page_gives_average_and_median_salary(client, mls, galaxy):
+    pay('David Beckham', mls, '2007', 5500000, 6500000, galaxy)
+    pay('Landon Donovan', mls, '2007', 900000, 900000, galaxy)
+    pay('Kenny Schoeni', mls, '2007', 17700, 17700, None)
+
+    html = client.get('/c/major-league-soccer/').content.decode()
+
+    assert '>average salary<' in html and '>median salary<' in html
+    assert '$2,472,567' in html      # 7,417,700 over three
+    assert '$900,000' in html        # the player in the middle
+
+
+def test_season_page_gives_average_and_median_salary(client, season_2007):
+    html = client.get('/c/major-league-soccer/2007/').content.decode()
+    assert 'an average of $2,472,567, and a median of $900,000' in html
