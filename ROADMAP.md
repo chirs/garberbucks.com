@@ -6,10 +6,6 @@ Open work only; completed items are removed as they land (see git history).
 
 ## Salary data
 
-- [ ] MLS 2007–2014 from the union's own guides. It publishes a fall guide for
-  each of those years; the files on hand are older transcriptions (2014 is the
-  April list) with no recorded source for 2007–2013. Retranscribing gives every
-  season the same release, a source, and positions throughout.
 - [ ] Take each new guide as it comes out: 2026 is the spring list and the fall
   one replaces it.
 - [ ] Both releases a year, not one: a player signed in the summer window is in
@@ -23,8 +19,10 @@ Open work only; completed items are removed as they land (see git history).
 - [ ] Spelling variants split one player into two (Amado Guevera, Dilaver Duka,
   Benjamin and Benji Kikanović). About one salary name in six matches no MLS
   stat line that season; some never played, the rest need aliases in `metadata`.
-- [ ] Positions are letter codes through 2023 and spelled out from 2024. Pick
-  one vocabulary.
+- [ ] Take positions from MLSsoccer.com's season stats, which will override the
+  union's. The salary guides' positions (letter codes through 2023, named roles
+  from 2024, grouped in the build's normalize stage) are a stopgap, and
+  1996 and 2004–2006 have none.
 - [ ] `metadata.alias` maps "Aminu Abdallah" to "Aminu Abdallah*".
 - [ ] The 1925 wage sits in season "1925"; ASL seasons straddle two years.
 - [ ] Salaries before MLS: ASL, NASL and the rest, as sources turn up.
