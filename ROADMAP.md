@@ -29,7 +29,6 @@ Open work only; completed items are removed as they land (see git history).
 
 ## Site
 
-- [ ] Deploy to bert: gunicorn unit, nginx vhost, `upload.sh`, as s2 does it.
 - [ ] Sortable tables.
 - [ ] Player and team indexes, and search.
 - [ ] A player's age each season; dollars per minute and per goal once season

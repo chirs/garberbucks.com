@@ -43,3 +43,29 @@ backup databases in place.
 
     .venv/bin/python -m pytest
     ruff check .
+
+## Deploy
+
+Production runs on bert, beside soccerstats.us, at
+/home/chris/www/garberbucks.com:
+
+* gunicorn via systemd (`etc/systemd/garberbucks.service`) on 127.0.0.1:8101
+* nginx proxies garberbucks.com to it (`etc/nginx/garberbucks.com`);
+  www.garberbucks.com 301s to the apex. The vhost leans on the crawler
+  defenses s2 installs in `/etc/nginx/conf.d/`.
+* secrets live in /home/chris/www/garberbucks.com/.env (not in git). It
+  connects as the `soccerstats` role, to database `garberbucks`.
+
+The files under `etc/` are the source of truth, but nothing syncs them; bert
+holds copies. Certbot edits the live vhost in place, so copy it back into the
+repo after any cert change or the next deploy reverts it. To deploy a change:
+
+    ssh bert 'cd /home/chris/www/garberbucks.com && git pull && \
+        sudo cp etc/nginx/garberbucks.com /etc/nginx/sites-available/ && \
+        sudo nginx -t && sudo systemctl reload nginx'
+
+To ship the local `garberbucks_dev` database along with the current master:
+
+    ./upload.sh
+
+Request errors go to `journalctl -u garberbucks` on bert.

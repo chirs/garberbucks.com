@@ -1,0 +1,14 @@
+[Unit]
+Description=garberbucks (gunicorn)
+After=network.target postgresql.service
+
+[Service]
+User=chris
+Group=chris
+WorkingDirectory=/home/chris/www/garberbucks.com
+EnvironmentFile=/home/chris/www/garberbucks.com/.env
+ExecStart=/home/chris/www/garberbucks.com/.venv/bin/gunicorn --workers 2 --bind 127.0.0.1:8101 wsgi:application
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
