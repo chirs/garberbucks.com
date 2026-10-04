@@ -6,6 +6,7 @@ from bios.models import Bio
 from competitions.models import Competition
 from money.coverage import season_ranges
 from money.models import Salary
+from money.templatetags.charts import compact, latest_run, payroll_chart
 from money.templatetags.money_tags import dollars
 from teams.models import Team
 
@@ -186,3 +187,98 @@ def test_a_person_who_does_not_exist_is_not_found(client, db):
     response = client.get('/bios/no-such-person/')
     assert response.status_code == 404
     assert 'Not found' in response.content.decode()
+
+
+def test_compact_money():
+    assert compact(630955755) == '$631M'
+    assert compact(2500000) == '$2.5M'
+    assert compact(20000000) == '$20M'
+    assert compact(500000) == '$500K'
+    assert compact(0) == '$0'
+
+
+def summary(season, total, team_average=None, period='year'):
+    return {'season': season, 'period': period, 'total': total, 'team_average': team_average,
+            'competition__slug': 'major-league-soccer'}
+
+
+def test_latest_run_stops_at_a_missing_season():
+    seasons = [summary(s, 1) for s in ('2006', '1996', '2004', '2005')]
+    assert [s['season'] for s in latest_run(seasons)] == ['2004', '2005', '2006']
+
+
+def test_latest_run_leaves_out_wages_that_are_not_annual():
+    seasons = [summary('1924', 1, period='week'), summary('1925', 1), summary('1926', 1)]
+    assert [s['season'] for s in latest_run(seasons)] == ['1925', '1926']
+
+
+def test_no_chart_for_fewer_than_three_seasons():
+    assert payroll_chart([summary('2025', 1), summary('2026', 2)]) == {}
+
+
+def test_chart_draws_the_average_only_where_clubs_are_on_record():
+    seasons = [summary('2004', 10), summary('2005', 20), summary('2006', 30, 3),
+               summary('2007', 40, 4), summary('2008', 50, 5)]
+    chart = payroll_chart(seasons)
+
+    league, average = chart['panels']
+    assert len(league['points']) == 5
+    assert len(average['points']) == 3
+    assert league['end']['text'] == '$50'
+    assert 'no clubs before 2006' in chart['caption']
+    # One unbroken line each: a single move-to.
+    assert league['path'].count('M') == 1
+    assert average['path'].count('M') == 1
+
+
+def test_chart_has_one_panel_when_no_clubs_are_on_record():
+    chart = payroll_chart([summary(s, 10) for s in ('2004', '2005', '2006')])
+    assert [p['name'] for p in chart['panels']] == ['League payroll']
+
+
+def squad(competition, team, season, n, each):
+    for i in range(n):
+        pay('%s %s Player %d' % (team.name, season, i), competition, season, each, each, team)
+
+
+def test_league_page_charts_payroll_and_averages_it_by_club(client, mls, galaxy):
+    fire = Team.objects.create(name='Chicago Fire', slug='chicago-fire')
+    for season in '2007', '2008', '2009':
+        squad(mls, galaxy, season, 11, 300000)
+        squad(mls, fire, season, 11, 100000)
+
+    html = client.get('/c/major-league-soccer/').content.decode()
+
+    assert '<svg' in html
+    assert 'League payroll' in html and 'Average team payroll' in html
+    assert '$4,400,000' in html      # the league: 11 x 300k + 11 x 100k
+    assert '$2,200,000' in html      # split across two clubs
+    assert 'href="/c/major-league-soccer/2008/"' in html
+
+
+def test_a_club_without_a_squad_is_left_out_of_the_average(client, mls, galaxy):
+    orlando = Team.objects.create(name='Orlando City SC', slug='orlando-city-sc')
+    squad(mls, galaxy, '2014', 11, 100000)
+    pay('Kaka', mls, '2014', 6660000, 7167500, orlando)
+
+    html = client.get('/c/major-league-soccer/').content.decode()
+
+    assert '$8,267,500' in html      # he counts toward the league
+    assert '$1,100,000' in html      # the average is the Galaxy alone
+    assert '<svg' not in html        # one season is not a chart
+
+
+def test_league_page_marks_a_season_with_no_clubs(client, mls):
+    pay('Marcelo Balboa', mls, '1996', 175000)
+
+    html = client.get('/c/major-league-soccer/').content.decode()
+
+    assert 'title="no clubs on record">%s</td>' % GAP in html
+
+
+def test_a_league_that_does_not_exist_is_not_found(client, db):
+    assert client.get('/c/no-such-league/').status_code == 404
+
+
+def test_home_links_each_season_to_its_league(client, season_2007):
+    assert 'href="/c/major-league-soccer/"' in client.get('/').content.decode()

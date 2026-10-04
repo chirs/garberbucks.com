@@ -1,13 +1,15 @@
 {% load humanize money_tags %}
-{# One row per season, from views.season_summaries. team is set on a team's page. #}
+{# One row per season, from views.season_summaries. team is set on a team's page, league on a league's. #}
 <table>
 
 <thead>
   <tr>
     <th scope="col">season</th>
-    {% if not team %}<th scope="col">competition</th>{% endif %}
+    {% if not team and not league %}<th scope="col">competition</th>{% endif %}
     <th scope="col" class="num">players</th>
+    {% if league %}<th scope="col" class="num">clubs</th>{% endif %}
     <th scope="col" class="num">total pay</th>
+    {% if league %}<th scope="col" class="num">average team payroll</th>{% endif %}
     <th scope="col">highest paid</th>
     <th scope="col" class="num">pay</th>
   </tr>
@@ -20,10 +22,24 @@
   <td><a href="{% url 'team_season_detail' team.slug season.season %}">{{ season.season }}</a></td>
   {% else %}
   <td><a href="{% url 'season_detail' season.competition__slug season.season %}">{{ season.season }}</a></td>
-  <td>{{ season.competition__name }}</td>
+  {% if not league %}<td><a href="{% url 'competition_detail' season.competition__slug %}">{{ season.competition__name }}</a></td>{% endif %}
   {% endif %}
   <td class="num">{{ season.players|intcomma }}</td>
+  {% if league %}
+  {% if season.teams %}
+  <td class="num">{{ season.teams }}</td>
+  {% else %}
+  {% include "gap.html" with num=True title="no clubs on record" %}
+  {% endif %}
+  {% endif %}
   <td class="num">{{ season.total|dollars }}{% if season.period != 'year' %} a {{ season.period }}{% endif %}</td>
+  {% if league %}
+  {% if season.team_average is not None %}
+  <td class="num">{{ season.team_average|dollars }}{% if season.period != 'year' %} a {{ season.period }}{% endif %}</td>
+  {% else %}
+  {% include "gap.html" with num=True title="no clubs on record" %}
+  {% endif %}
+  {% endif %}
   <td><a href="{{ season.top.person.get_absolute_url }}">{{ season.top.person.name }}</a></td>
   <td class="num">{{ season.top.pay|dollars }}{% if season.period != 'year' %} a {{ season.period }}{% endif %}</td>
 </tr>
@@ -33,4 +49,7 @@
 </table>
 
 <p class="table-legend">Pay is guaranteed compensation where the source gives it and base
-salary where it does not. Total pay sums it across every player on record that season.</p>
+salary where it does not. Total pay sums it across every player on record that season.
+{% if league %}Average team payroll is the pay of the players listed with a club, split evenly
+across the clubs. A club with fewer than eleven players on record is an expansion side signing
+ahead of its first season, and is left out of both.{% endif %}</p>

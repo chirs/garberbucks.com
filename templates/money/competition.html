@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load charts %}
+
+{% block title %}{{ competition.name }} payroll{% endblock %}
+{% block metadescription %}What {{ competition.name }} has paid its players, season by season{% endblock %}
+
+{% block content %}
+
+<h1>{{ competition.name }} payroll</h1>
+
+<p class="prose">What {{ competition.name }} has paid its players in each season on record:
+the league as a whole, and the average club.</p>
+
+{% payroll_chart seasons %}
+
+<h2>Seasons on record</h2>
+
+{% include "money/_seasons.html" with league=True %}
+
+{% endblock %}

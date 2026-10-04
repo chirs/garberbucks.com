@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from django.db.models import Count, Sum
 from django.http import Http404
 from django.shortcuts import get_object_or_404, render
@@ -8,10 +10,16 @@ from money.models import PAY, Salary
 from teams.models import Team
 
 
+# A club listed with fewer players than a team sheet is an expansion side signing
+# ahead of its first season (Orlando in 2014, St. Louis in 2022). It has no
+# payroll to average yet.
+SQUAD = 11
+
+
 def season_summaries(salaries):
     """
-    One row per competition, season and pay period: how many players,
-    what they were paid in all, and who was paid most.
+    One row per competition, season and pay period: how many players and
+    clubs, what they were paid in all, and who was paid most.
     """
     fields = ('competition_id', 'season', 'period')
 
@@ -19,12 +27,22 @@ def season_summaries(salaries):
                    .annotate(players=Count('id'), total=Sum(PAY))
                    .order_by('-season', 'competition__name'))
 
+    # Players listed without a club count toward the league, not toward any club.
+    clubs = defaultdict(list)
+    for club in (salaries.exclude(team=None).values(*fields, 'team_id')
+                 .annotate(players=Count('id'), total=Sum(PAY))):
+        if club['players'] >= SQUAD:
+            clubs[tuple(club[f] for f in fields)].append(club['total'])
+
     top = (salaries.annotate(pay=PAY).select_related('person')
            .order_by(*fields, '-pay').distinct(*fields))
     top = {tuple(getattr(s, f) for f in fields): s for s in top}
 
     for season in seasons:
-        season['top'] = top[tuple(season[f] for f in fields)]
+        key = tuple(season[f] for f in fields)
+        season['top'] = top[key]
+        season['teams'] = len(clubs[key])
+        season['team_average'] = sum(clubs[key]) / len(clubs[key]) if clubs[key] else None
 
     return seasons
 
@@ -49,6 +67,19 @@ def index(request):
         'seasons': season_summaries(Salary.objects.all()),
         }
     return render(request, "money/index.html", context)
+
+
+def competition_detail(request, competition_slug):
+    """
+    A league's payroll, season by season.
+    """
+    competition = get_object_or_404(Competition, slug=competition_slug)
+
+    context = {
+        'competition': competition,
+        'seasons': season_summaries(Salary.objects.filter(competition=competition)),
+        }
+    return render(request, "money/competition.html", context)
 
 
 def season_detail(request, competition_slug, season):

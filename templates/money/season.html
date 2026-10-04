@@ -8,6 +8,7 @@
 
 <p class="season-nav">
 {% if previous %}<a href="{% url 'season_detail' competition.slug previous %}">&larr; {{ previous }}</a>{% endif %}
+<a href="{% url 'competition_detail' competition.slug %}">{{ competition.name }}</a>
 {% if next %}<a href="{% url 'season_detail' competition.slug next %}">{{ next }} &rarr;</a>{% endif %}
 </p>
 

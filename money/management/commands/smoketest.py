@@ -32,6 +32,7 @@ class Command(BaseCommand):
         # Every season page: the columns on record differ from season to season.
         seasons = Salary.objects.values_list('competition__slug', 'season').distinct()
         urls += [reverse('season_detail', args=season) for season in seasons]
+        urls += [reverse('competition_detail', args=[slug]) for slug in {slug for slug, _ in seasons}]
 
         client = Client(headers={'host': 'localhost'})
         failures = []

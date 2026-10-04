@@ -20,6 +20,9 @@ Garberbucks is a reference site for money in American soccer. Read
   tabular, a missing value is a marked gap (`templates/gap.html`), never a
   blank cell, and a column empty for the whole view is left out.
 - Money renders in whole dollars through the `dollars` filter.
+- Charts are inline SVG drawn by `money/templatetags/charts.py`, with no
+  JavaScript, one series in the accent, and never two y-scales on one plot. Each
+  is followed by a table carrying the same numbers.
 - A salary carries a pay period. Only annual figures count toward coverage;
   anything else says its period wherever it is shown.
 - `ruff check .` uses the narrow rule set in `ruff.toml`, as the sibling repos

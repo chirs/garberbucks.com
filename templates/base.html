@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="{% block metadescription %}What American soccer players are paid{% endblock %}">
 
-  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=1" media="screen">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=2" media="screen">
 </head>
 
 <body>
@@ -17,6 +17,7 @@
       <a href="{% url 'index' %}" id="maintitle">Garberbucks</a>
       <nav id="nav">
         <a href="{% url 'index' %}">salaries</a>
+        <a href="{% url 'competition_detail' 'major-league-soccer' %}" title="Major League Soccer">MLS</a>
       </nav>
     </div>
   </header>

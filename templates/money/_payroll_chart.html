@@ -1,0 +1,23 @@
+{% if panels %}
+<figure class="chart">
+<svg viewBox="0 0 {{ width }} {{ height }}" role="img" aria-label="{{ label }}">
+  {% for p in panels %}
+  <text class="label name" x="{{ left }}" y="{{ p.title_y }}">{{ p.name }}</text>
+  {% for t in p.ticks %}
+  <line class="grid" x1="{{ left }}" x2="{{ right_edge }}" y1="{{ t.y|floatformat:1 }}" y2="{{ t.y|floatformat:1 }}"/>
+  <text x="{{ left|add:"-8" }}" y="{{ t.y|floatformat:1 }}" dy="4" text-anchor="end">{{ t.text }}</text>
+  {% endfor %}
+  <line class="axis" x1="{{ left }}" x2="{{ right_edge }}" y1="{{ p.base|floatformat:1 }}" y2="{{ p.base|floatformat:1 }}"/>
+  <path class="line" d="{{ p.path }}"/>
+  {% for pt in p.points %}
+  <a href="{{ pt.url }}"><circle class="dot" cx="{{ pt.x|floatformat:1 }}" cy="{{ pt.y|floatformat:1 }}" r="4"/><circle class="hit" cx="{{ pt.x|floatformat:1 }}" cy="{{ pt.y|floatformat:1 }}" r="12"><title>{{ pt.title }}</title></circle></a>
+  {% endfor %}
+  <text class="label value" x="{{ p.end.x|floatformat:1 }}" y="{{ p.end.y|floatformat:1 }}" dy="4">{{ p.end.text }}</text>
+  {% endfor %}
+  {% for l in labels %}
+  <text x="{{ l.x|floatformat:1 }}" y="{{ label_y }}" text-anchor="middle">{{ l.text }}</text>
+  {% endfor %}
+</svg>
+<figcaption>{{ caption }}</figcaption>
+</figure>
+{% endif %}
