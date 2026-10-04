@@ -1,0 +1,51 @@
+{% load money_tags %}
+{# One row per deal. club=False leaves out the club column, on a club's own page. #}
+<table class="wide">
+
+<thead>
+  <tr>
+    {% if club %}<th scope="col">club</th>{% endif %}
+    <th scope="col">sponsor</th>
+    <th scope="col">named</th>
+    <th scope="col">seasons</th>
+    <th scope="col" class="num">a year</th>
+    <th scope="col" class="num">in all</th>
+    <th scope="col">note</th>
+    <th scope="col">sources</th>
+  </tr>
+</thead>
+
+<tbody>
+{% for deal in deals %}
+<tr>
+  {% if club %}
+  {% if deal.team %}
+  <td><a href="{{ deal.team.get_absolute_url }}">{{ deal.team.name }}</a></td>
+  {% else %}
+  <td>{{ deal.competition.name }}</td>
+  {% endif %}
+  {% endif %}
+  <td>{{ deal.sponsor }}</td>
+  <td>{{ deal.property }}</td>
+  {% if deal.years %}
+  <td>{{ deal.years }}</td>
+  {% else %}
+  {% include "gap.html" %}
+  {% endif %}
+  {% if deal.annual is not None %}
+  <td class="num">{{ deal.annual|dollars:deal.currency }}</td>
+  {% else %}
+  {% include "gap.html" with num=True title="not reported" %}
+  {% endif %}
+  {% if deal.total is not None %}
+  <td class="num">{{ deal.total|dollars:deal.currency }}</td>
+  {% else %}
+  {% include "gap.html" with num=True title="not reported" %}
+  {% endif %}
+  <td class="note">{{ deal.note }}</td>
+  <td>{% for url in deal.source_list %}<a href="{{ url }}">{{ forloop.counter }}</a>{% if not forloop.last %} {% endif %}{% endfor %}</td>
+</tr>
+{% endfor %}
+</tbody>
+
+</table>

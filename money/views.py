@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404, render
 
 from bios.models import Bio
 from competitions.models import Competition
-from money.models import PAY, Salary
+from money.models import PAY, Salary, Sponsorship
 from teams.models import Team
 
 
@@ -136,6 +136,7 @@ def team_detail(request, slug):
     context = {
         'team': team,
         'seasons': season_summaries(Salary.objects.filter(team=team)),
+        'sponsorships': list(Sponsorship.objects.filter(team=team).order_by('kind', 'start')),
         }
     return render(request, "money/team.html", context)
 
@@ -184,3 +185,21 @@ def person_detail(request, slug):
         'cols': columns(salaries),
         }
     return render(request, "money/person.html", context)
+
+
+def sponsorships_index(request):
+    """
+    Every sponsorship on record: stadiums, shirts, the league.
+    """
+    deals = Sponsorship.objects.select_related('team', 'competition')
+    kinds = [
+        ('Stadium naming rights', deals.filter(kind=Sponsorship.NAMING_RIGHTS)),
+        ('Shirt sponsors', deals.filter(kind=Sponsorship.SHIRT)),
+        ('League sponsors', deals.filter(kind=Sponsorship.LEAGUE)),
+    ]
+    context = {
+        'kinds': [(name, list(qs.order_by('team__name', 'start'))) for name, qs in kinds],
+        'count': deals.count(),
+        'with_figure': deals.exclude(annual=None, total=None).count(),
+        }
+    return render(request, "money/sponsorships.html", context)

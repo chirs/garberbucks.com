@@ -5,7 +5,7 @@ import pytest
 
 from bios.models import Bio
 from build import load
-from money.models import Salary
+from money.models import Salary, Sponsorship
 from teams.models import Team
 
 
@@ -36,9 +36,10 @@ def salary(**kw):
 
 @pytest.fixture
 def mongo(monkeypatch):
-    def use(salaries, bios=()):
+    def use(salaries, bios=(), sponsorships=()):
         db = FakeDB(
             salaries=salaries,
+            sponsorships=list(sponsorships),
             bios=list(bios),
             competitions=[{'name': 'Major League Soccer', 'abbreviation': 'MLS'}],
         )
@@ -104,3 +105,23 @@ def test_pay_period_is_kept(mongo):
     load.load()
 
     assert Salary.objects.get().period == 'week'
+
+
+@pytest.mark.django_db
+def test_loads_sponsorships_and_their_clubs(mongo):
+    mongo([salary()], sponsorships=[
+        {'club': 'Toronto FC', 'competition': 'Major League Soccer', 'kind': 'stadium naming rights',
+         'sponsor': 'BMO', 'property': 'BMO Field', 'start': 2007, 'end': 2016, 'annual': None,
+         'total': 27000000, 'currency': 'CAD', 'note': 'ten years',
+         'sources': ['https://a.example', 'https://b.example']},
+        {'club': None, 'competition': 'Major League Soccer', 'kind': 'league sponsorship',
+         'sponsor': 'Adidas', 'property': 'kit supplier', 'start': 2005, 'end': 2014, 'annual': None,
+         'total': 150000000, 'currency': 'USD', 'note': '', 'sources': []},
+    ])
+    load.load()
+
+    bmo = Sponsorship.objects.select_related('team').get(sponsor='BMO')
+    assert bmo.team.slug == 'toronto-fc'      # a club with no salaries still loads
+    assert bmo.currency == 'CAD'
+    assert bmo.source_list() == ['https://a.example', 'https://b.example']
+    assert Sponsorship.objects.get(sponsor='Adidas').team is None

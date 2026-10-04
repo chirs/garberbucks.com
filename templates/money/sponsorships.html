@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Sponsorships{% endblock %}
+{% block metadescription %}Stadium naming rights, shirt sponsors and league partners in American soccer, and what they are reported to pay{% endblock %}
+
+{% block content %}
+
+<h1>Sponsorships</h1>
+
+<p class="prose">Who pays to put a name on a stadium, a shirt or the league, and what the
+deal is reported to be worth. Clubs almost never announce these figures; they come from the
+business press, usually citing unnamed sources, and are estimates. {{ count|intcomma }} deals
+are on record, {{ with_figure|intcomma }} with a figure. Where a range was reported, the low end
+is shown and the range is in the note.</p>
+
+{% for name, deals in kinds %}
+{% if deals %}
+<h2>{{ name }}</h2>
+{% include "money/_sponsorships.html" with club=True %}
+{% endif %}
+{% endfor %}
+
+<p class="table-legend">A year and in all are as reported; neither is worked out from the other.
+Seasons are the first and last the deal covers. Sources are numbered links to the reports.</p>
+
+{% endblock %}

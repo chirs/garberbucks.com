@@ -186,6 +186,8 @@ table td a:focus-visible {
    row still reads across on one line rather than wrapping its names. */
 table.wide { display: block; overflow-x: auto; }
 table.wide td { white-space: nowrap; }
+/* A note is prose; it wraps, but not to a sliver. */
+table.wide td.note { white-space: normal; min-width: 24ch; max-width: 40ch; color: var(--ink-soft); }
 
 /* Money and counts sit right so the digits line up by place. */
 .num { text-align: right; white-space: nowrap; }

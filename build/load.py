@@ -5,7 +5,7 @@ from django.template.defaultfilters import slugify
 
 from bios.models import Bio
 from competitions.models import Competition
-from money.models import Salary
+from money.models import Salary, Sponsorship
 from teams.models import Team
 
 connection = pymongo.MongoClient()
@@ -19,12 +19,15 @@ def load():
     Everything else about them stays on soccerstats.us, reached by slug.
     """
     salaries = list(soccer_db.salaries.find())
+    sponsorships = list(soccer_db.sponsorships.find())
 
-    competitions = load_competitions({e['competition'] for e in salaries})
-    teams = load_teams({e['team'] for e in salaries if e['team']})
+    competitions = load_competitions({e['competition'] for e in salaries + sponsorships})
+    teams = load_teams({e['team'] for e in salaries if e['team']} |
+                       {e['club'] for e in sponsorships if e['club']})
     bios = load_bios({e['name'] for e in salaries})
 
     load_salaries(salaries, competitions, teams, bios)
+    load_sponsorships(sponsorships, competitions, teams)
 
 
 def load_competitions(names):
@@ -90,3 +93,24 @@ def load_salaries(salaries, competitions, teams, bios):
             source=e['source'] or '',
             )
         for e in salaries)
+
+
+def load_sponsorships(sponsorships, competitions, teams):
+    print("loading {} sponsorships".format(len(sponsorships)))
+
+    Sponsorship.objects.bulk_create(
+        Sponsorship(
+            team_id=teams[e['club']] if e['club'] else None,
+            competition_id=competitions[e['competition']],
+            kind=e['kind'],
+            sponsor=e['sponsor'],
+            property=e['property'],
+            start=e['start'],
+            end=e['end'],
+            annual=e['annual'],
+            total=e['total'],
+            currency=e['currency'] or 'USD',
+            note=e['note'],
+            sources='\n'.join(e['sources']),
+            )
+        for e in sponsorships)

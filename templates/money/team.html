@@ -14,4 +14,14 @@ games, rosters and history are at <a href="{{ team.soccerstats_url }}">soccersta
 
 {% include "money/_seasons.html" %}
 
+{% if sponsorships %}
+<h2>Sponsorships</h2>
+
+{% include "money/_sponsorships.html" with deals=sponsorships club=False %}
+
+<p class="table-legend">Figures are as reported, mostly press estimates. Seasons are the first and
+last the deal covers. Sources are numbered links to the reports.
+<a href="{% url 'sponsorships_index' %}">Every club's sponsorships</a>.</p>
+{% endif %}
+
 {% endblock %}

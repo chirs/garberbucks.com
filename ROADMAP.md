@@ -49,9 +49,6 @@ Open work only; completed items are removed as they land (see git history).
 
 ## Sponsorships
 
-- [ ] Load `money_data/sponsorships/`: a parser in `parse`, the mongo build, a
-  model, and pages by club. The data is a first pass of 47 deals and is not on
-  the site.
 - [ ] Fill the gaps: naming-rights and shirt deals before about 2015, the
   undisclosed current deals (Q2, Subaru, Carvana, Target, Yeti, Nationwide),
   sleeve patches, training grounds.

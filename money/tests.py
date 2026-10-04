@@ -5,7 +5,7 @@ import pytest
 from bios.models import Bio
 from competitions.models import Competition
 from money.coverage import season_ranges
-from money.models import Salary
+from money.models import Salary, Sponsorship
 from money.templatetags.charts import compact, latest_run, payroll_chart
 from money.templatetags.money_tags import dollars
 from teams.models import Team
@@ -28,6 +28,10 @@ def test_season_ranges_of_nothing():
 def test_dollars_rounds_to_whole_dollars():
     assert dollars(Decimal('5500000.08')) == '$5,500,000'
     assert dollars(Decimal('25')) == '$25'
+
+
+def test_dollars_marks_canadian_dollars():
+    assert dollars(27000000, 'CAD') == 'C$27,000,000'
 
 
 @pytest.fixture
@@ -339,3 +343,61 @@ def test_league_page_gives_average_and_median_salary(client, mls, galaxy):
 def test_season_page_gives_average_and_median_salary(client, season_2007):
     html = client.get('/c/major-league-soccer/2007/').content.decode()
     assert 'an average of $2,472,567, and a median of $900,000' in html
+
+
+def deal(competition, team=None, **kw):
+    fields = {'kind': Sponsorship.NAMING_RIGHTS, 'sponsor': 'BMO', 'property': 'BMO Stadium',
+              'start': 2023, 'end': 2032, 'annual': 10000000, 'total': 100000000,
+              'sources': 'https://a.example\nhttps://b.example'}
+    fields.update(kw)
+    return Sponsorship.objects.create(competition=competition, team=team, **fields)
+
+
+def test_sponsorships_page_lists_deals_by_kind(client, mls, galaxy):
+    deal(mls, galaxy)
+    deal(mls, galaxy, kind=Sponsorship.SHIRT, sponsor='Herbalife', property='shirt',
+         start=2013, end=2022, annual=4400000, total=44000000)
+    deal(mls, None, kind=Sponsorship.LEAGUE, sponsor='Adidas', property='kit supplier',
+         start=2005, end=2014, annual=None, total=150000000)
+
+    html = client.get('/sponsorships/').content.decode()
+
+    assert html.index('Stadium naming rights') < html.index('Shirt sponsors') < html.index('League sponsors')
+    assert '$10,000,000' in html and '$44,000,000' in html and '$150,000,000' in html
+    assert '2023–2032' in html
+    assert 'href="https://b.example">2</a>' in html
+    assert '3 deals' in html and '3 with a figure' in html
+    assert 'title="not reported">&mdash;</td>' in html
+
+
+def test_a_deal_with_no_terms_is_listed_with_marked_gaps(client, mls, galaxy):
+    deal(mls, galaxy, sponsor='Q2', property='Q2 Stadium', start=2021, end=None,
+         annual=None, total=None, note='terms not disclosed')
+
+    html = client.get('/sponsorships/').content.decode()
+
+    assert 'Q2 Stadium' in html and '2021–' in html
+    assert html.count('title="not reported">&mdash;</td>') == 2
+    assert '0 with a figure' in html
+
+
+def test_canadian_dollars_say_so(client, mls):
+    toronto = Team.objects.create(name='Toronto FC', slug='toronto-fc')
+    deal(mls, toronto, property='BMO Field', annual=None, total=27000000, currency='CAD')
+
+    assert 'C$27,000,000' in client.get('/sponsorships/').content.decode()
+
+
+def test_team_page_lists_its_sponsorships(client, mls, galaxy):
+    pay('Landon Donovan', mls, '2013', 900000, 900000, galaxy)
+    deal(mls, galaxy, sponsor='Herbalife', property='shirt', kind=Sponsorship.SHIRT)
+
+    html = client.get('/teams/la-galaxy/').content.decode()
+
+    assert '<h2>Sponsorships</h2>' in html
+    assert 'Herbalife' in html
+    assert '>club<' not in html
+
+
+def test_team_page_without_sponsorships_has_no_section(client, season_2007):
+    assert 'Sponsorships</h2>' not in client.get('/teams/la-galaxy/').content.decode()

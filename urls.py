@@ -4,6 +4,7 @@ from money import views
 
 urlpatterns = [
     path('', views.index, name='index'),
+    path('sponsorships/', views.sponsorships_index, name='sponsorships_index'),
     path('c/<slug:competition_slug>/', views.competition_detail, name='competition_detail'),
     path('c/<slug:competition_slug>/<slug:season>/', views.season_detail, name='season_detail'),
     path('teams/<slug:slug>/', views.team_detail, name='team_detail'),
