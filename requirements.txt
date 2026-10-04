@@ -1,0 +1,6 @@
+Django~=5.2
+psycopg[binary]
+gunicorn
+pymongo>=4
+pytest
+pytest-django

@@ -1,0 +1,7 @@
+# Names and format strings only -- does this refer to something that doesn't exist?
+# The same narrow selection as the soccerstats.us repos this code shares its style with.
+
+exclude = ["archive"]
+
+[lint]
+select = ["F821", "F811", "F502", "F506", "F509", "F522", "F523", "F524"]
