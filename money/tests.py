@@ -5,6 +5,7 @@ import pytest
 from bios.models import Bio
 from competitions.models import Competition
 from money.coverage import season_ranges
+from money.views import SQUAD as SQUAD_SIZE
 from money.models import ExpansionFee, Operator, Rule, Sale, Salary, Sponsorship, Transfer, Valuation
 from money.templatetags.charts import compact, latest_run, log_ticks, payroll_chart, value_chart
 from money.templatetags.money_tags import dollars, fee, millions
@@ -829,7 +830,7 @@ def test_clubs_page_sets_each_current_club_side_by_side(client, mls, galaxy, atl
     table, others = html.split('<tbody>')[1].split('Other clubs on record')
 
     assert 'LA Galaxy' in table and 'Atlanta United' not in table
-    assert '$6M' in table and '$1,200M' in table and 'Forbes 2026' in table
+    assert '$6M' in table and 'title="Forbes 2026">$1,200M' in table
     assert '<td class="wrap">AEG</td>' in table and '<td class="wrap">Dignity Health Sports Park</td>' in table
     assert 'Gabriel Pec</a>, in</td>' in table and '$9.6M' in table
     assert 'Atlanta United' in others
@@ -922,3 +923,30 @@ def test_the_salary_budget_is_a_line_on_the_team_payroll_panel(mls, galaxy):
     team = [p for p in chart['panels'] if p['name'] == 'Team payroll'][0]
     assert [line['name'] for line in team['lines']] == ['Average club', 'Median club', 'Salary budget']
     assert 'salary budget' in chart['caption']
+
+
+
+def test_a_club_page_sets_payroll_against_the_salary_budget(client, mls, galaxy):
+    for season in ('2017', '2018', '2019'):
+        for i in range(SQUAD_SIZE):
+            pay('Player %d' % i, mls, season, 100000, None, galaxy)
+        pay('Star', mls, season, 6000000, None, galaxy)
+        Rule.objects.create(competition=mls, season=int(season), salary_budget=4000000, maximum_charge=500000)
+
+    html = client.get('/teams/la-galaxy/').content.decode()
+    section = html.split('<h3>Against the salary budget</h3>')[1].split('</table>')[0]
+
+    # 11 players at $100,000 and one at $6M: $7.1M against a $4M budget
+    assert '$7,100,000' in section and '$3,100,000' in section and '1.8&times;' in section
+    assert '<td class="num">1</td>' in section
+    assert 'Payroll against the salary budget' in section
+
+
+def test_clubs_page_gives_each_club_its_multiple_of_the_budget(client, mls, galaxy):
+    for i in range(SQUAD_SIZE):
+        pay('Player %d' % i, mls, '2026', 500000, None, galaxy)
+    Rule.objects.create(competition=mls, season=2026, salary_budget=5500000, maximum_charge=400000)
+
+    table = client.get('/clubs/').content.decode().split('<tbody>')[1]
+
+    assert '1.0&times;' in table and '<td class="num">11</td>' in table

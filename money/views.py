@@ -187,7 +187,9 @@ def clubs_index(request):
             if team_id in payrolls and (team_id not in biggest or t.fee > biggest[team_id].fee):
                 biggest[team_id] = t
 
+    positions = budget_positions(teams)
     rows = [{'team': team, 'payroll': payrolls[team.id],
+             'position': next((p for p in positions.get(team.id, []) if p['season'] == season), None),
              'value': values.get(team.id, (0, None))[1],
              'owner': owners.get(team.id, (0, None))[1],
              'stadium': stadiums.get(team.id, (0, None))[1],
@@ -252,6 +254,7 @@ def team_detail(request, slug):
     context = {
         'team': team,
         'seasons': season_summaries(Salary.objects.filter(team=team)),
+        'budget': budget_positions([team]).get(team.id, []),
         'sponsorships': list(Sponsorship.objects.filter(team=team).exclude(kind__in=Sponsorship.TV)
                              .order_by('kind', 'start')),
         'tv_deals': list(Sponsorship.objects.filter(team=team, kind__in=Sponsorship.TV).order_by('start')),
@@ -285,6 +288,44 @@ def mark_over_maximum(salaries, competition, season):
     for s in salaries:
         s.over_maximum = maximum is not None and s.period == 'year' and (s.guaranteed or s.base) > maximum
     return maximum
+
+
+def budget_positions(teams):
+    """
+    Each club's MLS payroll against the salary budget, for every season with
+    rules on record: {team_id: [row, newest first]}. A row has the payroll,
+    the budget, how far over it the club spent, that as a multiple, and how
+    many players it paid above the maximum budget charge.
+    """
+    rules = {r.season: r for r in Rule.objects.filter(competition__slug=MLS)}
+    salaries = (Salary.objects.filter(team__in=teams, competition__slug=MLS, period='year',
+                                      season__in=[str(s) for s in rules])
+                .annotate(pay=PAY).values_list('team_id', 'team__slug', 'season', 'pay'))
+    clubs = defaultdict(lambda: {'payroll': 0, 'players': 0, 'above_max': 0})
+    for team_id, slug, season, pay in salaries:
+        rule = rules[int(season)]
+        row = clubs[(team_id, slug, int(season))]
+        row['payroll'] += pay
+        row['players'] += 1
+        if rule.maximum_charge is not None and pay > rule.maximum_charge:
+            row['above_max'] += 1
+
+    positions = defaultdict(list)
+    for (team_id, slug, season), row in sorted(clubs.items(), key=lambda kv: -kv[0][2]):
+        rule = rules[season]
+        if row['players'] < SQUAD or not rule.salary_budget:
+            continue
+        positions[team_id].append({
+            'season': str(season),
+            'period': 'year',
+            'url': reverse('team_season_detail', args=[slug, season]),
+            'payroll': row['payroll'],
+            'budget': rule.salary_budget,
+            'over': row['payroll'] - rule.salary_budget,
+            'times': row['payroll'] / rule.salary_budget,
+            'above_max': row['above_max'] if rule.maximum_charge is not None else None,
+        })
+    return positions
 
 
 def rules_index(request):

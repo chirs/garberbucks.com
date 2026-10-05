@@ -68,7 +68,7 @@ def series(name, css, rows, key, xs, base, scale):
         drawing = True
         points.append({
             'x': x, 'y': y, 'value': value,
-            'url': reverse('season_detail', args=[row['competition__slug'], row['season']]),
+            'url': row.get('url') or reverse('season_detail', args=[row['competition__slug'], row['season']]),
             'title': '%s %s: $%s' % (row['season'], name.lower(), format(round(value), ',')),
         })
     return {'name': name, 'css': css, 'path': ''.join(path), 'points': points}
@@ -331,4 +331,38 @@ def rights_chart(years, label):
                    'reported no figure; an empty season had no deal on record. Where only some '
                    'of a season\'s deals reported a figure, the bar counts those, so it is a floor.'
                    % label,
+    }
+
+
+@register.inclusion_tag("money/_payroll_chart.html")
+def budget_chart(positions):
+    """
+    A club's payroll against the league's salary budget, season by season, on
+    one scale: the gap between the lines is what it spent beyond the cap.
+    """
+    rows = latest_run(positions)
+    if len(rows) < 3:
+        return {}
+    slot = (WIDTH - LEFT - RIGHT) / (len(rows) - 1)
+    xs = [LEFT + i * slot for i in range(len(rows))]
+    p = panel('Payroll against the salary budget', rows,
+              [('Payroll', 'average', 'payroll'), ('Salary budget', 'budget', 'budget')], xs, 0)
+    every = max(1, math.ceil(44 / slot))
+    first, last = rows[0]['season'], rows[-1]['season']
+    caption = ("The club's payroll is every player's guaranteed pay; the salary budget is what the "
+               'rules let it count against the cap. The gap is Designated Players and allocation '
+               'money. Hover or focus a point for its figure.')
+    if len(rows) < len(positions):
+        caption += ' Seasons outside the unbroken run of %s–%s are in the table only.' % (first, last)
+    return {
+        'panels': [p],
+        'labels': [{'x': x, 'text': r['season']} for i, (r, x) in enumerate(zip(rows, xs))
+                   if (len(rows) - 1 - i) % every == 0],
+        'label_y': p['base'] + LABEL_H - 10,
+        'width': WIDTH,
+        'height': p['base'] + LABEL_H,
+        'left': LEFT,
+        'right_edge': WIDTH - RIGHT,
+        'label': 'Payroll against the salary budget, %s to %s' % (first, last),
+        'caption': caption,
     }

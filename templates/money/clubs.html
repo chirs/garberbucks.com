@@ -17,8 +17,9 @@ paid or received. Each club's page has the history behind every figure.</p>
   <tr>
     <th scope="col">club</th>
     <th scope="col" class="num">payroll {{ season }}</th>
+    <th scope="col" class="num">&times; budget</th>
+    <th scope="col" class="num">above max</th>
     <th scope="col" class="num">value</th>
-    <th scope="col">valued by</th>
     <th scope="col">owner</th>
     <th scope="col">stadium</th>
     <th scope="col">biggest transfer</th>
@@ -30,12 +31,17 @@ paid or received. Each club's page has the history behind every figure.</p>
 <tr>
   <td><a href="{{ row.team.get_absolute_url }}">{{ row.team.name }}</a></td>
   <td class="num"><a href="{% url 'team_season_detail' row.team.slug season %}">{{ row.payroll|millions }}</a></td>
+  {% if row.position %}
+  <td class="num">{{ row.position.times|floatformat:1 }}&times;</td>
+  {% if row.position.above_max is not None %}<td class="num">{{ row.position.above_max }}</td>{% else %}{% include "gap.html" with num=True %}{% endif %}
+  {% else %}
+  {% include "gap.html" with num=True title="no salary budget on record" %}
+  {% include "gap.html" with num=True %}
+  {% endif %}
   {% if row.value %}
-  <td class="num">{{ row.value.value|millions }}</td>
-  <td>{{ row.value.publisher }} {{ row.value.season }}</td>
+  <td class="num" title="{{ row.value.publisher }} {{ row.value.season }}">{{ row.value.value|millions }}</td>
   {% else %}
   {% include "gap.html" with num=True title="on no published list" %}
-  {% include "gap.html" %}
   {% endif %}
   {% if row.owner %}<td class="wrap">{{ row.owner.operator }}</td>{% else %}{% include "gap.html" with title="not on record" %}{% endif %}
   {% if row.stadium %}<td class="wrap">{{ row.stadium.property }}</td>{% else %}{% include "gap.html" with title="no naming-rights deal on record" %}{% endif %}
@@ -52,7 +58,8 @@ paid or received. Each club's page has the history behind every figure.</p>
 </table>
 
 <p class="table-legend">Payroll is the guaranteed pay of every player on the club's {{ season }}
-list. Value is the latest published estimate. The stadium is a current naming-rights deal; a club
+list; &times; budget is that as a multiple of the season's salary budget, and above max counts the
+players paid more than the maximum budget charge (<a href="{% url 'rules_index' %}">the rules</a>). Value is the latest published estimate; hover it for whose and which year. The stadium is a current naming-rights deal; a club
 with none on record shows a gap, though its ground may still carry a name. The transfer is the
 biggest cash fee on record, in dollars, for a player coming in or going out.</p>
 

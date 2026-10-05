@@ -23,6 +23,41 @@ owns it, and what it is paid. The club's games, rosters and history are at
 2004 on; a club from outside those years has none yet.</p>
 {% endif %}
 
+{% if budget %}
+<h3>Against the salary budget</h3>
+
+{% budget_chart budget %}
+
+<table>
+<thead>
+  <tr>
+    <th scope="col">season</th>
+    <th scope="col" class="num">payroll</th>
+    <th scope="col" class="num">salary budget</th>
+    <th scope="col" class="num">over the budget</th>
+    <th scope="col" class="num">times the budget</th>
+    <th scope="col" class="num">above the maximum</th>
+  </tr>
+</thead>
+<tbody>
+{% for b in budget %}
+<tr>
+  <td><a href="{{ b.url }}">{{ b.season }}</a></td>
+  <td class="num">{{ b.payroll|dollars }}</td>
+  <td class="num">{{ b.budget|dollars }}</td>
+  <td class="num">{{ b.over|dollars }}</td>
+  <td class="num">{{ b.times|floatformat:1 }}&times;</td>
+  {% if b.above_max is not None %}<td class="num">{{ b.above_max }}</td>{% else %}{% include "gap.html" with num=True title="no maximum charge on record that season" %}{% endif %}
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+<p class="table-legend">Payroll is every player's guaranteed pay; the salary budget is the cap from
+<a href="{% url 'rules_index' %}">that season's rules</a>. Above the maximum counts the players paid
+more than the maximum budget charge: its Designated Players and those bought down with allocation money.</p>
+{% endif %}
+
 {% if transfers %}
 <h3>Transfers</h3>
 
