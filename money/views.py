@@ -97,7 +97,8 @@ def minimum_rows(seasons):
         # A list far shorter than a league's rosters (1996's 46 names) is its best-paid
         # players, so counting who sits at the floor would be meaningless.
         partial = summary and summary['players'] < PARTIAL_LIST * max(summary['teams'], 1)
-        at_minimum = (league.filter(season=str(year), base__lte=senior).count()
+        # The union's lists carry annualized cents: 2019's minimum is $70,250.04.
+        at_minimum = (league.filter(season=str(year), base__lt=senior + 1).count()
                       if senior and summary and not partial else None)
         rows.append({
             'season': str(year),

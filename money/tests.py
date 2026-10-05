@@ -1158,3 +1158,15 @@ def test_the_league_page_draws_the_minimum_on_player_pay(mls, galaxy):
     chart = payroll_chart(seasons)
     player = [p for p in chart['panels'] if p['name'] == 'Player pay'][0]
     assert [line['name'] for line in player['lines']][-1] == 'Minimum salary'
+
+
+
+def test_the_minimum_count_allows_for_annualized_cents(client, mls, galaxy):
+    for season in ('2019', '2020'):
+        Rule.objects.create(competition=mls, season=int(season), senior_minimum=70250)
+        for i in range(PARTIAL_LIST):
+            pay('P%s %d' % (season, i), mls, season, Decimal('70250.04') if i < 9 else 100000, None, galaxy)
+
+    section = client.get('/pay/').content.decode().split('<h2>The minimum salary</h2>')[1]
+
+    assert '9 of 18' in section
