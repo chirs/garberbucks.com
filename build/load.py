@@ -116,6 +116,7 @@ def load_sponsorships(sponsorships, competitions, teams):
             property=e['property'],
             start=e['start'],
             end=e['end'],
+            length=e['length'],
             annual=e['annual'],
             total=e['total'],
             currency=e['currency'] or 'USD',

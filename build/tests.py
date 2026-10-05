@@ -115,11 +115,11 @@ def test_pay_period_is_kept(mongo):
 def test_loads_sponsorships_and_their_clubs(mongo):
     mongo([salary()], sponsorships=[
         {'club': 'Toronto FC', 'competition': 'Major League Soccer', 'kind': 'stadium naming rights',
-         'sponsor': 'BMO', 'property': 'BMO Field', 'start': 2007, 'end': 2016, 'annual': None,
+         'sponsor': 'BMO', 'property': 'BMO Field', 'start': 2007, 'end': 2016, 'length': None, 'annual': None,
          'total': 27000000, 'currency': 'CAD', 'note': 'ten years',
          'sources': ['https://a.example', 'https://b.example']},
         {'club': None, 'competition': 'Major League Soccer', 'kind': 'league sponsorship',
-         'sponsor': 'Adidas', 'property': 'kit supplier', 'start': 2005, 'end': 2014, 'annual': None,
+         'sponsor': 'Adidas', 'property': 'kit supplier', 'start': 2005, 'end': 2014, 'length': None, 'annual': None,
          'total': 150000000, 'currency': 'USD', 'note': '', 'sources': []},
     ])
     load.load()

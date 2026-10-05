@@ -53,6 +53,7 @@ class Sponsorship(models.Model):
 
     start = models.IntegerField(null=True)
     end = models.IntegerField(null=True)
+    length = models.IntegerField(null=True) # contracted seasons, where it differs from start to end
 
     annual = models.BigIntegerField(null=True)
     total = models.BigIntegerField(null=True)
@@ -66,6 +67,29 @@ class Sponsorship(models.Model):
 
     def source_list(self):
         return self.sources.split()
+
+    def seasons(self):
+        """
+        How many seasons the deal was signed for: its contracted length where
+        that is on record (a deal ended early), otherwise start to end.
+        """
+        if self.length:
+            return self.length
+        if self.start and self.end:
+            return self.end - self.start + 1
+        return None
+
+    def annual_inferred(self):
+        """The yearly figure worked out from a reported total and length, when only the total was reported."""
+        if self.annual is None and self.total is not None and self.seasons():
+            return self.total / self.seasons()
+        return None
+
+    def total_inferred(self):
+        """The total worked out from a reported yearly figure and length, when only the yearly figure was reported."""
+        if self.total is None and self.annual is not None and self.seasons():
+            return self.annual * self.seasons()
+        return None
 
     def years(self):
         if self.start and self.end:

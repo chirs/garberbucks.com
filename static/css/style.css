@@ -205,6 +205,9 @@ table.wide td.note { white-space: normal; min-width: 24ch; max-width: 40ch; colo
 /* A name that follows a figure needs clear water between them. */
 .num + :not(.num) { padding-left: 28px; }
 
+/* A figure worked out rather than reported: grey and italic, so it never reads as sourced. */
+td.inferred { color: var(--ink-soft); font-style: italic; }
+
 /* A marked gap: the figure is missing from the record, not zero. */
 td.gap { color: #9aa3ab; }
 

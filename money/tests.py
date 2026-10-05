@@ -373,7 +373,8 @@ def test_sponsorships_page_lists_deals_by_kind(client, mls, galaxy):
     assert '2023–2032' in html
     assert 'href="https://b.example">2</a>' in html
     assert '3 deals' in html and '3 with a figure' in html
-    assert 'title="not reported">&mdash;</td>' in html
+    # Adidas reported a total over ten seasons, so its yearly figure is worked out.
+    assert 'class="num inferred" title="worked out: $150,000,000 over 10 seasons">$15,000,000</td>' in html
 
 
 def test_a_deal_with_no_terms_is_listed_with_marked_gaps(client, mls, galaxy):
@@ -561,3 +562,40 @@ def test_team_chart_carries_its_own_deals(client, chicago, mls):
     html = client.get('/teams/chicago-fire/').content.decode()
 
     assert 'class="mark-fee"' in html and 'class="mark-sale"' in html
+
+
+def test_a_missing_annual_is_worked_out_from_total_and_length(client, mls, galaxy):
+    deal(mls, galaxy, sponsor='Home Depot', property='Home Depot Center', start=2003, end=2012,
+         annual=None, total=70000000)
+
+    html = client.get('/sponsorships/').content.decode()
+
+    assert 'class="num inferred" title="worked out: $70,000,000 over 10 seasons">$7,000,000</td>' in html
+
+
+def test_a_missing_total_is_worked_out_from_annual_and_length(client, mls, galaxy):
+    deal(mls, galaxy, sponsor='Dignity Health', property='Dignity Health Sports Park', start=2019,
+         end=2028, annual=6000000, total=None)
+
+    html = client.get('/sponsorships/').content.decode()
+
+    assert 'class="num inferred" title="worked out: $6,000,000 a season for 10 seasons">$60,000,000</td>' in html
+
+
+def test_nothing_is_worked_out_without_a_known_length(client, mls, galaxy):
+    deal(mls, galaxy, sponsor='Audi', property='Audi Field', start=2018, end=None,
+         annual=4000000, total=None)
+
+    html = client.get('/sponsorships/').content.decode()
+
+    assert 'inferred' not in html.split('<tbody>')[1]
+    assert 'title="not reported">&mdash;</td>' in html
+
+
+def test_a_deal_ended_early_is_worked_out_over_its_contracted_length(client, mls, galaxy):
+    deal(mls, galaxy, sponsor='Banc of California', property='Banc of California Stadium',
+         start=2018, end=2020, length=15, annual=None, total=100000000)
+
+    html = client.get('/sponsorships/').content.decode()
+
+    assert 'title="worked out: $100,000,000 over 15 seasons">$6,666,667</td>' in html

@@ -34,11 +34,15 @@
   {% endif %}
   {% if deal.annual is not None %}
   <td class="num">{{ deal.annual|dollars:deal.currency }}</td>
+  {% elif deal.annual_inferred %}
+  <td class="num inferred" title="worked out: {{ deal.total|dollars:deal.currency }} over {{ deal.seasons }} seasons">{{ deal.annual_inferred|dollars:deal.currency }}</td>
   {% else %}
   {% include "gap.html" with num=True title="not reported" %}
   {% endif %}
   {% if deal.total is not None %}
   <td class="num">{{ deal.total|dollars:deal.currency }}</td>
+  {% elif deal.total_inferred %}
+  <td class="num inferred" title="worked out: {{ deal.annual|dollars:deal.currency }} a season for {{ deal.seasons }} seasons">{{ deal.total_inferred|dollars:deal.currency }}</td>
   {% else %}
   {% include "gap.html" with num=True title="not reported" %}
   {% endif %}
