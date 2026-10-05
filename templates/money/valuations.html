@@ -8,12 +8,44 @@
 
 <h1>Team valuations</h1>
 
-<p class="prose">What each club is worth, as Forbes and Sportico estimate it: {{ lists }} published
-lists, from Forbes's first in 2008. They measure different things. Forbes values the team alone,
-leaving out stadiums and real estate; Sportico includes the team's real estate and related
-businesses, so it runs higher for clubs that own their grounds. Neither is a sale price.</p>
+<p class="prose">What MLS clubs are worth: {{ lists }} published lists from Forbes and Sportico,
+from Forbes's first in 2008, and the values that expansion fees and club sales have put on clubs
+since 1996. The lists measure different things. Forbes values the team alone, leaving out stadiums
+and real estate; Sportico includes the team's real estate and related businesses, so it runs higher
+for clubs that own their grounds. Neither is a sale price; the fees and sales are.</p>
 
-{% value_chart series "Average MLS team value by year, Forbes and Sportico" %}
+{% value_chart lines marks "MLS club values by year: published averages, every club on each list, expansion fees and sales" 1996 %}
+
+<h2>Expansion fees and sales</h2>
+
+<table class="wide">
+<thead>
+  <tr>
+    <th scope="col">year</th>
+    <th scope="col">club</th>
+    <th scope="col">kind</th>
+    <th scope="col">what</th>
+    <th scope="col" class="num">club valued at</th>
+  </tr>
+</thead>
+<tbody>
+{% for d in deals %}
+<tr>
+  <td>{{ d.year }}</td>
+  <td><a href="{{ d.team.get_absolute_url }}">{{ d.team.name }}</a></td>
+  <td>{% if d.kind == 'fee' %}expansion fee{% else %}sale{% endif %}</td>
+  <td>{{ d.what }}</td>
+  <td class="num">{{ d.value|dollars }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+<p class="table-legend">An expansion fee is what the club cost to join, by the year it was awarded.
+A sale is on the chart when it stated what it valued the whole club at, or sold the whole club; a
+partial stake with no stated valuation is left off rather than scaled up. Some sales included a
+stadium or a sister club; the <a href="{% url 'ownership_index' %}">ownership page</a> has the
+details and sources.</p>
 
 {% for grid in grids %}
 <h2>{{ grid.publisher }}</h2>

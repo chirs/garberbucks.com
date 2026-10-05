@@ -144,6 +144,9 @@ def team_detail(request, slug):
             Operator.objects.filter(team=team).select_related('competition').order_by('start')),
         'value_series': [(p, css, {v.season: v.value for v in Valuation.objects.filter(team=team, publisher=p)})
                          for p, css in PUBLISHERS],
+        'deal_marks': deal_values(
+            ExpansionFee.objects.filter(team=team, competition__slug=MLS).select_related('team'),
+            Sale.objects.filter(team=team, competition__slug=MLS).select_related('team')),
         }
     return render(request, "money/team.html", context)
 
@@ -213,6 +216,37 @@ def sponsorships_index(request):
 
 
 PUBLISHERS = (('Forbes', 'average'), ('Sportico', 'median'))
+MLS = 'major-league-soccer'
+
+
+def money(value):
+    return '$' + format(round(value), ',')
+
+
+def deal_values(fees, sales):
+    """
+    The club values that expansion fees and sales put on record, as chart marks
+    and table rows. A fee is what a new club cost. A sale counts when it stated
+    the value it put on the whole club, or sold the whole club, so its price is
+    that value; a partial stake with no stated valuation is left out rather than
+    scaled up.
+    """
+    rows = []
+    for f in fees:
+        if f.fee is not None:
+            rows.append({'year': f.awarded, 'value': f.fee, 'kind': 'fee', 'team': f.team,
+                         'what': 'expansion fee, first season %s' % f.first_season,
+                         'title': '%s %s expansion fee: %s' % (f.awarded, f.team.name, money(f.fee))})
+    for s in sales:
+        if s.valuation is not None:
+            value, what = s.valuation, '%s sold%s' % (s.stake or 'a stake', ' for %s' % money(s.price) if s.price else '')
+        elif s.price is not None and s.stake == '100%':
+            value, what = s.price, 'the whole club sold'
+        else:
+            continue
+        rows.append({'year': s.year, 'value': value, 'kind': 'sale', 'team': s.team, 'what': what,
+                     'title': '%s %s sale (%s): club valued at %s' % (s.year, s.team.name, what, money(value))})
+    return sorted(rows, key=lambda r: (r['year'], r['team'].name))
 
 
 def valuation_grid(valuations):
@@ -234,13 +268,12 @@ def valuation_grid(valuations):
 
 def valuations_index(request):
     """
-    Every published valuation: the league's average by year, and each team's
-    value on each list.
+    Every MLS club valuation on record: the published lists, their averages by
+    year, and the values that sales and expansion fees put on clubs since 1996.
     """
     valuations = list(Valuation.objects.select_related('team').order_by('season', 'rank'))
 
-    series = []
-    grids = []
+    lines, grids = [], []
     for publisher, css in PUBLISHERS:
         mine = [v for v in valuations if v.publisher == publisher]
         if not mine:
@@ -248,14 +281,23 @@ def valuations_index(request):
         by_season = defaultdict(list)
         for v in mine:
             by_season[v.season].append(v.value)
-        series.append(('%s, average team' % publisher, css,
-                       {s: sum(vs) / len(vs) for s, vs in by_season.items()}))
+        lines.append(('%s, average club' % publisher, css,
+                      {s: sum(vs) / len(vs) for s, vs in by_season.items()}))
         seasons, rows = valuation_grid(mine)
         grids.append({'publisher': publisher, 'seasons': seasons, 'rows': rows,
                       'averages': [sum(by_season[s]) / len(by_season[s]) for s in seasons]})
 
+    deals = deal_values(
+        ExpansionFee.objects.filter(competition__slug=MLS).select_related('team'),
+        Sale.objects.filter(competition__slug=MLS).select_related('team'))
+    marks = [{'year': v.season, 'value': v.value, 'kind': 'club',
+              'title': '%s %s, %s: %s' % (v.season, v.publisher, v.team.name, money(v.value))}
+             for v in valuations] + deals
+
     context = {
-        'series': series,
+        'lines': lines,
+        'marks': marks,
+        'deals': deals,
         'grids': grids,
         'lists': len({(v.publisher, v.season) for v in valuations}),
         }

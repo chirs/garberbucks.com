@@ -6,7 +6,7 @@ from bios.models import Bio
 from competitions.models import Competition
 from money.coverage import season_ranges
 from money.models import ExpansionFee, Operator, Sale, Salary, Sponsorship, Valuation
-from money.templatetags.charts import compact, latest_run, payroll_chart, value_chart
+from money.templatetags.charts import compact, latest_run, log_ticks, payroll_chart, value_chart
 from money.templatetags.money_tags import dollars, millions
 from teams.models import Team
 
@@ -416,16 +416,31 @@ def test_millions():
     assert millions(2200000) == '$2.2M'
 
 
+def test_log_ticks_bracket_the_values():
+    assert log_ticks(5e6, 1.45e9) == [5e6, 1e7, 2e7, 5e7, 1e8, 2e8, 5e8, 1e9, 2e9]
+
+
 def test_value_chart_breaks_the_line_at_a_missing_year():
-    chart = value_chart([('Forbes', 'average', {2008: 37e6, 2013: 103e6, 2015: 157e6, 2016: 185e6})], 'x')
+    chart = value_chart([('Forbes', 'average', {2008: 37e6, 2013: 103e6, 2015: 157e6, 2016: 185e6})], [], 'x')
     (line,) = chart['lines']
     assert len(line['points']) == 4
     assert line['path'].count('M') == 3     # 2008 alone, 2013 alone, 2015-2016 joined
-    assert 'legend' not in line
+
+
+def test_value_chart_starts_where_asked_and_draws_marks():
+    marks = [{'year': 1997, 'value': 5e6, 'kind': 'fee', 'title': 'fee'},
+             {'year': 2019, 'value': 4e8, 'kind': 'sale', 'title': 'sale'}]
+    chart = value_chart([('Forbes', 'average', {2018: 2.4e8, 2019: 3.1e8})], marks, 'x', 1996)
+    # The axis starts in 1996, a year before the first mark.
+    assert chart['marks'][0]['x'] > chart['left']
+    assert [m['kind'] for m in chart['marks']] == ['fee', 'sale']
+    assert [i['kind'] for i in chart['legend']] == ['line', 'fee', 'sale']
+    fee, sale = chart['marks']
+    assert fee['y'] > sale['y']                 # $5M sits below $400M
 
 
 def test_value_chart_needs_two_years():
-    assert value_chart([('Forbes', 'average', {2026: 1e9})], 'x') == {}
+    assert value_chart([('Forbes', 'average', {2026: 1e9})], [], 'x') == {}
 
 
 def valuation(team, competition, publisher, season, value, rank=1, **kw):
@@ -446,7 +461,7 @@ def test_valuations_page_tables_each_publisher(client, mls, galaxy):
     assert '$320M' in html and '$1,170M' in html
     assert '$282M' in html                       # the 2018 Forbes average, 282.5 rounded to even
     assert 'title="not on this list">&mdash;' in html   # the Fire in 2019
-    assert '<figure class="chart"' in html and 'Forbes, average team' in html
+    assert '<figure class="chart"' in html and 'Forbes, average club' in html
     assert '3 published' in html
 
 
@@ -523,3 +538,26 @@ def test_ownership_is_grouped_by_league(client, chicago, db):
 
 def test_a_club_in_one_league_has_no_league_heading(client, chicago):
     assert '<h3>Major League Soccer</h3>' not in client.get('/teams/chicago-fire/').content.decode()
+
+
+def test_valuations_page_charts_fees_and_sales(client, mls, galaxy, chicago):
+    valuation(galaxy, mls, 'Forbes', 2018, 320000000, 1)
+
+    html = client.get('/valuations/').content.decode()
+
+    assert '<h2>Expansion fees and sales</h2>' in html
+    assert 'class="mark-fee"' in html and 'class="mark-sale"' in html
+    assert 'class="mark-club"' in html
+    # Mansueto's 51% stated a $400M valuation; the 49% with no figure is left off.
+    assert '$400,000,000' in html and '51% sold for $204,000,000' in html
+    assert '49% sold' not in html
+    assert '1997 Chicago Fire expansion fee: $5,000,000' in html
+
+
+def test_team_chart_carries_its_own_deals(client, chicago, mls):
+    valuation(chicago, mls, 'Forbes', 2018, 245000000, 13)
+    valuation(chicago, mls, 'Forbes', 2019, 335000000, 8)
+
+    html = client.get('/teams/chicago-fire/').content.decode()
+
+    assert 'class="mark-fee"' in html and 'class="mark-sale"' in html

@@ -176,58 +176,89 @@ def payroll_chart(seasons):
     }
 
 
+def log_ticks(lo, hi):
+    """Gridline values at 1, 2 and 5 times each power of ten, from the one at or below lo to the one at or above hi."""
+    ticks = []
+    for power in range(math.floor(math.log10(lo)), math.ceil(math.log10(hi)) + 1):
+        for m in (1, 2, 5):
+            ticks.append(m * 10 ** power)
+    below = max(t for t in ticks if t <= lo)
+    above = min(t for t in ticks if t >= hi)
+    return [t for t in ticks if below <= t <= above]
+
+
 @register.inclusion_tag("money/_value_chart.html")
-def value_chart(series, label):
+def value_chart(lines, points, label, first_year=None):
     """
-    Values by year on one scale, one line per series: [(name, css, {year: dollars})].
-    The axis runs year by year; a line joins only consecutive years, so a year
-    with no list is a break, not an interpolation.
+    Club values by year on a log scale: lines for series that run year to year,
+    [(name, css, {year: dollars})], and single marks for one-off valuations,
+    [{year, value, kind, title}] where kind is 'club' (a published value), 'fee'
+    (an expansion fee) or 'sale' (what a sale valued the club at).
+
+    A line joins only consecutive years, so a year with no list is a gap. The
+    scale is logarithmic because values run from a few million dollars to more
+    than a billion; on a linear one the early years would lie on the floor.
     """
-    series = [(name, css, points) for name, css, points in series if points]
-    years = sorted({y for _, _, points in series for y in points})
-    if len(years) < 2:
+    lines = [(name, css, pts) for name, css, pts in lines if pts]
+    values = [v for _, _, pts in lines for v in pts.values()] + [p['value'] for p in points]
+    years = [y for _, _, pts in lines for y in pts] + [p['year'] for p in points]
+    if len(set(years)) < 2:
         return {}
 
-    first, last = years[0], years[-1]
-    top, height = HEAD_H, HEAD_H + PANEL_H
+    first = min(years + ([first_year] if first_year else []))
+    last = max(years)
+    top = HEAD_H
     base = top + PANEL_H
     slot = (WIDTH - LEFT - RIGHT) / (last - first)
     x = lambda year: LEFT + (year - first) * slot
 
-    ceiling = max(v for _, _, points in series for v in points.values())
-    step = nice_step(ceiling)
-    y_max = step * math.ceil(ceiling / step)
-    scale = PANEL_H / y_max
+    ticks = log_ticks(min(values), max(values))
+    lo, hi = math.log10(ticks[0]), math.log10(ticks[-1])
+    y = lambda value: base - (math.log10(value) - lo) / (hi - lo) * PANEL_H
 
-    lines = []
-    for name, css, points in series:
+    drawn = []
+    for name, css, pts in lines:
         path, dots = [], []
-        for year in sorted(points):
-            px, py = x(year), base - points[year] * scale
-            path.append('%s%.1f,%.1f' % ('L' if year - 1 in points else 'M', px, py))
-            dots.append({'x': px, 'y': py, 'title': '%s %s: $%s' % (year, name, format(round(points[year]), ','))})
-        lines.append({'name': name, 'css': css, 'path': ''.join(path), 'points': dots})
+        for year in sorted(pts):
+            px, py = x(year), y(pts[year])
+            path.append('%s%.1f,%.1f' % ('L' if year - 1 in pts else 'M', px, py))
+            dots.append({'x': px, 'y': py, 'title': '%s %s: $%s' % (year, name, format(round(pts[year]), ','))})
+        drawn.append({'name': name, 'css': css, 'path': ''.join(path), 'points': dots})
 
-    if len(lines) > 1:
-        lx = LEFT
-        for line in lines:
-            line['legend'] = {'x1': lx, 'x2': lx + 28, 'dot': lx + 14, 'text_x': lx + 36}
-            lx += 36 + len(line['name']) * 6.3 + 24
+    marks = [dict(p, x=x(p['year']), y=y(p['value'])) for p in points]
+    # Published values sit behind everything else; sales and fees on top.
+    marks.sort(key=lambda m: m['kind'] != 'club')
+
+    # The legend names each line and each kind of mark actually on the chart.
+    legend, lx = [], LEFT
+    for line in drawn:
+        legend.append({'kind': 'line', 'css': line['css'], 'text': line['name'], 'x': lx})
+        lx += 36 + len(line['name']) * 6.3 + 24
+    names = {'club': 'A club on a published list', 'fee': 'Expansion fee', 'sale': 'Sale'}
+    for kind in ('club', 'fee', 'sale'):
+        if any(m['kind'] == kind for m in marks):
+            legend.append({'kind': kind, 'css': kind, 'text': names[kind], 'x': lx})
+            lx += 22 + len(names[kind]) * 6.3 + 24
+    for item in legend:
+        item['mark_x'] = item['x'] + 14
+        item['text_x'] = item['x'] + (36 if item['kind'] == 'line' else 22)
 
     every = max(1, math.ceil(44 / slot))
     return {
-        'lines': lines,
-        'ticks': [{'y': base - i * step * scale, 'text': compact(i * step)}
-                  for i in range(round(y_max / step) + 1)],
-        'labels': [{'x': x(y), 'text': y} for y in range(last, first - 1, -every)],
+        'lines': drawn,
+        'marks': marks,
+        'legend': legend,
+        'ticks': [{'y': y(t), 'text': compact(t)} for t in ticks],
+        'labels': [{'x': x(yr), 'text': yr} for yr in range(last, first - 1, -every)],
         'legend_y': 14,
         'base': base,
-        'label_y': height + LABEL_H - 10,
+        'label_y': base + LABEL_H - 10,
         'width': WIDTH,
-        'height': height + LABEL_H,
+        'height': base + LABEL_H,
         'left': LEFT,
         'right_edge': WIDTH - RIGHT,
         'label': label,
-        'caption': '%s. A line joins only consecutive years, so a year with no list is a gap. '
-                   'Hover or focus a point for its figure.' % label,
+        'caption': '%s, on a logarithmic scale: each gridline step is a doubling or more. '
+                   'A line joins only consecutive years, so a year with no list is a gap. '
+                   'Hover or focus a mark for its figure.' % label,
     }

@@ -236,6 +236,12 @@ figure.chart figcaption { font-size: .9em; color: var(--ink-soft); margin-top: 6
 /* The point is small; what the pointer has to find is not. */
 .chart .hit { fill: transparent; }
 .chart a:hover .dot, .chart a:focus-visible .dot { r: 6px; }
+/* Single valuations. Published values are faint context; deals are the point,
+   in ink, told apart by shape: a hollow square for a fee, a diamond for a sale. */
+.chart .mark-club { fill: var(--ink-soft); opacity: 0.35; }
+.chart .mark-fee { fill: #fff; stroke: var(--ink); stroke-width: 1.5; }
+.chart .mark-sale { fill: var(--ink); stroke: #fff; stroke-width: 1; }
+.chart [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .chart a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 /* A surface halo keeps a value legible where a gridline crosses it. */
 .chart text.value { paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round; }
