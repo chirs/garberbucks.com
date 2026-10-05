@@ -1,0 +1,27 @@
+{% if bars %}
+<figure class="chart">
+<svg viewBox="0 0 {{ width }} {{ height }}" role="img" aria-label="{{ label }}">
+  {% for t in ticks %}
+  <line class="grid" x1="{{ left }}" x2="{{ right_edge }}" y1="{{ t.y|floatformat:1 }}" y2="{{ t.y|floatformat:1 }}"/>
+  <text x="{{ left|add:"-8" }}" y="{{ t.y|floatformat:1 }}" dy="4" text-anchor="end">{{ t.text }}</text>
+  {% endfor %}
+  {% for b in bars %}
+  {% if b.zero %}
+  <text class="label zero" x="{{ b.mid|floatformat:1 }}" y="{{ base|add:"-6" }}" text-anchor="middle" tabindex="0" role="button" data-tip="{{ b.title }}"><title>{{ b.title }}</title>$0</text>
+  {% else %}
+  <rect class="bar" x="{{ b.x|floatformat:1 }}" y="{{ b.y|floatformat:1 }}" width="{{ b.w|floatformat:1 }}" height="{{ b.h|floatformat:1 }}" rx="2" tabindex="0" role="button" data-tip="{{ b.title }}"><title>{{ b.title }}</title></rect>
+  {% endif %}
+  {% endfor %}
+  {% for g in gaps %}
+  <text class="label zero" x="{{ g.x|floatformat:1 }}" y="{{ base|add:"-6" }}" text-anchor="middle" tabindex="0" role="button" data-tip="{{ g.title }}"><title>{{ g.title }}</title>&ndash;</text>
+  {% endfor %}
+  <line class="axis" x1="{{ left }}" x2="{{ right_edge }}" y1="{{ base }}" y2="{{ base }}"/>
+  {% for l in labels %}
+  <text x="{{ l.x|floatformat:1 }}" y="{{ label_y }}" text-anchor="middle">{{ l.text }}</text>
+  {% endfor %}
+</svg>
+<p class="chart-readout" aria-live="polite">Click or tap a bar to see the deals in it.</p>
+<figcaption>{{ caption }}</figcaption>
+</figure>
+{% include "money/_chart_readout.html" %}
+{% endif %}

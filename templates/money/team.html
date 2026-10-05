@@ -100,4 +100,13 @@ out from the other figure and the deal's length. Seasons are the first and last 
 <a href="{% url 'sponsorships_index' %}">Every club's sponsorships</a>.</p>
 {% endif %}
 
+{% if tv_deals %}
+<h2>Local TV</h2>
+
+{% include "money/_sponsorships.html" with deals=tv_deals club=False tv=True %}
+
+<p class="table-legend">Figures are as reported; one in grey italics is worked out from the other
+figure and the deal's length. <a href="{% url 'tv_index' %}">The league's TV deals</a>.</p>
+{% endif %}
+
 {% endblock %}

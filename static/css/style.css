@@ -248,6 +248,8 @@ figure.chart figcaption { font-size: .9em; color: var(--ink-soft); margin-top: 6
 .chart .mark-sale { fill: var(--sale); stroke: #fff; stroke-width: 1.5; }
 .chart [data-tip] { cursor: pointer; }
 .chart .selected { stroke: var(--ink); stroke-width: 2.5; opacity: 1; }
+.chart .bar { fill: var(--accent); }
+.chart .zero { fill: var(--ink-soft); }
 .chart-readout { margin: 6px 0 0; font-size: .95em; min-height: 1.5em; }
 .chart [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .chart a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

@@ -54,8 +54,15 @@ Open work only; completed items are removed as they land (see git history).
 - [ ] Fill the gaps: naming-rights and shirt deals before about 2015, the
   undisclosed current deals (Q2, Subaru, Carvana, Target, Yeti, Nationwide),
   sleeve patches, training grounds.
-- [ ] Media rights (Apple's $250M a year, the earlier ESPN/Fox/Univision deals)
-  in a file of their own.
+
+## TV rights
+
+- [ ] Local TV deals for clubs other than the two LA clubs, 1996–2022 (Seattle's
+  JOEtv and KCPQ, Toronto and Montreal, the Red Bulls on MSG, Chicago on WGN).
+- [ ] Figures for MLS 1999–2006, the 2023 Fox, TelevisaUnivision and TSN deals,
+  and the Canadian deals from 2007; the NASL's TVS, ESPN and USA Network deals.
+- [ ] Split the 2007–2022 deals between MLS and U.S. Soccer where a report does.
+- [ ] Other leagues: the NPSL's 1967 CBS deal, USL, NWSL.
 
 ## Beyond salaries
 

@@ -26,6 +26,7 @@ class Command(BaseCommand):
             reverse('sponsorships_index'),
             reverse('valuations_index'),
             reverse('ownership_index'),
+            reverse('tv_index'),
             reverse('season_detail', args=[salary.competition.slug, salary.season]),
             reverse('team_detail', args=[salary.team.slug]),
             reverse('team_season_detail', args=[salary.team.slug, salary.season]),

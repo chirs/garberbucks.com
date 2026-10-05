@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load money_tags charts %}
+
+{% block title %}TV rights{% endblock %}
+{% block metadescription %}What American soccer leagues and clubs have been paid for TV and streaming rights, from CBS in 1968 to Apple{% endblock %}
+
+{% block content %}
+
+<h1>TV rights</h1>
+
+<p class="prose">What broadcasters have paid American soccer leagues to show their games, and
+clubs for their local games. Leagues rarely announce these figures; most come from the business
+press, citing unnamed sources, and are estimates. MLS took no rights fee at all for its first
+three seasons, and its national money rose from about $8 million a year in 2007 to Apple's
+$250 million. Apple's deal also took every match, so clubs' local deals ended after 2022.
+{{ count }} deals are on record.</p>
+
+{% for league in leagues %}
+<h2>{{ league.competition.name }}</h2>
+
+{% if league.years %}
+{% rights_chart league.years league.competition.name|add:" national TV money by season" %}
+{% endif %}
+
+{% include "money/_sponsorships.html" with deals=league.national club=False tv=True %}
+
+{% if league.local %}
+<h3>Clubs' local TV</h3>
+{% include "money/_sponsorships.html" with deals=league.local club=True tv=True %}
+{% endif %}
+{% endfor %}
+
+<p class="table-legend">A year and in all are as reported. Where only one was reported and the
+deal's length is known, the other is worked out from it and shown in grey italics; hover it for the
+sum. A reported range is shown at its low end. Seasons are the first and last the deal covers.
+Deals sold with U.S. national team rights, as most were from 2007 to 2022, are shown whole, though
+not all of the money was for the league. Sources are numbered links to the reports.</p>
+
+{% endblock %}

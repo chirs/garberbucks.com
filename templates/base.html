@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="{% block metadescription %}What American soccer players are paid{% endblock %}">
 
-  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=12" media="screen">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=13" media="screen">
 </head>
 
 <body>
@@ -20,6 +20,7 @@
         <a href="{% url 'competition_detail' 'major-league-soccer' %}" title="Major League Soccer">MLS</a>
         <a href="{% url 'valuations_index' %}">valuations</a>
         <a href="{% url 'sponsorships_index' %}">sponsorships</a>
+        <a href="{% url 'tv_index' %}" title="TV and streaming rights">TV</a>
         <a href="{% url 'ownership_index' %}">ownership</a>
       </nav>
     </div>

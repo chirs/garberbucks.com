@@ -602,3 +602,63 @@ def test_a_deal_ended_early_is_worked_out_over_its_contracted_length(client, mls
     html = client.get('/sponsorships/').content.decode()
 
     assert 'title="worked out: $100,000,000 over 15 seasons">$6,666,667</td>' in html
+
+
+def tv(competition, team=None, **kw):
+    kind = Sponsorship.LOCAL_TV if team else Sponsorship.NATIONAL_TV
+    return deal(competition, team, **{'kind': kind, **kw})
+
+
+def test_tv_deals_get_their_own_page_not_the_sponsorships_page(client, mls, galaxy):
+    tv(mls, sponsor='Apple', property='every match, streaming', start=2023, end=2025,
+       annual=250000000, total=None)
+    tv(mls, galaxy, sponsor='Time Warner Cable SportsNet', property='local TV', start=2012,
+       end=2021, annual=None, total=55000000)
+
+    sponsorships = client.get('/sponsorships/').content.decode()
+    page = client.get('/tv/').content.decode()
+
+    assert 'Apple' not in sponsorships and 'Time Warner' not in sponsorships
+    assert '<th scope="col">broadcaster</th>' in page
+    assert 'Apple' in page and "Clubs' local TV" in page
+    assert 'title="worked out: $55,000,000 over 10 seasons">$5,500,000</td>' in page
+
+
+def test_tv_chart_sums_each_season_and_leaves_unreported_seasons_as_gaps(client, mls):
+    tv(mls, sponsor='ABC and ESPN', property='TV', start=1996, end=1998, annual=0, total=None)
+    tv(mls, sponsor='ABC, ESPN and Univision', property='TV', start=1999, end=2006,
+       annual=None, total=None)
+    tv(mls, sponsor='ESPN', property='TV', start=2007, end=2014, annual=8000000, total=None)
+    tv(mls, sponsor='Univision', property='TV', start=2007, end=2014, annual=None, total=80000000)
+    tv(mls, sponsor='Fox', property='TV', start=2011, end=2011, annual=None, total=None)
+
+    html = client.get('/tv/').content.decode()
+    chart = html.split('<figure')[1].split('</figure>')[0]
+
+    assert chart.count('class="bar"') == 8              # 2007-2014; 1999-2006 has no figure
+    assert chart.count('>$0</text>') == 4               # 1996-1998, no rights fee, and the axis
+    assert chart.count('>&ndash;</text>') == 8          # 1999-2006, deals with no figure
+    assert 'data-tip="2007: $18M (ESPN $8M; Univision $10M)"' in chart
+    assert 'data-tip="2011: $18M (ESPN $8M; Univision $10M; Fox not reported)"' in chart
+
+
+def test_a_club_page_lists_its_local_tv_deals_apart_from_sponsorships(client, mls, galaxy):
+    deal(mls, galaxy)
+    tv(mls, galaxy, sponsor='Time Warner Cable SportsNet', property='local TV', start=2012,
+       end=2021, annual=None, total=55000000)
+
+    html = client.get('/teams/la-galaxy/').content.decode()
+
+    sponsorships, local = html.split('<h2>Sponsorships</h2>')[1].split('<h2>Local TV</h2>')
+    assert 'BMO' in sponsorships and 'Time Warner' not in sponsorships
+    assert 'Time Warner' in local
+
+
+def test_tv_chart_keeps_seasons_with_no_deal_on_the_axis(client, mls):
+    tv(mls, sponsor='CBS', property='TV', start=1968, end=1968, annual=500000, total=None)
+    tv(mls, sponsor='ABC', property='TV', start=1979, end=1980, annual=None, total=1800000)
+
+    chart = client.get('/tv/').content.decode().split('<figure')[1].split('</figure>')[0]
+
+    assert '>1974</text>' in chart and '&ndash;' not in chart
+    assert chart.count('class="bar"') == 3

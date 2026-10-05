@@ -261,3 +261,65 @@ def value_chart(lines, points, label, first_year=None):
         'caption': '%s, on a logarithmic scale: each gridline step is a doubling or more. '
                    'A line joins only consecutive years, so a year with no list is a gap.' % label,
     }
+
+
+@register.inclusion_tag("money/_rights_chart.html")
+def rights_chart(years, label):
+    """
+    A league's national TV money as one bar per season, on a linear scale from
+    zero, since the point is how much bigger one era's money is than another's.
+    A season with deals but no reported figure gets a dash on the baseline, a
+    marked gap rather than a zero; a season with no deal on record gets nothing.
+    A reported zero (no rights fee) is written in.
+    """
+    known = [r for r in years if r['value'] is not None]
+    if len(known) < 2:
+        return {}
+
+    top = HEAD_H
+    base = top + PANEL_H
+    slot = (WIDTH - LEFT - RIGHT) / len(years)
+    ceiling = max(r['value'] for r in known) or 1
+    step = nice_step(ceiling)
+    y_max = step * math.ceil(ceiling / step)
+    scale = PANEL_H / y_max
+    bar_w = max(4, slot - 4)  # a 4px gap between neighbours
+
+    bars, gaps = [], []
+    for i, r in enumerate(years):
+        x = LEFT + i * slot + (slot - bar_w) / 2
+        if r['value'] is None:
+            if r['unreported']:
+                gaps.append({'x': x + bar_w / 2, 'title': '%s: %s, terms not reported' % (
+                    r['year'], ', '.join(d.sponsor for d in r['unreported']))})
+            continue
+        parts = ['%s %s' % (d.sponsor, compact(f) if f else '$0') for d, f in r['paid']]
+        if r['unreported']:
+            parts.append('%s not reported' % ', '.join(d.sponsor for d in r['unreported']))
+        h = r['value'] * scale
+        bars.append({'x': x, 'y': base - h, 'w': bar_w, 'h': h, 'zero': r['value'] == 0,
+                     'mid': x + bar_w / 2,
+                     'title': '%s: %s (%s)' % (r['year'], compact(r['value']) if r['value'] else '$0',
+                                               '; '.join(parts))})
+
+    every = max(1, math.ceil(44 / slot))
+    return {
+        'bars': bars,
+        'gaps': gaps,
+        'ticks': [{'y': base - i * step * scale, 'text': compact(i * step)}
+                  for i in range(round(y_max / step) + 1)],
+        'labels': [{'x': LEFT + i * slot + slot / 2, 'text': r['year']}
+                   for i, r in enumerate(years) if (len(years) - 1 - i) % every == 0],
+        'base': base,
+        'label_y': base + LABEL_H - 10,
+        'width': WIDTH,
+        'height': base + LABEL_H,
+        'left': LEFT,
+        'right_edge': WIDTH - RIGHT,
+        'label': label,
+        'caption': '%s: the yearly figures of every national deal covering the season, '
+                   'reported or worked out from a total. A dash marks a season whose deals '
+                   'reported no figure; an empty season had no deal on record. Where only some '
+                   'of a season\'s deals reported a figure, the bar counts those, so it is a floor.'
+                   % label,
+    }

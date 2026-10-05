@@ -1,12 +1,12 @@
 {% load money_tags %}
-{# One row per deal. club=False leaves out the club column, on a club's own page. #}
+{# One row per deal. club=False leaves out the club column, on a club's own page; tv=True heads the columns for broadcasters. #}
 <table class="wide">
 
 <thead>
   <tr>
     {% if club %}<th scope="col">club</th>{% endif %}
-    <th scope="col">sponsor</th>
-    <th scope="col">named</th>
+    <th scope="col">{% if tv %}broadcaster{% else %}sponsor{% endif %}</th>
+    <th scope="col">{% if tv %}rights{% else %}named{% endif %}</th>
     <th scope="col">seasons</th>
     <th scope="col" class="num">a year</th>
     <th scope="col" class="num">in all</th>

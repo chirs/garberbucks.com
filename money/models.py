@@ -37,12 +37,17 @@ class Salary(models.Model):
 class Sponsorship(models.Model):
     """
     A deal that puts a sponsor's name on something: a stadium, a shirt, the
-    league. Figures are as reported, mostly press estimates, and often missing.
+    league. TV and streaming deals have the same shape and live here too, the
+    broadcaster as sponsor and the rights as property. Figures are as reported,
+    mostly press estimates, and often missing.
     """
 
     NAMING_RIGHTS = 'stadium naming rights'
     SHIRT = 'front-of-shirt sponsorship'
     LEAGUE = 'league sponsorship'
+    NATIONAL_TV = 'national TV rights'
+    LOCAL_TV = 'local TV rights'
+    TV = (NATIONAL_TV, LOCAL_TV)  # media deals share the shape; pages keep them apart
 
     team = models.ForeignKey(Team, null=True, on_delete=models.CASCADE)
     competition = models.ForeignKey(Competition, on_delete=models.CASCADE)
@@ -90,6 +95,10 @@ class Sponsorship(models.Model):
         if self.total is None and self.annual is not None and self.seasons():
             return self.annual * self.seasons()
         return None
+
+    def figure_for(self, year):
+        """What the deal paid in a season it covers: the yearly figure, reported or worked out."""
+        return self.annual if self.annual is not None else self.annual_inferred()
 
     def years(self):
         if self.start and self.end:

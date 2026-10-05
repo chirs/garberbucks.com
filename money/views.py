@@ -1,4 +1,5 @@
 from collections import defaultdict
+from datetime import date
 from statistics import median
 
 from django.db.models import Count, Sum
@@ -136,7 +137,9 @@ def team_detail(request, slug):
     context = {
         'team': team,
         'seasons': season_summaries(Salary.objects.filter(team=team)),
-        'sponsorships': list(Sponsorship.objects.filter(team=team).order_by('kind', 'start')),
+        'sponsorships': list(Sponsorship.objects.filter(team=team).exclude(kind__in=Sponsorship.TV)
+                             .order_by('kind', 'start')),
+        'tv_deals': list(Sponsorship.objects.filter(team=team, kind__in=Sponsorship.TV).order_by('start')),
         'valuations': list(Valuation.objects.filter(team=team).order_by('-season', 'publisher')),
         'ownership': ownership_by_competition(
             ExpansionFee.objects.filter(team=team).select_related('competition'),
@@ -201,7 +204,7 @@ def sponsorships_index(request):
     """
     Every sponsorship on record: stadiums, shirts, the league.
     """
-    deals = Sponsorship.objects.select_related('team', 'competition')
+    deals = Sponsorship.objects.exclude(kind__in=Sponsorship.TV).select_related('team', 'competition')
     kinds = [
         ('Stadium naming rights', deals.filter(kind=Sponsorship.NAMING_RIGHTS)),
         ('Shirt sponsors', deals.filter(kind=Sponsorship.SHIRT)),
@@ -213,6 +216,49 @@ def sponsorships_index(request):
         'with_figure': deals.exclude(annual=None, total=None).count(),
         }
     return render(request, "money/sponsorships.html", context)
+
+
+def rights_by_year(deals, last):
+    """
+    A league's national TV money season by season, from its first deal to the
+    last season that has begun: the reported or worked-out yearly figures of
+    every deal covering it. A season with no figure has value None, whether its
+    deals went unreported or it had none on record; a season with some figures
+    counts the rest as unreported, not zero.
+    """
+    deals = [d for d in deals if d.start]
+    if not deals:
+        return []
+    rows = []
+    last = min(last, max(d.end or d.start for d in deals))
+    for year in range(min(d.start for d in deals), last + 1):
+        covering = [d for d in deals if d.start <= year <= (d.end or d.start)]
+        figures = [(d, d.figure_for(year)) for d in covering]
+        known = [f for _, f in figures if f is not None]
+        rows.append({
+            'year': year,
+            'value': sum(known) if known else None,
+            'paid': [(d, f) for d, f in figures if f is not None],
+            'unreported': [d for d, f in figures if f is None],
+        })
+    return rows
+
+
+def tv_index(request):
+    """
+    TV and streaming rights: each league's national deals, with a chart of what
+    they paid by season, and clubs' local deals.
+    """
+    tv = Sponsorship.objects.filter(kind__in=Sponsorship.TV).select_related('team', 'competition')
+    leagues = []
+    for competition in Competition.objects.filter(sponsorship__kind__in=Sponsorship.TV).distinct().order_by('name'):
+        national = list(tv.filter(competition=competition, kind=Sponsorship.NATIONAL_TV).order_by('start', 'sponsor'))
+        local = list(tv.filter(competition=competition, kind=Sponsorship.LOCAL_TV).order_by('team__name', 'start'))
+        years = rights_by_year(national, date.today().year)
+        leagues.append({'competition': competition, 'national': national, 'local': local, 'years': years})
+    # MLS first: it is the league with the money and the record.
+    leagues.sort(key=lambda l: l['competition'].slug != MLS)
+    return render(request, "money/tv.html", {'leagues': leagues, 'count': tv.count()})
 
 
 PUBLISHERS = (('Forbes', 'average'), ('Sportico', 'median'))
