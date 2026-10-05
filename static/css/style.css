@@ -13,6 +13,7 @@
     --fill-hover: #eef4f1; /* row hover highlight */
     --fee: #2a78d6;        /* valuation chart: an expansion fee */
     --sale: #eb6834;       /* valuation chart: a sale; checked against --fee for colour-blind separation */
+    --third: #c4398a;      /* a third kind of mark; checked against --fee and --sale, all pairs */
 }
 
 * { box-sizing: border-box; }
@@ -253,6 +254,7 @@ figure.chart figcaption { font-size: .9em; color: var(--ink-soft); margin-top: 6
 .chart .mark-club { fill: var(--ink-soft); opacity: 0.35; }
 .chart .mark-fee { fill: var(--fee); stroke: #fff; stroke-width: 1.5; }
 .chart .mark-sale { fill: var(--sale); stroke: #fff; stroke-width: 1.5; }
+.chart .mark-league { fill: var(--third); stroke: #fff; stroke-width: 1.5; }
 .chart [data-tip] { cursor: pointer; }
 .chart .selected { stroke: var(--ink); stroke-width: 2.5; opacity: 1; }
 .chart .bar { fill: var(--accent); }

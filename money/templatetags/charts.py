@@ -194,7 +194,8 @@ def value_chart(lines, points, label, first_year=None, names=None):
     [(name, css, {year: dollars})], and single marks for one-off valuations,
     [{year, value, kind, title}] where kind is 'club' (a published value), 'fee'
     (an expansion fee) or 'sale' (what a sale valued the club at). names
-    renames the kinds in the legend, for marks that are something else.
+    renames the kinds in the legend, in legend order, for marks that are
+    something else; 'league' is a third colour for those.
 
     A line joins only consecutive years, so a year with no list is a gap. The
     scale is logarithmic because values run from a few million dollars to more
@@ -236,7 +237,7 @@ def value_chart(lines, points, label, first_year=None, names=None):
         legend.append({'kind': 'line', 'css': line['css'], 'text': line['name'], 'x': lx})
         lx += 36 + len(line['name']) * 6.3 + 24
     names = names or {'club': 'A club on a published list', 'fee': 'Expansion fee', 'sale': 'Sale'}
-    for kind in ('club', 'fee', 'sale'):
+    for kind in names:
         if any(m['kind'] == kind for m in marks):
             legend.append({'kind': kind, 'css': kind, 'text': names[kind], 'x': lx})
             lx += 22 + len(names[kind]) * 6.3 + 24

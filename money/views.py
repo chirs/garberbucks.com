@@ -327,6 +327,10 @@ def person_detail(request, slug):
     return render(request, "money/person.html", context)
 
 
+# Mark styles for the sponsorship chart, by kind of deal.
+SPONSOR_MARKS = {Sponsorship.NAMING_RIGHTS: 'fee', Sponsorship.SHIRT: 'sale', Sponsorship.LEAGUE: 'league'}
+
+
 def sponsorships_index(request):
     """
     Every sponsorship on record: stadiums, shirts, the league.
@@ -337,7 +341,19 @@ def sponsorships_index(request):
         ('Shirt sponsors', deals.filter(kind=Sponsorship.SHIRT)),
         ('League sponsors', deals.filter(kind=Sponsorship.LEAGUE)),
     ]
+    marks = []
+    for d in deals:
+        figure = d.figure_for(d.start)
+        if d.start and figure and d.kind in SPONSOR_MARKS:
+            marks.append({'year': d.start, 'value': figure, 'kind': SPONSOR_MARKS[d.kind],
+                          'href': d.team.get_absolute_url() if d.team else None,
+                          'title': '%s: %s, %s%s, %s a year' % (
+                              d.start, d.sponsor, d.property,
+                              ' (%s)' % d.team.name if d.team else '', fee(figure, d.currency))})
+
     context = {
+        'marks': marks,
+        'mark_names': {'fee': 'Stadium naming rights', 'sale': 'Shirt sponsor', 'league': 'League sponsor'},
         'kinds': [(name, list(qs.order_by('team__name', 'start'))) for name, qs in kinds],
         'count': deals.count(),
         'with_figure': deals.exclude(annual=None, total=None).count(),

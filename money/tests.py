@@ -855,3 +855,21 @@ def test_merged_sections_switch_between_their_pages(client, db):
         assert 'aria-current="page">%s</a>' % here in html, url
     assert 'aria-current="page">value &amp; ownership</a>' in client.get('/ownership/').content.decode()
     assert 'aria-current="page">revenue</a>' in client.get('/tv/').content.decode()
+
+
+
+def test_sponsorships_chart_marks_each_deal_by_kind_at_its_yearly_figure(client, mls, galaxy):
+    deal(mls, galaxy)                                              # $10M a year from 2023
+    deal(mls, galaxy, kind=Sponsorship.SHIRT, sponsor='Herbalife', property='shirt',
+         start=2013, end=2022, annual=None, total=44000000)         # worked out: $4.4M a year
+    deal(mls, None, kind=Sponsorship.LEAGUE, sponsor='Adidas', property='kit supplier',
+         start=2005, end=2014, annual=None, total=150000000)
+    deal(mls, galaxy, sponsor='Q2', property='Q2 Stadium', start=2021, end=None, annual=None, total=None)
+
+    chart = client.get('/sponsorships/').content.decode().split('<figure')[1].split('</figure>')[0]
+
+    # one mark per deal with a figure, plus one of each kind in the legend
+    assert chart.count('class="mark-fee"') == 2
+    assert chart.count('class="mark-sale"') == 2 and chart.count('class="mark-league"') == 2
+    assert 'data-tip="2013: Herbalife, shirt (LA Galaxy), $4.4M a year"' in chart
+    assert chart.index('Stadium naming rights') < chart.index('Shirt sponsor') < chart.index('League sponsor')
