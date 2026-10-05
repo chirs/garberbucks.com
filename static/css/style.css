@@ -94,9 +94,12 @@ h3 { font-size: 0.95em; color: var(--ink-soft); }
     gap: 8px;
 }
 
-#maintitle .logo { height: 34px; width: auto; }
+/* The silhouette knocked out of a green tile. */
+#maintitle .logo { height: 44px; width: auto; }
+#maintitle .logo-ground { fill: var(--accent); }
 
 #maintitle:hover { text-decoration: none; color: var(--accent-dark); }
+#maintitle:hover .logo-ground { fill: var(--accent-dark); }
 
 #nav {
     display: flex;
