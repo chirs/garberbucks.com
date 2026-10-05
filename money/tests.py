@@ -1074,3 +1074,21 @@ def test_clubs_money_grid_sorts_by_a_column(client, mls, galaxy, atlanta):
 
     assert grid.index('Atlanta United') < grid.index('LA Galaxy')
     assert 'sort=fees_out" aria-current="true"' in grid
+
+
+
+def test_americans_filter_ranks_fees_by_nationality_on_record(client, mls, atlanta, galaxy):
+    move('Michael Bradley', mls, 2014, 'in', 'Roma', 'Toronto FC', fee=10000000)
+    move('Brad Friedel', mls, 1998, 'out', 'Columbus Crew', 'Liverpool', fee=2500000)
+    move('Josh Sargent', mls, 2026, 'in', 'Norwich City', 'Toronto FC', fee=22000000)   # no nationality yet
+    move('Miguel Almiron', mls, 2019, 'out', 'Atlanta United', 'Newcastle', from_team=atlanta, fee=27000000)
+    Bio.objects.filter(slug__in=['michael-bradley', 'brad-friedel']).update(nationality='USA')
+    Bio.objects.filter(slug='miguel-almiron').update(nationality='Paraguay')
+
+    html = client.get('/transfers/?nationality=usa').content.decode()
+    table = html.split('<h2>The biggest fees for American players</h2>')[1]
+
+    assert table.index('Michael Bradley') < table.index('Brad Friedel')
+    assert 'Josh Sargent' not in table and 'Miguel Almiron' not in table
+    assert 'nationality=usa" aria-current="page">Americans</a>' in html or '>Americans</a>' in html
+    assert '<h2>2014</h2>' not in html

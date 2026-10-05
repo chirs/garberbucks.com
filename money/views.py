@@ -583,7 +583,13 @@ def transfers_index(request):
     move = request.GET.get('move')
     if move not in MOVES:
         move = None
-    transfers = list(everything.filter(direction=move) if move else everything)
+    american = request.GET.get('nationality') == 'usa'
+    transfers = everything.filter(direction=move) if move else everything
+    if american:
+        # Only what the player's bio records: a player whose nationality is not
+        # on record yet is left out, not guessed at.
+        transfers = transfers.filter(person__nationality__iexact='USA', kind=Transfer.TRANSFER).exclude(fee=None)
+    transfers = list(transfers)
 
     marks = [{'year': t.season, 'value': t.fee, 'kind': MOVES[t.direction],
               'href': t.person.get_absolute_url(),
@@ -602,6 +608,9 @@ def transfers_index(request):
         'marks': marks,
         'names': MOVE_NAMES,
         'count': len(transfers),
+        'american': american,
+        'ranked': sorted(transfers, key=lambda t: -t.fee) if american else None,
+        'ranked_cols': transfer_columns(transfers),
         'move': move,
         'moves': [(None, 'All'), ('in', 'Into MLS'), ('out', 'Out of MLS'), ('within', 'Within MLS')],
         'record_in': max((t for t in cash if t.direction == 'in'), key=lambda t: t.fee, default=None),

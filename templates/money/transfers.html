@@ -19,17 +19,28 @@ the biggest out is {{ record_out.fee|fee }} for
 
 <nav class="filters" aria-label="Which moves">
   {% for value, name in moves %}
-  <a href="{% url 'transfers_index' %}{% if value %}?move={{ value }}{% endif %}"{% if value == move %} aria-current="page"{% endif %}>{{ name }}</a>
+  <a href="{% url 'transfers_index' %}{% if value %}?move={{ value }}{% if american %}&amp;nationality=usa{% endif %}{% elif american %}?nationality=usa{% endif %}"{% if value == move %} aria-current="page"{% endif %}>{{ name }}</a>
   {% endfor %}
+  <a href="?{% if move %}move={{ move }}&amp;{% endif %}{% if not american %}nationality=usa{% endif %}"{% if american %} aria-current="page"{% endif %}>Americans</a>
   <span class="count">{{ count|intcomma }} move{{ count|pluralize }}</span>
 </nav>
 
 {% value_chart None marks "Transfer fees by season, one mark per cash deal in dollars" 1996 names %}
 
+{% if american %}
+<h2>The biggest fees for American players</h2>
+
+<p class="prose">Every cash fee on record for a player whose bio gives his nationality as American,
+biggest first. Nationality comes from the player's soccerstats.us bio; a player whose bio is not in
+yet is missing from this list until it is, so it grows as bios are added.</p>
+
+{% include "money/_transfers.html" with transfers=ranked cols=ranked_cols season=True player=True %}
+{% else %}
 {% for year, transfers, cols in seasons %}
 <h2>{{ year }}</h2>
 {% include "money/_transfers.html" with player=True %}
 {% endfor %}
+{% endif %}
 
 <p class="table-legend">The season is the first one a move affects, so a winter sale is filed under
 the next year. The fee is the headline figure: the flat fee, or the guaranteed part before add-ons;
