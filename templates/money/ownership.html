@@ -64,4 +64,13 @@ the whole club at. A sale that included a stadium, real estate or a sister club 
 Clubs that began play in a league's first season paid no expansion fee and are not listed under
 fees.</p>
 
+{% if worths %}
+<h2>Owners' net worths</h2>
+
+<p class="prose">What the people behind the clubs are worth, by Forbes's yearly estimates, in the
+years they ran their club. The richest owners are worth many times their clubs.</p>
+
+{% include "money/_net_worths.html" with years=worth_years rows=worths club=True %}
+{% endif %}
+
 {% endblock %}

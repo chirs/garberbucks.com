@@ -1,0 +1,26 @@
+{% load money_tags %}
+{# Owners' net worths by year, from views.net_worth_grid. club=False leaves out the club, on a club's own page. #}
+<table class="wide worths">
+<thead>
+  <tr>
+    <th scope="col">owner</th>
+    {% if club %}<th scope="col">club</th>{% endif %}
+    {% for year in years %}<th scope="col" class="num">{{ year }}</th>{% endfor %}
+    <th scope="col">sources</th>
+  </tr>
+</thead>
+<tbody>
+{% for row in rows %}
+<tr>
+  <td>{{ row.owner }}{% if row.note %} <span class="aside">({{ row.note }})</span>{% endif %}</td>
+  {% if club %}<td><a href="{{ row.team.get_absolute_url }}">{{ row.team.name }}</a></td>{% endif %}
+  {% for v in row.values %}{% if v is not None %}<td class="num">{{ v|billions }}</td>{% else %}{% include "gap.html" with num=True title="not on that year's list" %}{% endif %}{% endfor %}
+  <td>{% for url in row.sources %}<a href="{{ url }}">{{ forloop.counter }}</a>{% if not forloop.last %} {% endif %}{% endfor %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+<p class="table-legend">Net worth as Forbes estimated it for its billionaires list each spring. An
+owner left off a year's list fell below a billion, or was not counted; owners never on it, like most
+of the league's, are not here. A family's fortune is listed under the member Forbes names.</p>

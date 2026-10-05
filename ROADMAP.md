@@ -63,9 +63,11 @@ Open work only; completed items are removed as they land (see git history).
 
 ## Beyond salaries
 
-- [ ] Rules before 2011: the salary budget and maximum charge for 1997–2009,
-  the first DP years (one slot from 2007), allocation money before 2015. The
-  league's rules page is archived only from 2011.
+- [ ] Rules for 1997–2005, the 2009 salary budget, and allocation money before
+  2015. The league's rules page is archived only from 2011; 2006–2010 come from
+  the press.
+- [ ] Owners' net worths for 2025 and 2026 (the archive holds Forbes's lists only
+  in pages of 50), and before 2019 from Forbes's earlier lists or the Forbes 400.
 - [ ] Rules not yet on record: the U22 Initiative slots, the third-DP fee, the
   homegrown subsidy, and the 2025 cash-for-GAM conversion. Define them in prose
   first, then model what can be.

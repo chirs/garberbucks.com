@@ -205,6 +205,9 @@ table.wide td { white-space: nowrap; }
 tr.total td { border-top: 2px solid var(--ink); font-weight: 600; }
 
 /* A note is prose; it wraps, but not to a sliver. */
+/* An owner's note sits beside the name, quieter, and lets the cell wrap. */
+table.worths td:first-child { white-space: normal; min-width: 18ch; max-width: 36ch; }
+.aside { color: var(--ink-soft); font-size: .9em; }
 /* A name long enough to wrap, in ink, unlike a note. */
 table.wide td.wrap { white-space: normal; min-width: 14ch; max-width: 26ch; }
 table.wide td.note { white-space: normal; min-width: 24ch; max-width: 40ch; color: var(--ink-soft); }

@@ -255,3 +255,20 @@ class Rule(models.Model):
 
     def source_list(self):
         return self.sources.split()
+
+
+class NetWorth(Sourced):
+    """
+    What a club's owner was worth in a year, by a publisher's estimate (Forbes's
+    billionaires list): the person behind the club, not the club.
+    """
+
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE)
+    owner = models.CharField(max_length=200)
+    year = models.IntegerField()
+    net_worth = models.BigIntegerField()
+    publisher = models.CharField(max_length=50)
+
+    def __str__(self):
+        return "%s %s: %s" % (self.owner, self.year, self.net_worth)

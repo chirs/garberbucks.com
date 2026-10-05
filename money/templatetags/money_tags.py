@@ -37,3 +37,9 @@ def fee(value, currency='USD'):
     """
     text = ('%.2f' % (value / 1e6)).rstrip('0').rstrip('.')
     return '%s%sM' % (SYMBOLS.get(currency, '$'), text)
+
+
+@register.filter
+def billions(value):
+    """A fortune in billions, to one place: 9200000000 -> $9.2B, 11000000000 -> $11B, 600000000 -> $0.6B."""
+    return '$%sB' % ('%.1f' % (value / 1e9)).rstrip('0').rstrip('.')

@@ -5,7 +5,7 @@ from django.template.defaultfilters import slugify
 
 from bios.models import Bio
 from competitions.models import Competition
-from money.models import ExpansionFee, Operator, Rule, Salary, Sale, Sponsorship, Transfer, Valuation
+from money.models import ExpansionFee, NetWorth, Operator, Rule, Salary, Sale, Sponsorship, Transfer, Valuation
 from teams.models import Team
 
 # Which end of a move is a club in the league: those get team pages, the
@@ -28,7 +28,8 @@ def load():
     operators = list(soccer_db.operators.find())
     sales = list(soccer_db.sales.find())
     fees = list(soccer_db.expansion_fees.find())
-    ownership = operators + sales + fees
+    worths = list(soccer_db.net_worths.find())
+    ownership = operators + sales + fees + worths
     transfers = list(soccer_db.transfers.find())
     rules = list(soccer_db.rules.find())
 
@@ -44,6 +45,7 @@ def load():
     load_sponsorships(sponsorships, competitions, teams)
     load_valuations(valuations, competitions, teams)
     load_ownership(operators, sales, fees, competitions, teams)
+    load_net_worths(worths, competitions, teams)
     load_transfers(transfers, competitions, teams, bios)
     load_rules(rules, competitions)
 
@@ -172,6 +174,16 @@ def load_ownership(operators, sales, fees, competitions, teams):
     ExpansionFee.objects.bulk_create(
         ExpansionFee(awarded=e['awarded'], first_season=e['first_season'], fee=e['fee'], **common(e))
         for e in fees)
+
+
+def load_net_worths(worths, competitions, teams):
+    print("loading {} owners' net worths".format(len(worths)))
+
+    NetWorth.objects.bulk_create(
+        NetWorth(team_id=teams[e['club']], competition_id=competitions[e['competition']],
+                 owner=e['owner'], year=e['year'], net_worth=e['net_worth'], publisher=e['publisher'],
+                 note=e['note'], sources='\n'.join(e['sources']))
+        for e in worths)
 
 
 def load_transfers(transfers, competitions, teams, bios):

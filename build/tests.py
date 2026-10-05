@@ -5,7 +5,7 @@ import pytest
 
 from bios.models import Bio
 from build import load
-from money.models import ExpansionFee, Operator, Rule, Sale, Salary, Sponsorship, Transfer, Valuation
+from money.models import ExpansionFee, NetWorth, Operator, Rule, Sale, Salary, Sponsorship, Transfer, Valuation
 from teams.models import Team
 
 
@@ -36,7 +36,7 @@ def salary(**kw):
 
 @pytest.fixture
 def mongo(monkeypatch):
-    def use(salaries, bios=(), sponsorships=(), valuations=(), operators=(), sales=(), fees=(), transfers=(), rules=()):
+    def use(salaries, bios=(), sponsorships=(), valuations=(), operators=(), sales=(), fees=(), transfers=(), rules=(), worths=()):
         db = FakeDB(
             salaries=salaries,
             sponsorships=list(sponsorships),
@@ -46,6 +46,7 @@ def mongo(monkeypatch):
             expansion_fees=list(fees),
             transfers=list(transfers),
             rules=list(rules),
+            net_worths=list(worths),
             bios=list(bios),
             competitions=[{'name': 'Major League Soccer', 'abbreviation': 'MLS'}],
         )
@@ -200,3 +201,14 @@ def test_loads_rules_leaving_unpublished_figures_empty(mongo):
 
     r = Rule.objects.get()
     assert (r.season, r.salary_budget, r.maximum_charge, r.senior_minimum) == (2017, 3845000, 480625, None)
+
+
+@pytest.mark.django_db
+def test_loads_owners_net_worths_with_their_clubs(mongo):
+    mongo([salary()], worths=[{'club': 'Atlanta United', 'owner': 'Arthur Blank', 'year': 2024,
+                               'net_worth': 9200000000, 'publisher': 'Forbes', 'note': '',
+                               'competition': 'Major League Soccer', 'sources': ['https://a.example']}])
+    load.load()
+
+    w = NetWorth.objects.select_related('team').get()
+    assert (w.team.slug, w.owner, w.year, w.net_worth) == ('atlanta-united', 'Arthur Blank', 2024, 9200000000)

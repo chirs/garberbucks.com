@@ -9,7 +9,7 @@ from django.urls import reverse
 
 from bios.models import Bio
 from competitions.models import Competition
-from money.models import PAY, ExpansionFee, Operator, Rule, Sale, Salary, Sponsorship, Transfer, Valuation
+from money.models import PAY, ExpansionFee, NetWorth, Operator, Rule, Sale, Salary, Sponsorship, Transfer, Valuation
 from money.templatetags.money_tags import fee
 from teams.models import Team
 
@@ -188,10 +188,14 @@ def clubs_index(request):
                 biggest[team_id] = t
 
     positions = budget_positions(teams)
+    worths = {}
+    for w in NetWorth.objects.filter(team__in=teams).order_by('year', 'net_worth'):
+        worths[w.team_id] = w    # the latest year, and within it the richest owner
     rows = [{'team': team, 'payroll': payrolls[team.id],
              'position': next((p for p in positions.get(team.id, []) if p['season'] == season), None),
              'value': values.get(team.id, (0, None))[1],
              'owner': owners.get(team.id, (0, None))[1],
+             'worth': worths.get(team.id),
              'stadium': stadiums.get(team.id, (0, None))[1],
              'transfer': biggest.get(team.id)} for team in teams]
 
@@ -255,6 +259,7 @@ def team_detail(request, slug):
         'team': team,
         'seasons': season_summaries(Salary.objects.filter(team=team)),
         'budget': budget_positions([team]).get(team.id, []),
+        'worths': net_worth_grid(list(NetWorth.objects.filter(team=team).select_related('team'))),
         'sponsorships': list(Sponsorship.objects.filter(team=team).exclude(kind__in=Sponsorship.TV)
                              .order_by('kind', 'start')),
         'tv_deals': list(Sponsorship.objects.filter(team=team, kind__in=Sponsorship.TV).order_by('start')),
@@ -642,12 +647,35 @@ def ownership_by_competition(fees, sales, operators):
     return sorted(leagues.values(), key=latest, reverse=True)
 
 
+def net_worth_grid(worths):
+    """
+    One row per owner and club, a column per year: (years, rows), richest by
+    their latest figure first.
+    """
+    years = sorted({w.year for w in worths})
+    owners = {}
+    for w in worths:
+        row = owners.setdefault((w.owner, w.team_id), {'owner': w.owner, 'team': w.team, 'note': w.note,
+                                                      'by_year': {}, 'sources': []})
+        row['by_year'][w.year] = w.net_worth
+        row['sources'] += [s for s in w.source_list() if s not in row['sources']]
+    rows = list(owners.values())
+    for row in rows:
+        row['values'] = [row['by_year'].get(y) for y in years]
+        row['latest'] = row['by_year'][max(row['by_year'])]
+    rows.sort(key=lambda r: -r['latest'])
+    return years, rows
+
+
 def ownership_index(request):
     """
     What clubs have paid to join each league, what they have sold for, and who
     has run each of them.
     """
+    years, worths = net_worth_grid(list(NetWorth.objects.select_related('team')))
     context = {
+        'worth_years': years,
+        'worths': worths,
         'leagues': ownership_by_competition(
             ExpansionFee.objects.select_related('team', 'competition'),
             Sale.objects.select_related('team', 'competition'),

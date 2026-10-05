@@ -6,9 +6,9 @@ from bios.models import Bio
 from competitions.models import Competition
 from money.coverage import season_ranges
 from money.views import SQUAD as SQUAD_SIZE
-from money.models import ExpansionFee, Operator, Rule, Sale, Salary, Sponsorship, Transfer, Valuation
+from money.models import ExpansionFee, NetWorth, Operator, Rule, Sale, Salary, Sponsorship, Transfer, Valuation
 from money.templatetags.charts import compact, latest_run, log_ticks, payroll_chart, value_chart
-from money.templatetags.money_tags import dollars, fee, millions
+from money.templatetags.money_tags import billions, dollars, fee, millions
 from teams.models import Team
 
 GAP = '&mdash;'
@@ -950,3 +950,36 @@ def test_clubs_page_gives_each_club_its_multiple_of_the_budget(client, mls, gala
     table = client.get('/clubs/').content.decode().split('<tbody>')[1]
 
     assert '1.0&times;' in table and '<td class="num">11</td>' in table
+
+
+
+def test_billions():
+    assert billions(9200000000) == '$9.2B'
+    assert billions(11000000000) == '$11B'
+    assert billions(600000000) == '$0.6B'
+
+
+def worth(team, competition, owner, year, value):
+    return NetWorth.objects.create(team=team, competition=competition, owner=owner, year=year,
+                                   net_worth=value, publisher='Forbes', sources='https://forbes.example/%d' % year)
+
+
+def test_ownership_page_grids_owners_net_worths_richest_first(client, mls, galaxy, atlanta):
+    worth(atlanta, mls, 'Arthur Blank', 2023, 7400000000)
+    worth(atlanta, mls, 'Arthur Blank', 2024, 9200000000)
+    worth(galaxy, mls, 'Philip Anschutz', 2024, 15000000000)
+
+    html = client.get('/ownership/').content.decode()
+    grid = html.split("<h2>Owners' net worths</h2>")[1]
+
+    assert grid.index('Philip Anschutz') < grid.index('Arthur Blank')
+    assert '$7.4B' in grid and '$9.2B' in grid and '$15B' in grid
+    assert 'title="not on that year&#x27;s list"' in grid or "title=\"not on that year's list\"" in grid
+
+
+def test_club_pages_show_their_owners_worth(client, mls, atlanta, galaxy):
+    worth(atlanta, mls, 'Arthur Blank', 2024, 9200000000)
+    pay('Someone', mls, '2026', 100000, None, atlanta)
+
+    assert "<h4>Owner's net worth</h4>" in client.get('/teams/atlanta-united/').content.decode()
+    assert "Owner's net worth" not in client.get('/teams/la-galaxy/').content.decode()

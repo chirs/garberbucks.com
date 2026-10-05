@@ -67,7 +67,7 @@ more than the maximum budget charge: its Designated Players and those bought dow
 <a href="{% url 'transfers_index' %}">Every transfer on record</a>.</p>
 {% endif %}
 
-{% if valuations or ownership %}
+{% if valuations or ownership or worths.1 %}
 <h2>Value &amp; ownership</h2>
 
 {% if valuations %}
@@ -115,7 +115,7 @@ operating income are for the season before the list; Sportico includes the team'
 related businesses. <a href="{% url 'valuations_index' %}">Every club's valuations</a>.</p>
 {% endif %}
 
-{% if ownership %}
+{% if ownership or worths.1 %}
 <h3>Ownership</h3>
 
 {% for league in ownership %}
@@ -135,6 +135,11 @@ Note: {{ fee.note }}.{% endif %}</p>
 {% include "money/_sales.html" with sales=league.sales club=False %}
 {% endif %}
 {% endfor %}
+
+{% if worths.1 %}
+<h4>Owner's net worth</h4>
+{% include "money/_net_worths.html" with years=worths.0 rows=worths.1 club=False %}
+{% endif %}
 
 <p class="table-legend"><a href="{% url 'ownership_index' %}">Every club's ownership, sales and
 expansion fees</a>.</p>
