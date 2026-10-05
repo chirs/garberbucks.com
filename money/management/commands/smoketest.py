@@ -50,7 +50,10 @@ class Command(BaseCommand):
             urls.append(aeg.get_absolute_url())
 
         # Every season page: the columns on record differ from season to season.
-        seasons = Salary.objects.values_list('competition__slug', 'season').distinct()
+        seasons = Salary.objects.filter(coverage='full').values_list('competition__slug', 'season').distinct()
+        # A league with only reported salaries has its page, but no season pages.
+        urls += [reverse('competition_detail', args=[slug]) for slug in
+                 Salary.objects.filter(coverage='reported').values_list('competition__slug', flat=True).distinct()]
         urls += [reverse('season_detail', args=season) for season in seasons]
         urls += [reverse('competition_detail', args=[slug]) for slug in {slug for slug, _ in seasons}]
 
