@@ -33,7 +33,6 @@ Open work only; completed items are removed as they land (see git history).
 - [ ] Player and team indexes, and search.
 - [ ] A player's age each season; dollars per minute and per goal once season
   stats are loaded.
-- [ ] Adjust for inflation, and show each salary against that season's cap.
 - [ ] A favicon. The header silhouette is a blob at 16px, so it needs its own
   mark.
 
@@ -86,3 +85,7 @@ Open work only; completed items are removed as they land (see git history).
   Sportico's 2023, if it exists. Forbes 2008 and 2019 come from write-ups of the
   lists, not Forbes's own pages; replace them if the tables turn up.
 - [ ] Other leagues: Liga MX, NASL, ASL, ALPF, then the big European five.
+
+## Deferred
+
+- Inflation adjustment: ruled out; every figure stays in dollars of the day.
