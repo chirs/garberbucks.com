@@ -7,14 +7,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="{% block metadescription %}What American soccer players are paid{% endblock %}">
 
-  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=8" media="screen">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=9" media="screen">
 </head>
 
 <body>
 
   <header id="site-header">
     <div class="header-inner">
-      <a href="{% url 'index' %}" id="maintitle">Garberbucks</a>
+      <a href="{% url 'index' %}" id="maintitle">{% include "garber.svg" %}Garberbucks</a>
       <nav id="nav">
         <a href="{% url 'index' %}">salaries</a>
         <a href="{% url 'competition_detail' 'major-league-soccer' %}" title="Major League Soccer">MLS</a>
@@ -35,6 +35,8 @@
       <span>Salaries on record:
         {% for competition, seasons in coverage %}{{ competition }} {{ seasons }}{% if not forloop.last %}; {% endif %}{% empty %}none yet{% endfor %}.
         Everything else about these players and teams is at <a href="https://soccerstats.us">soccerstats.us</a>.</span>
+      <span>Silhouette after a <a href="https://commons.wikimedia.org/wiki/File:WES_groundbreaking_-_Don_Garber_(46375678381).jpg">photo</a>
+        by Hayden Schiff, <a href="https://creativecommons.org/licenses/by/2.0/">CC BY 2.0</a>.</span>
     </div>
   </footer>
 

@@ -273,7 +273,7 @@ def test_league_page_charts_payroll_and_averages_it_by_club(client, mls, galaxy)
 
     html = client.get('/c/major-league-soccer/').content.decode()
 
-    assert '<svg' in html
+    assert '<figure class="chart"' in html
     assert 'League payroll' in html
     assert 'Average club' in html and 'Median club' in html
     assert '$4,400,000' in html      # the league: 11 x 300k + 11 x 100k
@@ -290,7 +290,7 @@ def test_a_club_without_a_squad_is_left_out_of_the_average(client, mls, galaxy):
 
     assert '$8,267,500' in html      # he counts toward the league
     assert '$1,100,000' in html      # the average is the Galaxy alone
-    assert '<svg' not in html        # one season is not a chart
+    assert '<figure class="chart"' not in html  # one season is not a chart
 
 
 def test_league_page_marks_a_season_with_no_clubs(client, mls):
@@ -446,7 +446,7 @@ def test_valuations_page_tables_each_publisher(client, mls, galaxy):
     assert '$320M' in html and '$1,170M' in html
     assert '$282M' in html                       # the 2018 Forbes average, 282.5 rounded to even
     assert 'title="not on this list">&mdash;' in html   # the Fire in 2019
-    assert '<svg' in html and 'Forbes, average team' in html
+    assert '<figure class="chart"' in html and 'Forbes, average team' in html
     assert '3 published' in html
 
 
@@ -461,7 +461,7 @@ def test_team_page_lists_its_valuations(client, mls, galaxy):
     assert '$320,000,000' in html and '$63,000,000' in html
     assert 'title="not given">&mdash;' in html
     assert 'href="https://a.example">1</a>' in html
-    assert '<svg' in html
+    assert '<figure class="chart"' in html
 
 
 @pytest.fixture

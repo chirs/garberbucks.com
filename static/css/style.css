@@ -86,7 +86,12 @@ h3 { font-size: 0.95em; color: var(--ink-soft); }
     font-weight: 700;
     letter-spacing: -0.5px;
     color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
+
+#maintitle .logo { height: 34px; width: auto; }
 
 #maintitle:hover { text-decoration: none; color: var(--accent-dark); }
 

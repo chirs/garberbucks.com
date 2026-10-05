@@ -34,6 +34,8 @@ Open work only; completed items are removed as they land (see git history).
 - [ ] A player's age each season; dollars per minute and per goal once season
   stats are loaded.
 - [ ] Adjust for inflation, and show each salary against that season's cap.
+- [ ] A favicon. The header silhouette is a blob at 16px, so it needs its own
+  mark.
 
 ## Transfers
 
