@@ -26,6 +26,8 @@ def season_summaries(salaries):
     clubs, what they were paid in all and on average, and who was paid most.
     """
     fields = ('competition_id', 'season', 'period')
+    # A season of reported salaries is a handful of stars, not a record to add up.
+    salaries = salaries.filter(coverage='full')
 
     seasons = list(salaries.values(*fields, 'competition__name', 'competition__slug')
                    .annotate(players=Count('id'), total=Sum(PAY))
@@ -139,6 +141,8 @@ def league_hub(request, competition):
         'league_sponsors': list(Sponsorship.objects.filter(competition=competition, kind=Sponsorship.LEAGUE)
                                 .order_by('start')),
         'has_rules': bool(budgets),
+        'reported': list(Salary.objects.filter(competition=competition, coverage='reported')
+                         .annotate(pay=PAY).select_related('person', 'team', 'competition').order_by('season', '-pay')),
         })
     return render(request, "money/hub.html", context)
 
@@ -279,7 +283,7 @@ def season_detail(request, competition_slug, season):
     """
     competition = get_object_or_404(Competition, slug=competition_slug)
 
-    in_season = Salary.objects.filter(competition=competition, season=season)
+    in_season = Salary.objects.filter(competition=competition, season=season, coverage='full')
     salaries = list(in_season.annotate(pay=PAY).select_related('person', 'team')
                     .order_by('-pay', 'person__name'))
     if not salaries:

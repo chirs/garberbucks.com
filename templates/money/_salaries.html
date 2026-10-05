@@ -20,7 +20,7 @@
 {% for salary in salaries %}
 <tr>
   {% if by == 'season' %}
-  <td><a href="{% url 'season_detail' salary.competition.slug salary.season %}">{{ salary.season }}</a></td>
+  <td>{% if salary.coverage == 'reported' %}<a href="{{ salary.competition.get_absolute_url }}" title="reported in the press">{{ salary.season }}</a>{% else %}<a href="{% url 'season_detail' salary.competition.slug salary.season %}">{{ salary.season }}</a>{% endif %}</td>
   {% else %}
   <td><a href="{{ salary.person.get_absolute_url }}">{{ salary.person.name }}</a></td>
   {% endif %}

@@ -1092,3 +1092,21 @@ def test_americans_filter_ranks_fees_by_nationality_on_record(client, mls, atlan
     assert 'Josh Sargent' not in table and 'Miguel Almiron' not in table
     assert 'nationality=usa" aria-current="page">Americans</a>' in html or '>Americans</a>' in html
     assert '<h2>2014</h2>' not in html
+
+
+
+def test_reported_salaries_stay_out_of_totals_and_list_on_the_league_page(client, db):
+    nasl = Competition.objects.create(name='North American Soccer League', slug='north-american-soccer-league', abbreviation='NASL')
+    cosmos = Team.objects.create(name='New York Cosmos', slug='new-york-cosmos')
+    pele = Bio.objects.create(name='Pelé', slug='pele')
+    Salary.objects.create(person=pele, competition=nasl, season='1975', base=1670000, team=cosmos,
+                          coverage='reported', source='https://cnn.example')
+
+    hub = client.get('/c/north-american-soccer-league/').content.decode()
+    player = client.get('/bios/pele/').content.decode()
+
+    assert '<h2>Reported salaries</h2>' in hub and '$1,670,000' in hub and 'href="https://cnn.example"' in hub
+    assert 'NASL' not in client.get('/pay/').content.decode().split('<footer')[1]   # not counted as coverage
+    assert 'NASL' not in client.get('/pay/').content.decode().split('<tbody>')[1].split('</tbody>')[0]
+    assert 'title="reported in the press"' in player
+    assert client.get('/c/north-american-soccer-league/1975/').status_code == 404

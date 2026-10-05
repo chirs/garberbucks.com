@@ -112,6 +112,7 @@ def load_salaries(salaries, competitions, teams, bios):
             base=e['base'],
             guaranteed=e['guaranteed'],
             period=e['period'],
+            coverage=e.get('coverage') or 'full',
             source=e['source'] or '',
             )
         for e in salaries)

@@ -25,6 +25,9 @@ class Salary(models.Model):
     base = models.DecimalField(max_digits=15, decimal_places=2)
     guaranteed = models.DecimalField(max_digits=15, decimal_places=2, null=True)
     period = models.CharField(max_length=20, default='year') # year, week
+    # 'full' where the source lists a season's players, 'reported' for a single
+    # salary the press reported, which says nothing about anyone else's.
+    coverage = models.CharField(max_length=10, default='full')
 
     source = models.CharField(max_length=500, blank=True)
 

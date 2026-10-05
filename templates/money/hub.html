@@ -30,6 +30,37 @@ Everything about its games and players is at <a href="{{ competition.soccerstats
 <a href="{% url 'rules_index' %}">roster rules, season by season</a>.</p>{% endif %}
 {% endif %}
 
+{% if reported %}
+<h2>Reported salaries</h2>
+
+<p class="prose">{{ competition.name }} published no salary list, so what is known is what the
+press reported of single players, mostly its stars. These are those reports, each with its source;
+they say nothing about what anyone else was paid, so they are not added up.</p>
+
+<table>
+<thead>
+  <tr>
+    <th scope="col">season</th>
+    <th scope="col">player</th>
+    <th scope="col">club</th>
+    <th scope="col" class="num">a year</th>
+    <th scope="col">source</th>
+  </tr>
+</thead>
+<tbody>
+{% for s in reported %}
+<tr>
+  <td>{{ s.season }}</td>
+  <td><a href="{{ s.person.get_absolute_url }}">{{ s.person.name }}</a></td>
+  {% if s.team %}<td><a href="{{ s.team.get_absolute_url }}">{{ s.team.name }}</a></td>{% else %}{% include "gap.html" %}{% endif %}
+  <td class="num">{{ s.pay|dollars }}</td>
+  <td>{% if s.source %}<a href="{{ s.source }}">1</a>{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% endif %}
+
 {% if recent_transfers %}
 <h2><a href="{% url 'transfers_index' %}">Transfers</a></h2>
 
