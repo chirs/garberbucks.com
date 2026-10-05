@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load charts money_tags %}
+
+{% block title %}Stadiums{% endblock %}
+{% block metadescription %}What MLS clubs' stadiums cost to build, and how much public money went into them{% endblock %}
+
+{% block content %}
+
+<h1>Stadiums</h1>
+
+{% include "money/_subnav.html" with group='value' here='stadiums_index' %}
+
+<p class="prose">What it cost to build or rebuild each MLS club's own stadium, in dollars of the
+day, from Columbus's in 1999, the league's first built for soccer. Together they cost
+{{ total|billions }} in dollars. Public money is recorded only where a report states it, for
+{{ with_public }} of them so far: {{ public_total|fee }} of their {{ public_of|fee }}. A blank is a
+figure not yet found, not a stadium built without public money; land, roads and tax breaks are
+often public even where the building is not. Stadiums a club shares with an NFL, MLB or college
+team are left out, since their cost was not the club's.</p>
+
+{% value_chart None marks "Stadium costs by the year they opened, one mark per stadium in dollars" 1996 names %}
+
+{% include "money/_stadiums.html" with club=True %}
+
+<p class="table-legend">Cost is the reported construction cost; Toronto's and Montreal's are in
+Canadian dollars and are left off the chart. The stadium is named as it is now; the note gives the
+name it opened under. Sources are numbered links to the reports.</p>
+
+{% endblock %}

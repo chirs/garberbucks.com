@@ -1,0 +1,31 @@
+{% load money_tags %}
+{# One row per stadium built or rebuilt. club=False leaves out the club, on a club's own page. #}
+<table class="wide">
+<thead>
+  <tr>
+    <th scope="col">opened</th>
+    {% if club %}<th scope="col">club</th>{% endif %}
+    <th scope="col">stadium</th>
+    <th scope="col">kind</th>
+    <th scope="col" class="num">cost</th>
+    <th scope="col" class="num">public money</th>
+    <th scope="col" class="num">public share</th>
+    <th scope="col">note</th>
+    <th scope="col">sources</th>
+  </tr>
+</thead>
+<tbody>
+{% for s in stadiums %}
+<tr>
+  <td>{{ s.opened }}</td>
+  {% if club %}<td><a href="{{ s.team.get_absolute_url }}">{{ s.team.name }}</a></td>{% endif %}
+  <td>{{ s.stadium }}</td>
+  <td>{{ s.kind }}</td>
+  {% if s.cost is not None %}<td class="num">{{ s.cost|fee:s.currency }}</td>{% else %}{% include "gap.html" with num=True title="not reported" %}{% endif %}
+  {% if s.public is not None %}<td class="num">{{ s.public|fee:s.currency }}</td><td class="num">{% widthratio s.public s.cost 100 %}%</td>{% else %}{% include "gap.html" with num=True title="none on record" %}{% include "gap.html" with num=True title="none on record" %}{% endif %}
+  <td class="note">{{ s.note }}</td>
+  <td>{% for url in s.source_list %}<a href="{{ url }}">{{ forloop.counter }}</a>{% if not forloop.last %} {% endif %}{% endfor %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>

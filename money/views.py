@@ -9,7 +9,7 @@ from django.urls import reverse
 
 from bios.models import Bio
 from competitions.models import Competition
-from money.models import PAY, ExpansionFee, NetWorth, Operator, Owner, Rule, Sale, Salary, Sponsorship, Transfer, Valuation
+from money.models import PAY, ExpansionFee, NetWorth, Operator, Owner, Rule, StadiumCost, Sale, Salary, Sponsorship, Transfer, Valuation
 from money.templatetags.money_tags import fee
 from teams.models import Team
 
@@ -378,6 +378,7 @@ def team_detail(request, slug):
         'seasons': season_summaries(Salary.objects.filter(team=team)),
         'budget': budget_positions([team]).get(team.id, []),
         'worths': net_worth_grid(list(NetWorth.objects.filter(team=team).select_related('team', 'club_owner'))),
+        'stadiums': list(StadiumCost.objects.filter(team=team)),
         'sponsorships': list(Sponsorship.objects.filter(team=team).exclude(kind__in=Sponsorship.TV)
                              .order_by('kind', 'start')),
         'tv_deals': list(Sponsorship.objects.filter(team=team, kind__in=Sponsorship.TV).order_by('start')),
@@ -825,6 +826,40 @@ def owner_detail(request, slug):
         'crumbs': [(reverse('ownership_index'), 'Ownership')],
         }
     return render(request, "money/owner.html", context)
+
+
+# Mark styles for the stadium chart: built blue, rebuilt orange, the public money grey.
+STADIUM_MARKS = {StadiumCost.BUILT: 'fee', StadiumCost.REBUILT: 'sale'}
+STADIUM_NAMES = {'fee': 'Built', 'sale': 'Rebuilt', 'club': 'Public money in it'}
+
+
+def stadiums_index(request):
+    """
+    What MLS clubs' stadiums cost to build, by the year they opened, and the
+    public money reports say went into them.
+    """
+    stadiums = list(StadiumCost.objects.select_related('team', 'competition'))
+    dollars = [s for s in stadiums if s.currency == 'USD' and s.cost]
+    marks = []
+    for s in dollars:
+        marks.append({'year': s.opened, 'value': s.cost, 'kind': STADIUM_MARKS[s.kind],
+                      'href': s.team.get_absolute_url(),
+                      'title': '%s: %s (%s), %s %s' % (s.opened, s.stadium, s.team.name, s.kind, fee(s.cost))})
+        if s.public:
+            marks.append({'year': s.opened, 'value': s.public, 'kind': 'club', 'href': s.team.get_absolute_url(),
+                          'title': '%s: %s, %s of public money' % (s.opened, s.stadium, fee(s.public))})
+    known = [s for s in dollars if s.public is not None]
+    context = {
+        'stadiums': stadiums,
+        'marks': marks,
+        'names': STADIUM_NAMES,
+        'total': sum(s.cost for s in dollars),
+        'with_public': len(known),
+        'public_total': sum(s.public for s in known),
+        'public_of': sum(s.cost for s in known),
+        'section': 'value',
+        }
+    return render(request, "money/stadiums.html", context)
 
 
 def ownership_index(request):

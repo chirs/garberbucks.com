@@ -67,7 +67,7 @@ more than the maximum budget charge: its Designated Players and those bought dow
 <a href="{% url 'transfers_index' %}">Every transfer on record</a>.</p>
 {% endif %}
 
-{% if valuations or ownership or worths.1 %}
+{% if valuations or ownership or worths.1 or stadiums %}
 <h2>Value &amp; ownership</h2>
 
 {% if valuations %}
@@ -113,6 +113,13 @@ more than the maximum budget charge: its Designated Players and those bought dow
 <p class="table-legend">Estimates, not sale prices. Forbes values the team alone, its revenue and
 operating income are for the season before the list; Sportico includes the team's real estate and
 related businesses. <a href="{% url 'valuations_index' %}">Every club's valuations</a>.</p>
+{% endif %}
+
+{% if stadiums %}
+<h3>Stadium</h3>
+{% include "money/_stadiums.html" with club=False %}
+<p class="table-legend">Cost as reported; public money only where a report states it.
+<a href="{% url 'stadiums_index' %}">Every club's stadium</a>.</p>
 {% endif %}
 
 {% if ownership or worths.1 %}

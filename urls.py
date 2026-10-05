@@ -11,6 +11,7 @@ urlpatterns = [
     path('sponsorships/', views.sponsorships_index, name='sponsorships_index'),
     path('valuations/', views.valuations_index, name='valuations_index'),
     path('ownership/', views.ownership_index, name='ownership_index'),
+    path('stadiums/', views.stadiums_index, name='stadiums_index'),
     path('tv/', views.tv_index, name='tv_index'),
     path('transfers/', views.transfers_index, name='transfers_index'),
     path('c/<slug:competition_slug>/', views.competition_detail, name='competition_detail'),

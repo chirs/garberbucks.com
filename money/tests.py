@@ -6,7 +6,7 @@ from bios.models import Bio
 from competitions.models import Competition
 from money.coverage import season_ranges
 from money.views import PARTIAL_LIST, SQUAD as SQUAD_SIZE
-from money.models import ExpansionFee, NetWorth, Operator, Owner, Rule, Sale, Salary, Sponsorship, Transfer, Valuation
+from money.models import ExpansionFee, NetWorth, Operator, Owner, Rule, StadiumCost, Sale, Salary, Sponsorship, Transfer, Valuation
 from money.templatetags.charts import compact, latest_run, log_ticks, payroll_chart, value_chart
 from money.templatetags.money_tags import billions, dollars, fee, millions
 from teams.models import Team
@@ -1170,3 +1170,29 @@ def test_the_minimum_count_allows_for_annualized_cents(client, mls, galaxy):
     section = client.get('/pay/').content.decode().split('<h2>The minimum salary</h2>')[1]
 
     assert '9 of 18' in section
+
+
+
+def test_stadiums_page_charts_cost_and_public_money(client, mls, galaxy, atlanta):
+    StadiumCost.objects.create(team=galaxy, competition=mls, stadium='Home Depot Center', opened=2003, kind='built',
+                               cost=150000000, sources='https://a.example')
+    StadiumCost.objects.create(team=atlanta, competition=mls, stadium='Subaru Park', opened=2010, kind='built',
+                               cost=120000000, public=77000000)
+    StadiumCost.objects.create(team=atlanta, competition=mls, stadium='BMO Field', opened=2007, kind='built',
+                               cost=62900000, currency='CAD')
+
+    html = client.get('/stadiums/').content.decode()
+    chart = html.split('<figure')[1].split('</figure>')[0]
+
+    prose = ' '.join(html.split())
+    assert 'Together they cost $0.3B' in prose and '$77M of their $120M' in prose
+    assert chart.count('class="mark-fee"') == 3 and chart.count('class="mark-club"') == 2   # legend adds one each
+    assert '64%' in html and 'C$62.9M' in html
+    assert 'title="none on record">&mdash;</td>' in html
+    assert 'aria-current="page">Stadiums</a>' in html
+
+
+def test_a_club_page_shows_its_stadium(client, mls, galaxy):
+    StadiumCost.objects.create(team=galaxy, competition=mls, stadium='Home Depot Center', opened=2003, kind='built',
+                               cost=150000000)
+    assert '<h3>Stadium</h3>' in client.get('/teams/la-galaxy/').content.decode()

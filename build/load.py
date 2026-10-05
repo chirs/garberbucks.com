@@ -7,7 +7,7 @@ from django.template.defaultfilters import slugify
 
 from bios.models import Bio
 from competitions.models import Competition
-from money.models import ExpansionFee, NetWorth, Operator, Owner, Rule, Salary, Sale, Sponsorship, Transfer, Valuation
+from money.models import ExpansionFee, NetWorth, Operator, Owner, StadiumCost, Rule, Salary, Sale, Sponsorship, Transfer, Valuation
 from teams.models import Team
 
 # Which end of a move is a club in the league: those get team pages, the
@@ -34,12 +34,13 @@ def load():
     ownership = operators + sales + fees + worths
     transfers = list(soccer_db.transfers.find())
     rules = list(soccer_db.rules.find())
+    stadiums = list(soccer_db.stadium_costs.find())
 
-    competitions = load_competitions({e['competition'] for e in salaries + sponsorships + valuations + ownership + transfers + rules})
+    competitions = load_competitions({e['competition'] for e in salaries + sponsorships + valuations + ownership + transfers + rules + stadiums})
     teams = load_teams({e['team'] for e in salaries if e['team']} |
                        {e['club'] for e in sponsorships if e['club']} |
                        {e['team'] for e in valuations} |
-                       {e['club'] for e in ownership} |
+                       {e['club'] for e in ownership + stadiums} |
                        {e[k] for e in transfers for k in LEAGUE_SIDE[e['direction']]})
     bios = load_bios({e['name'] for e in salaries + transfers})
 
@@ -50,6 +51,7 @@ def load():
     load_net_worths(worths, competitions, teams, operators)
     load_transfers(transfers, competitions, teams, bios)
     load_rules(rules, competitions)
+    load_stadiums(stadiums, competitions, teams)
 
 
 def load_competitions(names):
@@ -253,3 +255,14 @@ def load_rules(rules, competitions):
             **{k: e.get(k) for k in RULE_FIELDS},
             )
         for e in rules)
+
+
+def load_stadiums(stadiums, competitions, teams):
+    print("loading {} stadiums".format(len(stadiums)))
+
+    StadiumCost.objects.bulk_create(
+        StadiumCost(team_id=teams[e['club']], competition_id=competitions[e['competition']],
+                    stadium=e['stadium'], opened=e['opened'], kind=e['kind'], cost=e['cost'],
+                    public=e['public'], currency=e['currency'], note=e['note'],
+                    sources='\n'.join(e['sources']))
+        for e in stadiums)

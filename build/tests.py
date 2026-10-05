@@ -36,7 +36,7 @@ def salary(**kw):
 
 @pytest.fixture
 def mongo(monkeypatch):
-    def use(salaries, bios=(), sponsorships=(), valuations=(), operators=(), sales=(), fees=(), transfers=(), rules=(), worths=()):
+    def use(salaries, bios=(), sponsorships=(), valuations=(), operators=(), sales=(), fees=(), transfers=(), rules=(), worths=(), stadiums=()):
         db = FakeDB(
             salaries=salaries,
             sponsorships=list(sponsorships),
@@ -47,6 +47,7 @@ def mongo(monkeypatch):
             transfers=list(transfers),
             rules=list(rules),
             net_worths=list(worths),
+            stadium_costs=list(stadiums),
             bios=list(bios),
             competitions=[{'name': 'Major League Soccer', 'abbreviation': 'MLS'}],
         )

@@ -298,3 +298,31 @@ class NetWorth(Sourced):
 
     def __str__(self):
         return "%s %s: %s" % (self.owner, self.year, self.net_worth)
+
+
+class StadiumCost(Sourced):
+    """
+    A stadium built or rebuilt for a club, at its reported construction cost,
+    with the public money a report states went into it. None is not zero.
+    """
+
+    BUILT = 'built'
+    REBUILT = 'rebuilt'
+
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE)
+    stadium = models.CharField(max_length=200)
+    opened = models.IntegerField()
+    kind = models.CharField(max_length=10)
+    cost = models.BigIntegerField(null=True)
+    public = models.BigIntegerField(null=True)
+    currency = models.CharField(max_length=3, default='USD')
+
+    class Meta:
+        ordering = ('opened', 'stadium')
+
+    def __str__(self):
+        return "%s (%s)" % (self.stadium, self.opened)
+
+    def public_share(self):
+        return self.public / self.cost if self.public is not None and self.cost else None
