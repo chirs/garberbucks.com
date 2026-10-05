@@ -8,9 +8,48 @@
 
 <h1>Clubs</h1>
 
-<p class="prose">Every club in MLS's {{ season }} season side by side: what it pays its players,
-what it was last valued at, who runs it, the name on its stadium and the biggest transfer fee it has
-paid or received. Each club's page has the history behind every figure.</p>
+<p class="prose">Every MLS club side by side: what it pays, what it is worth, what it spends and
+takes in on transfers, and what its shirt and stadium sponsors pay; then who runs it. Each club's page
+has the history behind every figure.</p>
+
+<h2>The money, {{ grid_season }}</h2>
+
+<nav class="filters" aria-label="Season">
+  {% for y in grid_seasons %}<a href="?season={{ y }}{% if grid.sort != 'payroll' %}&amp;sort={{ grid.sort }}{% endif %}"{% if y|stringformat:"d" == grid_season|stringformat:"s" %} aria-current="page"{% endif %}>{{ y }}</a>{% endfor %}
+</nav>
+
+<table class="wide grid">
+<thead>
+  <tr>
+    <th scope="col">club</th>
+    {% for c in grid.columns %}<th scope="col" class="num" title="{{ c.title }}"><a href="?season={{ grid_season }}&amp;sort={{ c.key }}"{% if c.current %} aria-current="true"{% endif %}>{{ c.heading }}</a></th>{% endfor %}
+  </tr>
+</thead>
+<tbody>
+{% for row in grid.rows %}
+<tr>
+  <td><a href="{% url 'team_season_detail' row.team.slug grid_season %}">{{ row.team.name }}</a></td>
+  {% for value, title in row.cells %}{% if value is not None %}<td class="num"{% if title %} title="{{ title }}"{% endif %}>{{ value|millions }}</td>{% else %}{% include "gap.html" with num=True title="none on record" %}{% endif %}{% endfor %}
+</tr>
+{% endfor %}
+</tbody>
+<tfoot>
+  <tr>
+    <th scope="row">all {{ grid.rows|length }} clubs</th>
+    {% for total in grid.totals %}{% if total is not None %}<td class="num">{{ total|millions }}</td>{% else %}{% include "gap.html" with num=True title="none on record" %}{% endif %}{% endfor %}
+  </tr>
+</tfoot>
+</table>
+
+<p class="table-legend">Every MLS club in {{ grid_season }}, in millions of dollars of the day. Click a
+heading to sort by it. Payroll is guaranteed pay. Value is that season's published estimate, Forbes's
+where Forbes and Sportico both published; a season with no list is blank. Transfers count cash fees in
+dollars only, not allocation money, and net is received less paid. The shirt and stadium deals are the
+yearly figures of the deals in force, reported or worked out from a total; hover one for the sponsor.
+Totals add only what is on record, and the record is thin: transfer fees before 2024 and most
+sponsorship figures are missing, so a gap is not a zero.</p>
+
+<h2>Who runs them, {{ season }}</h2>
 
 <table class="wide">
 <thead>

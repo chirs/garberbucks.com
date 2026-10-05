@@ -157,6 +157,62 @@ def average_lines(valuations):
     return lines
 
 
+# The money grid's columns: (key, heading, title). Each is a dollar figure for
+# the season; a missing one is a gap, and the totals add up only what is known.
+GRID = (
+    ('payroll', 'payroll', 'guaranteed pay of every player on the club\'s list'),
+    ('value', 'value', 'that season\'s published valuation, Forbes where both published'),
+    ('fees_in', 'transfers in', 'cash fees paid for players that season'),
+    ('fees_out', 'transfers out', 'cash fees received for players that season'),
+    ('net', 'net transfers', 'fees received less fees paid'),
+    ('shirt', 'shirt deal', 'the front-of-shirt sponsor\'s yearly figure'),
+    ('stadium', 'stadium deal', 'the naming-rights sponsor\'s yearly figure'),
+)
+
+
+def money_grid(season, sort='payroll'):
+    """
+    Every MLS club in a season, a row each: payroll, valuation, transfer fees
+    in and out, and the yearly shirt and stadium deals. Rows sort by any column,
+    biggest first, missing figures last; the totals add what is on record.
+    """
+    year = int(season)
+    league = Salary.objects.filter(competition__slug=MLS, period='year', season=season).exclude(team=None)
+    squads = dict(league.values_list('team').annotate(n=Count('id')).values_list('team', 'n'))
+    payrolls = dict(league.values_list('team').annotate(total=Sum(PAY)).values_list('team', 'total'))
+    teams = Team.objects.filter(id__in=[t for t, n in squads.items() if n >= SQUAD])
+
+    rows = {t.id: dict({k: None for k, _, _ in GRID}, team=t, payroll=payrolls[t.id], titles={}) for t in teams}
+    for v in Valuation.objects.filter(team__in=teams, season=year).order_by('-publisher'):
+        rows[v.team_id]['value'] = v.value      # Sportico first, so Forbes wins where both published
+        rows[v.team_id]['titles']['value'] = '%s %s' % (v.publisher, year)
+    for t in Transfer.objects.filter(season=year, kind=Transfer.TRANSFER, currency='USD').exclude(fee=None):
+        for team_id, key in ((t.to_team_id, 'fees_in'), (t.from_team_id, 'fees_out')):
+            if team_id in rows:
+                rows[team_id][key] = (rows[team_id][key] or 0) + t.fee
+    for row in rows.values():
+        if row['fees_in'] is not None or row['fees_out'] is not None:
+            row['net'] = (row['fees_out'] or 0) - (row['fees_in'] or 0)
+    for s in Sponsorship.objects.filter(team__in=teams, kind__in=(Sponsorship.SHIRT, Sponsorship.NAMING_RIGHTS),
+                                        start__lte=year).exclude(end__lt=year):
+        figure = s.figure_for(year)
+        key = 'shirt' if s.kind == Sponsorship.SHIRT else 'stadium'
+        if figure:
+            rows[s.team_id][key] = figure
+            rows[s.team_id]['titles'][key] = s.sponsor
+
+    sort = sort if sort in dict((k, h) for k, h, _ in GRID) else 'payroll'
+    ordered = sorted(rows.values(), key=lambda r: (r[sort] is None, -(r[sort] or 0), r['team'].name))
+    totals = {k: sum(r[k] for r in ordered if r[k] is not None) if any(r[k] is not None for r in ordered) else None
+              for k, _, _ in GRID}
+    return {
+        'rows': [dict(r, cells=[(r[k], r['titles'].get(k)) for k, _, _ in GRID]) for r in ordered],
+        'columns': [{'key': k, 'heading': h, 'title': t, 'current': k == sort} for k, h, t in GRID],
+        'totals': [totals[k] for k, _, _ in GRID],
+        'sort': sort,
+    }
+
+
 def clubs_index(request):
     """
     Every club in the league's latest season, one row each: what it pays, what
@@ -199,9 +255,18 @@ def clubs_index(request):
              'stadium': stadiums.get(team.id, (0, None))[1],
              'transfer': biggest.get(team.id)} for team in teams]
 
+    seasons = sorted({int(s) for s in league.values_list('season', flat=True).distinct() if s.isdigit()},
+                     reverse=True)
+    grid_season = request.GET.get('season', season)
+    if not (grid_season and grid_season.isdigit() and int(grid_season) in seasons):
+        grid_season = season
+
     context = {
         'season': season,
         'rows': rows,
+        'grid_season': grid_season,
+        'grid_seasons': seasons,
+        'grid': money_grid(grid_season, request.GET.get('sort', 'payroll')) if grid_season else None,
         'others': Team.objects.exclude(id__in=payrolls).order_by('name'),
         'section': 'clubs',
         }

@@ -827,7 +827,7 @@ def test_clubs_page_sets_each_current_club_side_by_side(client, mls, galaxy, atl
     move('Gabriel Pec', mls, 2024, 'in', 'Vasco da Gama', 'LA Galaxy', to_team=galaxy, fee=9600000)
 
     html = client.get('/clubs/').content.decode()
-    table, others = html.split('<tbody>')[1].split('Other clubs on record')
+    table, others = html.split('Who runs them')[1].split('<tbody>')[1].split('Other clubs on record')
 
     assert 'LA Galaxy' in table and 'Atlanta United' not in table
     assert '$6M' in table and 'title="Forbes 2026">$1,200M' in table
@@ -947,7 +947,7 @@ def test_clubs_page_gives_each_club_its_multiple_of_the_budget(client, mls, gala
         pay('Player %d' % i, mls, '2026', 500000, None, galaxy)
     Rule.objects.create(competition=mls, season=2026, salary_budget=5500000, maximum_charge=400000)
 
-    table = client.get('/clubs/').content.decode().split('<tbody>')[1]
+    table = client.get('/clubs/').content.decode().split('Who runs them')[1].split('<tbody>')[1]
 
     assert '1.0&times;' in table and '<td class="num">11</td>' in table
 
@@ -1037,3 +1037,40 @@ def test_operators_link_to_their_owner(client, mls, galaxy):
 
     for url in ('/ownership/', '/teams/la-galaxy/'):
         assert 'href="/owners/anschutz-entertainment-group/">Anschutz Entertainment Group</a>' in client.get(url).content.decode(), url
+
+
+
+def test_clubs_money_grid_for_a_season(client, mls, galaxy, atlanta):
+    for team, base in ((galaxy, 200000), (atlanta, 100000)):
+        for i in range(SQUAD_SIZE):
+            pay('%s %d' % (team.slug, i), mls, '2025', base, None, team)
+    Valuation.objects.create(team=galaxy, competition=mls, publisher='Sportico', season=2025, rank=1, value=900000000)
+    Valuation.objects.create(team=galaxy, competition=mls, publisher='Forbes', season=2025, rank=1, value=1000000000)
+    move('Gabriel Pec', mls, 2025, 'in', 'Vasco da Gama', 'LA Galaxy', to_team=galaxy, fee=9600000)
+    move('Riqui Puig', mls, 2025, 'out', 'LA Galaxy', 'Barcelona', from_team=galaxy, fee=3000000)
+    deal(mls, galaxy, kind=Sponsorship.SHIRT, sponsor='Herbalife', property='shirt', start=2023, end=2027,
+         annual=None, total=40000000)
+    deal(mls, galaxy, sponsor='Dignity Health', property='Dignity Health Sports Park', start=2019, end=None,
+         annual=6000000, total=None)
+
+    html = client.get('/clubs/?season=2025').content.decode()
+    grid = html.split('<table class="wide grid">')[1].split('</table>')[0]
+    galaxy_row = grid.split('LA Galaxy</a></td>')[1].split('</tr>')[0]
+
+    assert grid.index('LA Galaxy') < grid.index('Atlanta United')          # payroll, biggest first
+    assert '$2.2M' in galaxy_row and 'title="Forbes 2025">$1,000M' in galaxy_row
+    assert '$9.6M' in galaxy_row and '>$3M<' in galaxy_row and '-$6.6M' in galaxy_row
+    assert 'title="Herbalife">$8M' in galaxy_row and 'title="Dignity Health">$6M' in galaxy_row
+    assert 'all 2 clubs' in grid and '$3.3M' in grid.split('<tfoot>')[1]   # $2.2M + $1.1M payroll
+
+
+def test_clubs_money_grid_sorts_by_a_column(client, mls, galaxy, atlanta):
+    for team, base in ((galaxy, 200000), (atlanta, 100000)):
+        for i in range(SQUAD_SIZE):
+            pay('%s %d' % (team.slug, i), mls, '2025', base, None, team)
+    move('Thiago Almada', mls, 2025, 'out', 'Atlanta United', 'Botafogo', from_team=atlanta, fee=21000000)
+
+    grid = client.get('/clubs/?season=2025&sort=fees_out').content.decode().split('<table class="wide grid">')[1]
+
+    assert grid.index('Atlanta United') < grid.index('LA Galaxy')
+    assert 'sort=fees_out" aria-current="true"' in grid
