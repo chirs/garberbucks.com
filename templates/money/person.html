@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load charts %}
 
 {% block title %}{{ bio.name }}{% if salaries %} salary{% else %} transfers{% endif %}{% endblock %}
 {% block metadescription %}What {{ bio.name }} was paid{% if transfers %} and the fees for {{ bio.name }}'s moves{% endif %}{% endblock %}
@@ -13,6 +14,8 @@
 
 {% if salaries %}
 <h2>Salary by season</h2>
+
+{% pay_chart salaries %}
 
 {% include "money/_salaries.html" with by="season" %}
 {% endif %}

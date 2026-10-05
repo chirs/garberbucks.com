@@ -983,3 +983,25 @@ def test_club_pages_show_their_owners_worth(client, mls, atlanta, galaxy):
 
     assert "<h4>Owner's net worth</h4>" in client.get('/teams/atlanta-united/').content.decode()
     assert "Owner's net worth" not in client.get('/teams/la-galaxy/').content.decode()
+
+
+
+def test_a_player_page_charts_pay_by_season_with_gaps(client, mls, galaxy):
+    for season, base, guaranteed in (('2008', 100000, 120000), ('2009', 150000, 160000), ('2011', 300000, None)):
+        pay('Benny Feilhaber', mls, season, base, guaranteed, galaxy)
+
+    html = client.get('/bios/benny-feilhaber/').content.decode()
+    chart = html.split('<figure')[1].split('</figure>')[0]
+
+    assert 'Guaranteed pay' in chart and 'Base salary' in chart
+    assert '2008 guaranteed pay: $120,000' in chart and '2011 base salary: $300,000' in chart
+    assert 'href="/teams/la-galaxy/2009/"' in chart
+    assert 'A gap is a season with no salary on record.' in chart
+    # 2010 is missing, so the base line starts again after it
+    import re
+    base = re.search(r'class="line median" d="([^"]+)"', chart).group(1)
+    assert base.count('M') == 2
+
+
+def test_one_season_is_not_a_chart(client, season_2007):
+    assert '<figure' not in client.get('/bios/david-beckham/').content.decode()

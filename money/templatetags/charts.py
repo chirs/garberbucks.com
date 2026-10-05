@@ -366,3 +366,59 @@ def budget_chart(positions):
         'label': 'Payroll against the salary budget, %s to %s' % (first, last),
         'caption': caption,
     }
+
+
+@register.inclusion_tag("money/_payroll_chart.html")
+def pay_chart(salaries):
+    """
+    One player's pay by season: guaranteed pay and base salary on one scale,
+    every season from the first on record to the last, so a season missing
+    from the record breaks the lines rather than being drawn across. A player
+    listed twice in a season (traded, or at two clubs) is shown at the higher
+    figure.
+    """
+    by_season = {}
+    for s in salaries:
+        if s.period != 'year' or not s.season.isdigit():
+            continue
+        season = int(s.season)
+        row = by_season.setdefault(season, {'base': None, 'guaranteed': None, 'url': None})
+        if row['base'] is None or s.base > row['base']:
+            row['base'] = s.base
+            row['url'] = (reverse('team_season_detail', args=[s.team.slug, s.season]) if s.team
+                          else reverse('season_detail', args=[s.competition.slug, s.season]))
+        if s.guaranteed is not None and (row['guaranteed'] is None or s.guaranteed > row['guaranteed']):
+            row['guaranteed'] = s.guaranteed
+    if len(by_season) < 2:
+        return {}
+
+    first, last = min(by_season), max(by_season)
+    rows = [dict(by_season.get(y, {'base': None, 'guaranteed': None, 'url': None}), season=str(y))
+            for y in range(first, last + 1)]
+    slot = (WIDTH - LEFT - RIGHT) / (len(rows) - 1)
+    xs = [LEFT + i * slot for i in range(len(rows))]
+
+    measures = [('Base salary', 'median', 'base')]
+    if any(r['guaranteed'] is not None for r in rows):
+        measures.insert(0, ('Guaranteed pay', 'average', 'guaranteed'))
+    p = panel('Pay by season', rows, measures, xs, 0)
+    every = max(1, math.ceil(44 / slot))
+    caption = 'Pay in each season on record, in dollars of the day.'
+    if len(measures) > 1:
+        caption += (' Guaranteed pay adds signing and guaranteed bonuses to the base salary, '
+                    'annualized over the contract, as the players\' union reports it.')
+    if len(by_season) < len(rows):
+        caption += ' A gap is a season with no salary on record.'
+    caption += ' Hover or focus a point for its figure.'
+    return {
+        'panels': [p],
+        'labels': [{'x': x, 'text': r['season']} for i, (r, x) in enumerate(zip(rows, xs))
+                   if (len(rows) - 1 - i) % every == 0],
+        'label_y': p['base'] + LABEL_H - 10,
+        'width': WIDTH,
+        'height': p['base'] + LABEL_H,
+        'left': LEFT,
+        'right_edge': WIDTH - RIGHT,
+        'label': 'Pay by season, %s to %s' % (first, last),
+        'caption': caption,
+    }
