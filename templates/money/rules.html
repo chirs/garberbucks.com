@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load money_tags %}
+
+{% block title %}{{ competition.name }} roster rules{% endblock %}
+{% block metadescription %}MLS's salary budget, maximum budget charge, minimum salaries and allocation money, season by season{% endblock %}
+
+{% block content %}
+
+<h1>Roster rules</h1>
+
+<p class="prose">What the rules let an MLS club spend, as the league published them each season.
+The salary budget is the cap: what a club's roster may count against it. No player counts more than
+the maximum budget charge, so a club pays above it only through its Designated Players, who count
+the maximum whatever they earn, or by buying a player's charge down with allocation money, which the
+league hands out each year. The minimums are the least a player on the senior and the reserve roster
+may be paid.</p>
+
+<table class="wide">
+<thead>
+  <tr>
+    <th scope="col">season</th>
+    <th scope="col" class="num">salary budget</th>
+    {% if cols.maximum_charge %}<th scope="col" class="num">maximum charge</th>{% endif %}
+    {% if cols.senior_minimum %}<th scope="col" class="num">senior minimum</th>{% endif %}
+    {% if cols.reserve_minimum %}<th scope="col" class="num">reserve minimum</th>{% endif %}
+    {% if cols.designated_players %}<th scope="col" class="num">DP slots</th>{% endif %}
+    {% if cols.general_allocation %}<th scope="col" class="num">GAM</th>{% endif %}
+    {% if cols.targeted_allocation %}<th scope="col" class="num">TAM</th>{% endif %}
+    {% if cols.roster %}<th scope="col" class="num">roster</th>{% endif %}
+    <th scope="col">sources</th>
+  </tr>
+</thead>
+<tbody>
+{% for r in rules %}
+<tr>
+  <td><a href="{% url 'season_detail' competition.slug r.season %}">{{ r.season }}</a></td>
+  {% include "money/_rule_cell.html" with value=r.salary_budget money=True %}
+  {% if cols.maximum_charge %}{% include "money/_rule_cell.html" with value=r.maximum_charge money=True %}{% endif %}
+  {% if cols.senior_minimum %}{% include "money/_rule_cell.html" with value=r.senior_minimum money=True %}{% endif %}
+  {% if cols.reserve_minimum %}{% include "money/_rule_cell.html" with value=r.reserve_minimum money=True %}{% endif %}
+  {% if cols.designated_players %}{% include "money/_rule_cell.html" with value=r.designated_players %}{% endif %}
+  {% if cols.general_allocation %}{% include "money/_rule_cell.html" with value=r.general_allocation money=True %}{% endif %}
+  {% if cols.targeted_allocation %}{% include "money/_rule_cell.html" with value=r.targeted_allocation money=True %}{% endif %}
+  {% if cols.roster %}{% include "money/_rule_cell.html" with value=r.roster %}{% endif %}
+  <td>{% for url in r.source_list %}<a href="{{ url }}">{{ forloop.counter }}</a>{% if not forloop.last %} {% endif %}{% endfor %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+<p class="table-legend">Figures are per club, as the league's roster rules stated them that season.
+GAM and TAM are General and Targeted Allocation Money, each club's annual allotment; clubs also gain
+and trade allocation money in deals, which this leaves out. DP slots are the Designated Players a
+club may carry. A gap is a figure not found in that season's rules, or a rule that did not yet exist.
+The salary budget is also drawn against club payrolls on the <a href="{% url 'index' %}">league page</a>.</p>
+
+{% endblock %}

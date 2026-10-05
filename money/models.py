@@ -223,3 +223,35 @@ class Transfer(Sourced):
 
     def __str__(self):
         return "%s: %s to %s (%s)" % (self.person, self.from_name, self.to_name, self.season)
+
+
+class Rule(models.Model):
+    """
+    A league's roster rules for a season, as it published them: the salary
+    budget each club may spend, the most one player may count against it, the
+    minimum salaries, and the room beyond it. A figure the league did not
+    publish, or that the rule did not yet exist for, is None.
+    """
+
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE)
+    season = models.IntegerField()
+
+    salary_budget = models.BigIntegerField(null=True)
+    maximum_charge = models.BigIntegerField(null=True)    # the most one non-DP player counts
+    senior_minimum = models.BigIntegerField(null=True)
+    reserve_minimum = models.BigIntegerField(null=True)
+    designated_players = models.IntegerField(null=True)   # slots per club
+    general_allocation = models.BigIntegerField(null=True)   # each club's annual GAM
+    targeted_allocation = models.BigIntegerField(null=True)  # each club's annual TAM
+    roster = models.IntegerField(null=True)               # most players on a roster
+
+    sources = models.TextField(blank=True)
+
+    class Meta:
+        unique_together = ('competition', 'season')
+
+    def __str__(self):
+        return "%s %s rules" % (self.competition, self.season)
+
+    def source_list(self):
+        return self.sources.split()

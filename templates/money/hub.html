@@ -25,6 +25,9 @@ Everything about its games and players is at <a href="{{ competition.soccerstats
 {% payroll_chart seasons %}
 
 {% include "money/_seasons.html" with league=True %}
+
+{% if has_rules %}<p class="table-legend">The salary budget and the rest of the
+<a href="{% url 'rules_index' %}">roster rules, season by season</a>.</p>{% endif %}
 {% endif %}
 
 {% if recent_transfers %}

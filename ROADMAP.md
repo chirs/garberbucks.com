@@ -63,8 +63,14 @@ Open work only; completed items are removed as they land (see git history).
 
 ## Beyond salaries
 
-- [ ] Transaction rules: the salary budget, designated players, allocation
-  money, the U22 initiative. Define them in prose first, then model them.
+- [ ] Rules before 2011: the salary budget and maximum charge for 1997–2009,
+  the first DP years (one slot from 2007), allocation money before 2015. The
+  league's rules page is archived only from 2011.
+- [ ] Rules not yet on record: the U22 Initiative slots, the third-DP fee, the
+  homegrown subsidy, and the 2025 cash-for-GAM conversion. Define them in prose
+  first, then model what can be.
+- [ ] A club's own budget position: payroll against the salary budget, its DPs,
+  and the allocation money it traded for, season by season.
 - [ ] Ownership: more sales with figures (Seattle's 2019 group and its 2026
   raise, Portland, Minnesota's partners, LAFC's earlier stake sales, Nashville's
   minority investors), exact dates rather than years, and stakes for the

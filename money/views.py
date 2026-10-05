@@ -5,10 +5,11 @@ from statistics import median
 from django.db.models import Count, F, Q, Sum
 from django.http import Http404
 from django.shortcuts import get_object_or_404, render
+from django.urls import reverse
 
 from bios.models import Bio
 from competitions.models import Competition
-from money.models import PAY, ExpansionFee, Operator, Sale, Salary, Sponsorship, Transfer, Valuation
+from money.models import PAY, ExpansionFee, Operator, Rule, Sale, Salary, Sponsorship, Transfer, Valuation
 from money.templatetags.money_tags import fee
 from teams.models import Team
 
@@ -100,6 +101,9 @@ def league_hub(request, competition):
         return render(request, "money/hub.html", context)
 
     seasons = season_summaries(Salary.objects.filter(competition=competition))
+    budgets = dict(Rule.objects.filter(competition=competition).values_list('season', 'salary_budget'))
+    for s in seasons:
+        s['salary_budget'] = budgets.get(int(s['season'])) if s['season'].isdigit() else None
 
     transfers = TRANSFERS.filter(competition=competition)
     cash = [t for t in transfers if t.kind == Transfer.TRANSFER and t.currency == 'USD' and t.fee]
@@ -134,6 +138,7 @@ def league_hub(request, competition):
         'latest_rights': next((r for r in reversed(rights) if r['value']), None),
         'league_sponsors': list(Sponsorship.objects.filter(competition=competition, kind=Sponsorship.LEAGUE)
                                 .order_by('start')),
+        'has_rules': bool(budgets),
         })
     return render(request, "money/hub.html", context)
 
@@ -216,8 +221,10 @@ def season_detail(request, competition_slug, season):
     seasons = sorted(set(Salary.objects.filter(competition=competition)
                          .values_list('season', flat=True)))
     i = seasons.index(season)
+    maximum = mark_over_maximum(salaries, competition, season)
 
     context = {
+        'maximum': maximum,
         'competition': competition,
         'season': season,
         'previous': seasons[i - 1] if i > 0 else None,
@@ -267,6 +274,38 @@ def team_detail(request, slug):
     return render(request, "money/team.html", context)
 
 
+def mark_over_maximum(salaries, competition, season):
+    """
+    Flag each salary paid above the season's maximum budget charge: a player the
+    rules let count only that much, so a Designated Player or one bought down
+    with allocation money. Returns the maximum, or None where none is on record.
+    """
+    rule = Rule.objects.filter(competition=competition, season=int(season)).first() if season.isdigit() else None
+    maximum = rule.maximum_charge if rule else None
+    for s in salaries:
+        s.over_maximum = maximum is not None and s.period == 'year' and (s.guaranteed or s.base) > maximum
+    return maximum
+
+
+def rules_index(request):
+    """
+    MLS's roster rules season by season: the salary budget, the most one player
+    counts against it, the minimum salaries, and the room beyond it.
+    """
+    competition = get_object_or_404(Competition, slug=MLS)
+    rules = list(Rule.objects.filter(competition=competition).order_by('-season'))
+    fields = ('maximum_charge', 'senior_minimum', 'reserve_minimum', 'designated_players',
+              'general_allocation', 'targeted_allocation', 'roster')
+    context = {
+        'competition': competition,
+        'rules': rules,
+        'cols': {f: any(getattr(r, f) is not None for r in rules) for f in fields},
+        'section': 'mls',
+        'crumbs': [(reverse('index'), competition.name)],
+        }
+    return render(request, "money/rules.html", context)
+
+
 def team_season_detail(request, slug, season):
     """
     Everyone a team paid in a season, highest first.
@@ -281,8 +320,10 @@ def team_season_detail(request, slug, season):
 
     cols = columns(salaries)
     cols['team'] = False
+    maximum = mark_over_maximum(salaries, salaries[0].competition, season)
 
     context = {
+        'maximum': maximum,
         'team': team,
         'season': season,
         'competition': salaries[0].competition,

@@ -5,7 +5,7 @@ import pytest
 from bios.models import Bio
 from competitions.models import Competition
 from money.coverage import season_ranges
-from money.models import ExpansionFee, Operator, Sale, Salary, Sponsorship, Transfer, Valuation
+from money.models import ExpansionFee, Operator, Rule, Sale, Salary, Sponsorship, Transfer, Valuation
 from money.templatetags.charts import compact, latest_run, log_ticks, payroll_chart, value_chart
 from money.templatetags.money_tags import dollars, fee, millions
 from teams.models import Team
@@ -873,3 +873,52 @@ def test_sponsorships_chart_marks_each_deal_by_kind_at_its_yearly_figure(client,
     assert chart.count('class="mark-sale"') == 2 and chart.count('class="mark-league"') == 2
     assert 'data-tip="2013: Herbalife, shirt (LA Galaxy), $4.4M a year"' in chart
     assert chart.index('Stadium naming rights') < chart.index('Shirt sponsor') < chart.index('League sponsor')
+
+
+
+def test_rules_page_lists_seasons_and_leaves_out_empty_columns(client, mls):
+    Rule.objects.create(competition=mls, season=2017, salary_budget=3845000, maximum_charge=480625,
+                        senior_minimum=65000, sources='https://a.example')
+    Rule.objects.create(competition=mls, season=2010, salary_budget=2550000, senior_minimum=40000)
+
+    html = client.get('/rules/').content.decode()
+
+    assert html.index('>2017</a>') < html.index('>2010</a>')
+    assert '$3,845,000' in html and '$480,625' in html
+    assert 'class="gap num" title="not found in that season' in html   # 2010 has no maximum on record
+    assert '>reserve minimum</th>' not in html and '>GAM</th>' not in html
+    assert 'aria-current="page">MLS</a>' in html
+
+
+def test_players_above_the_maximum_charge_are_marked(client, season_2007, mls):
+    Rule.objects.create(competition=mls, season=2007, salary_budget=2100000, maximum_charge=400000)
+
+    for url in ('/c/major-league-soccer/2007/', '/teams/la-galaxy/2007/'):
+        html = client.get(url).content.decode()
+        beckham = html.split('David Beckham')[1].split('</tr>')[0]
+        assert 'class="over"' in beckham, url
+        assert html.count('<abbr class="over" title') == 2, url        # Beckham and Donovan
+        if 'Kenny Schoeni' in html:                                     # listed without a club
+            assert 'class="over"' not in html.split('Kenny Schoeni')[1].split('</tr>')[0]
+        assert 'of $400,000' in html
+
+
+def test_no_marker_without_rules_for_the_season(client, season_2007):
+    assert 'class="over"' not in client.get('/c/major-league-soccer/2007/').content.decode()
+
+
+def test_the_salary_budget_is_a_line_on_the_team_payroll_panel(mls, galaxy):
+    from money.views import SQUAD, season_summaries
+    for season, budget in (('2007', 2100000), ('2008', 2300000), ('2009', 2300000)):
+        for i in range(SQUAD):
+            pay('Player %d %s' % (i, season), mls, season, 100000, None, galaxy)
+        Rule.objects.create(competition=mls, season=int(season), salary_budget=budget)
+
+    seasons = season_summaries(Salary.objects.all())
+    for s in seasons:
+        s['salary_budget'] = {'2007': 2100000, '2008': 2300000, '2009': 2300000}[s['season']]
+    chart = payroll_chart(seasons)
+
+    team = [p for p in chart['panels'] if p['name'] == 'Team payroll'][0]
+    assert [line['name'] for line in team['lines']] == ['Average club', 'Median club', 'Salary budget']
+    assert 'salary budget' in chart['caption']

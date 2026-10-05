@@ -5,7 +5,7 @@ from django.template.defaultfilters import slugify
 
 from bios.models import Bio
 from competitions.models import Competition
-from money.models import ExpansionFee, Operator, Sale, Salary, Sponsorship, Transfer, Valuation
+from money.models import ExpansionFee, Operator, Rule, Salary, Sale, Sponsorship, Transfer, Valuation
 from teams.models import Team
 
 # Which end of a move is a club in the league: those get team pages, the
@@ -30,8 +30,9 @@ def load():
     fees = list(soccer_db.expansion_fees.find())
     ownership = operators + sales + fees
     transfers = list(soccer_db.transfers.find())
+    rules = list(soccer_db.rules.find())
 
-    competitions = load_competitions({e['competition'] for e in salaries + sponsorships + valuations + ownership + transfers})
+    competitions = load_competitions({e['competition'] for e in salaries + sponsorships + valuations + ownership + transfers + rules})
     teams = load_teams({e['team'] for e in salaries if e['team']} |
                        {e['club'] for e in sponsorships if e['club']} |
                        {e['team'] for e in valuations} |
@@ -44,6 +45,7 @@ def load():
     load_valuations(valuations, competitions, teams)
     load_ownership(operators, sales, fees, competitions, teams)
     load_transfers(transfers, competitions, teams, bios)
+    load_rules(rules, competitions)
 
 
 def load_competitions(names):
@@ -196,3 +198,20 @@ def load_transfers(transfers, competitions, teams, bios):
             sources='\n'.join(e['sources']),
             )
         for e in transfers)
+
+
+RULE_FIELDS = ('salary_budget', 'maximum_charge', 'senior_minimum', 'reserve_minimum',
+               'designated_players', 'general_allocation', 'targeted_allocation', 'roster')
+
+
+def load_rules(rules, competitions):
+    print("loading {} seasons of rules".format(len(rules)))
+
+    Rule.objects.bulk_create(
+        Rule(
+            competition_id=competitions[e['competition']],
+            season=int(e['season']),
+            sources='\n'.join(e['sources']),
+            **{k: e.get(k) for k in RULE_FIELDS},
+            )
+        for e in rules)

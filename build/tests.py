@@ -5,7 +5,7 @@ import pytest
 
 from bios.models import Bio
 from build import load
-from money.models import ExpansionFee, Operator, Sale, Salary, Sponsorship, Transfer, Valuation
+from money.models import ExpansionFee, Operator, Rule, Sale, Salary, Sponsorship, Transfer, Valuation
 from teams.models import Team
 
 
@@ -36,7 +36,7 @@ def salary(**kw):
 
 @pytest.fixture
 def mongo(monkeypatch):
-    def use(salaries, bios=(), sponsorships=(), valuations=(), operators=(), sales=(), fees=(), transfers=()):
+    def use(salaries, bios=(), sponsorships=(), valuations=(), operators=(), sales=(), fees=(), transfers=(), rules=()):
         db = FakeDB(
             salaries=salaries,
             sponsorships=list(sponsorships),
@@ -45,6 +45,7 @@ def mongo(monkeypatch):
             sales=list(sales),
             expansion_fees=list(fees),
             transfers=list(transfers),
+            rules=list(rules),
             bios=list(bios),
             competitions=[{'name': 'Major League Soccer', 'abbreviation': 'MLS'}],
         )
@@ -188,3 +189,14 @@ def test_loads_transfers_with_teams_only_on_the_league_side(mongo):
     assert not Team.objects.filter(name='Middlesbrough').exists()
     within = Transfer.objects.get(person__slug='david-beckham')
     assert (within.from_team.slug, within.to_team.slug) == ('la-galaxy', 'atlanta-united')
+
+
+@pytest.mark.django_db
+def test_loads_rules_leaving_unpublished_figures_empty(mongo):
+    mongo([salary()], rules=[{'competition': 'Major League Soccer', 'season': '2017',
+                              'salary_budget': 3845000, 'maximum_charge': 480625,
+                              'sources': ['https://a.example']}])
+    load.load()
+
+    r = Rule.objects.get()
+    assert (r.season, r.salary_budget, r.maximum_charge, r.senior_minimum) == (2017, 3845000, 480625, None)

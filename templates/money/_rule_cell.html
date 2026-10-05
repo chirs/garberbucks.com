@@ -1,0 +1,1 @@
+{% load money_tags %}{% if value is not None %}<td class="num">{% if money %}{{ value|dollars }}{% else %}{{ value }}{% endif %}</td>{% else %}{% include "gap.html" with num=True title="not found in that season's rules" %}{% endif %}

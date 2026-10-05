@@ -38,10 +38,10 @@
   {% include "gap.html" %}
   {% endif %}
   {% endif %}
-  <td class="num">{{ salary.base|dollars }}{% if salary.period != 'year' %} a {{ salary.period }}{% endif %}</td>
+  <td class="num">{% if salary.over_maximum and not cols.guaranteed %}<abbr class="over" title="above the maximum budget charge">▲</abbr> {% endif %}{{ salary.base|dollars }}{% if salary.period != 'year' %} a {{ salary.period }}{% endif %}</td>
   {% if cols.guaranteed %}
   {% if salary.guaranteed is not None %}
-  <td class="num">{{ salary.guaranteed|dollars }}</td>
+  <td class="num">{% if salary.over_maximum %}<abbr class="over" title="above the maximum budget charge">▲</abbr> {% endif %}{{ salary.guaranteed|dollars }}</td>
   {% else %}
   {% include "gap.html" with num=True %}
   {% endif %}
@@ -51,6 +51,12 @@
 </tbody>
 
 </table>
+
+{% if maximum %}
+<p class="table-legend"><abbr class="over">▲</abbr> Paid above that season's maximum budget charge
+of {{ maximum|dollars }}, the most one player can count against the salary budget: a Designated Player,
+or a player bought down with allocation money. <a href="{% url 'rules_index' %}">The rules by season</a>.</p>
+{% endif %}
 
 {% if cols.guaranteed %}
 <p class="table-legend">Base is base salary. Guaranteed adds signing and guaranteed bonuses,

@@ -130,11 +130,14 @@ def payroll_chart(seasons):
 
     panels = [panel('League payroll', rows, [('League payroll', 'league', 'total')], xs, 0)]
     with_teams = [r for r in rows if r['team_average'] is not None]
+    budget = any(r.get('salary_budget') for r in rows)
     if len(with_teams) >= 3:
-        panels.append(panel('Team payroll', rows,
-                            [('Average club', 'average', 'team_average'),
-                             ('Median club', 'median', 'team_median')],
-                            xs, panels[-1]['base'] + GAP))
+        measures = [('Average club', 'average', 'team_average'), ('Median club', 'median', 'team_median')]
+        if budget:
+            for r in rows:
+                r.setdefault('salary_budget', None)
+            measures.append(('Salary budget', 'budget', 'salary_budget'))
+        panels.append(panel('Team payroll', rows, measures, xs, panels[-1]['base'] + GAP))
     panels.append(panel('Player pay', rows,
                         [('Average player', 'average', 'player_average'),
                          ('Median player', 'median', 'player_median')],
@@ -152,6 +155,9 @@ def payroll_chart(seasons):
         caption += (' Team payroll is the pay of the players listed with a club: the average '
                     'splits it evenly across the clubs that have a squad on record, and the '
                     'median is the club in the middle.')
+        if budget:
+            caption += (' The salary budget is what the rules let one club count against its cap; '
+                        'clubs spend above it on Designated Players and with allocation money.')
         if with_teams[0] is not rows[0]:
             caption += (' The record names no clubs before %s, so team payroll starts there.'
                         % with_teams[0]['season'])
