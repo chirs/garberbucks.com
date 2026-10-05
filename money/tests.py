@@ -5,7 +5,7 @@ import pytest
 from bios.models import Bio
 from competitions.models import Competition
 from money.coverage import season_ranges
-from money.views import SQUAD as SQUAD_SIZE
+from money.views import PARTIAL_LIST, SQUAD as SQUAD_SIZE
 from money.models import ExpansionFee, NetWorth, Operator, Owner, Rule, Sale, Salary, Sponsorship, Transfer, Valuation
 from money.templatetags.charts import compact, latest_run, log_ticks, payroll_chart, value_chart
 from money.templatetags.money_tags import billions, dollars, fee, millions
@@ -1119,3 +1119,42 @@ def test_a_token_sale_price_is_not_a_club_value(db, mls, galaxy):
     Sale.objects.create(team=galaxy, competition=mls, year=1980, seller='Warner', buyer='X', stake='100%', price=5000000)
 
     assert [r['value'] for r in deal_values([], Sale.objects.all())] == [5000000]
+
+
+
+def test_pay_page_tracks_the_minimum_salary_against_the_median(client, mls, galaxy):
+    for season, minimum in (('2010', 40000), ('2011', 42000), ('2012', 44000)):
+        Rule.objects.create(competition=mls, season=int(season), senior_minimum=minimum)
+        for i in range(PARTIAL_LIST):
+            pay('P%s %d' % (season, i), mls, season, minimum if i < 6 else 100000, None, galaxy)
+    Rule.objects.filter(season=2011).update(reserve_minimum=32600)
+
+    html = client.get('/pay/').content.decode()
+    section = html.split('<h2>The minimum salary</h2>')[1]
+
+    assert 'Senior minimum' in section and 'Reserve minimum' in section and 'Median player' in section
+    assert '$42,000' in section and '$32,600' in section
+    assert '6 of 18' in section and '33%' in section
+
+
+def test_a_short_list_is_not_counted_at_the_minimum(client, mls, galaxy):
+    for season in ('1996', '1997'):
+        Rule.objects.create(competition=mls, season=int(season), senior_minimum=24000)
+    for i in range(3):
+        pay('Star %d' % i, mls, '1996', 200000, None, galaxy)
+
+    section = client.get('/pay/').content.decode().split('<h2>The minimum salary</h2>')[1]
+
+    assert ' of 3<' not in section
+
+
+def test_the_league_page_draws_the_minimum_on_player_pay(mls, galaxy):
+    from money.views import season_summaries
+    for season in ('2010', '2011', '2012'):
+        pay('P%s' % season, mls, season, 100000, None, galaxy)
+    seasons = season_summaries(Salary.objects.all())
+    for s in seasons:
+        s['senior_minimum'] = 40000
+    chart = payroll_chart(seasons)
+    player = [p for p in chart['panels'] if p['name'] == 'Player pay'][0]
+    assert [line['name'] for line in player['lines']][-1] == 'Minimum salary'

@@ -138,10 +138,13 @@ def payroll_chart(seasons):
                 r.setdefault('salary_budget', None)
             measures.append(('Salary budget', 'budget', 'salary_budget'))
         panels.append(panel('Team payroll', rows, measures, xs, panels[-1]['base'] + GAP))
-    panels.append(panel('Player pay', rows,
-                        [('Average player', 'average', 'player_average'),
-                         ('Median player', 'median', 'player_median')],
-                        xs, panels[-1]['base'] + GAP))
+    measures = [('Average player', 'average', 'player_average'), ('Median player', 'median', 'player_median')]
+    minimum = any(r.get('senior_minimum') for r in rows)
+    if minimum:
+        for r in rows:
+            r.setdefault('senior_minimum', None)
+        measures.append(('Minimum salary', 'budget', 'senior_minimum'))
+    panels.append(panel('Player pay', rows, measures, xs, panels[-1]['base'] + GAP))
     height = panels[-1]['base'] + LABEL_H
 
     every = max(1, math.ceil(44 / slot))  # label spacing so four-digit years never touch
@@ -167,6 +170,8 @@ def payroll_chart(seasons):
     if len(rows) < len(seasons):
         caption += (' Seasons outside the unbroken run of %s–%s are in the table only.'
                     % (first, last))
+    if minimum:
+        caption += ' The minimum salary is the least the rules let a senior player be paid.'
     caption += ' Hover or focus a point for its figure.'
 
     return {
@@ -454,4 +459,38 @@ def worth_chart(worths):
         'label': 'Net worth by year, %s to %s' % (years[0], years[-1]),
         'caption': ("Forbes's estimate each spring, in the years they ran the club. A year off the "
                     'list breaks the line. Hover or focus a point for its figure.'),
+    }
+
+
+@register.inclusion_tag("money/_payroll_chart.html")
+def minimum_chart(rows):
+    """
+    The minimum salary by season against the median player's pay, on one scale:
+    how far the floor sits below the middle. A season with no rule or no
+    salaries on record breaks its line.
+    """
+    if len([r for r in rows if r['senior'] is not None]) < 2:
+        return {}
+    slot = (WIDTH - LEFT - RIGHT) / (len(rows) - 1)
+    xs = [LEFT + i * slot for i in range(len(rows))]
+    measures = [('Median player', 'average', 'median'), ('Senior minimum', 'median', 'senior')]
+    if any(r['reserve'] for r in rows):
+        measures.append(('Reserve minimum', 'budget', 'reserve'))
+    p = panel('The minimum salary', rows, measures, xs, 0)
+    every = max(1, math.ceil(44 / slot))
+    first, last = rows[0]['season'], rows[-1]['season']
+    return {
+        'panels': [p],
+        'labels': [{'x': x, 'text': r['season']} for i, (r, x) in enumerate(zip(rows, xs))
+                   if (len(rows) - 1 - i) % every == 0],
+        'label_y': p['base'] + LABEL_H - 10,
+        'width': WIDTH,
+        'height': p['base'] + LABEL_H,
+        'left': LEFT,
+        'right_edge': WIDTH - RIGHT,
+        'label': 'The minimum salary against the median player, %s to %s' % (first, last),
+        'caption': ('The senior minimum is the least a player on the senior roster may be paid; the '
+                    'reserve minimum, from 2011, the least on the reserve roster. The median is the player '
+                    'in the middle of that season\'s list. A season with no rule on record breaks its line. '
+                    'Hover or focus a point for its figure.'),
     }

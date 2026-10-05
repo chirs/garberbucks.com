@@ -72,12 +72,55 @@ def columns(salaries):
     }
 
 
+PARTIAL_LIST = 18   # players per club below which a season's list is not the whole league
+
+
+def minimum_rows(seasons):
+    """
+    MLS's minimum salaries season by season, oldest first, against what players
+    were actually paid: the median, and how many were paid the senior minimum
+    or less. Every season from the first rule on record to the last, so a
+    season without one is a gap rather than skipped.
+    """
+    rules = {r.season: r for r in Rule.objects.filter(competition__slug=MLS)
+             if r.senior_minimum or r.reserve_minimum}
+    if not rules:
+        return []
+    medians = {int(s['season']): s for s in seasons
+               if s['competition__slug'] == MLS and s['period'] == 'year' and s['season'].isdigit()}
+    league = Salary.objects.filter(competition__slug=MLS, period='year', coverage='full')
+    rows = []
+    for year in range(min(rules), max(rules) + 1):
+        rule = rules.get(year)
+        summary = medians.get(year)
+        senior = rule.senior_minimum if rule else None
+        # A list far shorter than a league's rosters (1996's 46 names) is its best-paid
+        # players, so counting who sits at the floor would be meaningless.
+        partial = summary and summary['players'] < PARTIAL_LIST * max(summary['teams'], 1)
+        at_minimum = (league.filter(season=str(year), base__lte=senior).count()
+                      if senior and summary and not partial else None)
+        rows.append({
+            'season': str(year),
+            'period': 'year',
+            'url': reverse('season_detail', args=[MLS, year]) if summary else None,
+            'senior': senior,
+            'reserve': rule.reserve_minimum if rule else None,
+            'median': summary['player_median'] if summary else None,
+            'players': summary['players'] if summary else None,
+            'at_minimum': at_minimum,
+            'share': at_minimum / summary['players'] if at_minimum is not None else None,
+        })
+    return rows
+
+
 def pay_index(request):
     """
-    Every season with salaries on record.
+    Every season with salaries on record, and the minimum salary through them.
     """
+    seasons = season_summaries(Salary.objects.all())
     context = {
-        'seasons': season_summaries(Salary.objects.all()),
+        'seasons': seasons,
+        'minimums': minimum_rows(seasons),
         'section': 'pay',
         }
     return render(request, "money/pay.html", context)
@@ -103,9 +146,14 @@ def league_hub(request, competition):
         return render(request, "money/hub.html", context)
 
     seasons = season_summaries(Salary.objects.filter(competition=competition))
-    budgets = dict(Rule.objects.filter(competition=competition).values_list('season', 'salary_budget'))
+    budgets, minimums = {}, {}
+    for season, budget, minimum in Rule.objects.filter(competition=competition).values_list(
+            'season', 'salary_budget', 'senior_minimum'):
+        budgets[season], minimums[season] = budget, minimum
     for s in seasons:
-        s['salary_budget'] = budgets.get(int(s['season'])) if s['season'].isdigit() else None
+        year = int(s['season']) if s['season'].isdigit() else None
+        s['salary_budget'] = budgets.get(year)
+        s['senior_minimum'] = minimums.get(year)
 
     transfers = TRANSFERS.filter(competition=competition)
     cash = [t for t in transfers if t.kind == Transfer.TRANSFER and t.currency == 'USD' and t.fee]
@@ -140,7 +188,7 @@ def league_hub(request, competition):
         'latest_rights': next((r for r in reversed(rights) if r['value']), None),
         'league_sponsors': list(Sponsorship.objects.filter(competition=competition, kind=Sponsorship.LEAGUE)
                                 .order_by('start')),
-        'has_rules': bool(budgets),
+        'has_rules': any(budgets.values()) or any(minimums.values()),
         'reported': list(Salary.objects.filter(competition=competition, coverage='reported')
                          .annotate(pay=PAY).select_related('person', 'team', 'competition').order_by('season', '-pay')),
         })

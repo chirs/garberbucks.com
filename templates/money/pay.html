@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load charts humanize money_tags %}
 
 {% block title %}Pay{% endblock %}
 
@@ -14,5 +15,45 @@ season leads to every player's pay that year, by club. Transfer fees are on
 <h2>Seasons on record</h2>
 
 {% include "money/_seasons.html" %}
+
+{% if minimums %}
+<h2>The minimum salary</h2>
+
+<p class="prose">The least MLS lets a player be paid. It sat at $24,000 for the league's first
+five seasons, every year the players' antitrust suit was in court, and the first collective
+bargaining agreement in 2004 raised it only to $28,000. In most seasons about a third of players are
+paid it or less, so where the floor sits says more about most players' pay than the stars do.</p>
+
+{% minimum_chart minimums %}
+
+<table class="wide">
+<thead>
+  <tr>
+    <th scope="col">season</th>
+    <th scope="col" class="num">senior minimum</th>
+    <th scope="col" class="num">reserve minimum</th>
+    <th scope="col" class="num">median player</th>
+    <th scope="col" class="num">at the minimum or less</th>
+    <th scope="col" class="num">share of players</th>
+  </tr>
+</thead>
+<tbody>
+{% for m in minimums reversed %}
+<tr>
+  <td>{% if m.url %}<a href="{{ m.url }}">{{ m.season }}</a>{% else %}{{ m.season }}{% endif %}</td>
+  {% include "money/_rule_cell.html" with value=m.senior money=True %}
+  {% include "money/_rule_cell.html" with value=m.reserve money=True %}
+  {% if m.median is not None %}<td class="num">{{ m.median|dollars }}</td>{% else %}{% include "gap.html" with num=True title="no salaries on record that season" %}{% endif %}
+  {% if m.at_minimum is not None %}<td class="num">{{ m.at_minimum|intcomma }} of {{ m.players|intcomma }}</td><td class="num">{% widthratio m.at_minimum m.players 100 %}%</td>{% else %}{% include "gap.html" with num=True %}{% include "gap.html" with num=True %}{% endif %}
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+<p class="table-legend">At the minimum or less counts the players on that season's list whose base
+salary is no more than the senior minimum: senior players at the floor, and reserve and development
+players below it. The reserve minimum applies from 2011. A gap is a season with no rule on record, or
+no salaries; 1996's list holds only 46 players, mostly the best paid, so it is not counted. Every figure is from <a href="{% url 'rules_index' %}">that season's rules</a>.</p>
+{% endif %}
 
 {% endblock %}
