@@ -88,6 +88,16 @@ Open work only; completed items are removed as they land (see git history).
   lists, not Forbes's own pages; replace them if the tables turn up.
 - [ ] Other leagues: Liga MX, NASL, ASL, ALPF, then the big European five.
 
+## Stadiums
+
+- [ ] Public money for the 21 stadiums without it on record: land, bonds,
+  infrastructure and tax breaks (Commerce City's $65M bond, Kansas's STAR
+  bonds, Orange County's tourist tax, Harrison's land for Red Bull Arena).
+- [ ] The big renovations: BMO Field 2016, Providence Park 2019, Stade Saputo
+  2012, BC Place 2011.
+- [ ] Nu Stadium (2026) and Etihad Park (2027, $780M) when their costs are
+  reported as built.
+
 ## Deferred
 
 - Inflation adjustment: ruled out; every figure stays in dollars of the day.
