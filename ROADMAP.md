@@ -39,9 +39,6 @@ Open work only; completed items are removed as they land (see git history).
 
 ## Transfers
 
-- [ ] Load `money_data/transfers/`: a parser in `parse`, the mongo build, a
-  `Transfer` model, and pages by season, club and player. The data is a first
-  pass of 181 reported fees and is not on the site.
 - [ ] Widen the first pass. It only holds deals whose fee is stated in the
   `oneonta` news archive, which holds MLSsoccer.com only from 2024: most of
   2015–2021 is missing. Backfilling MLSsoccer.com further (2013 on) would fill it.

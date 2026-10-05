@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load humanize charts money_tags %}
+
+{% block title %}Transfers{% endblock %}
+{% block metadescription %}Transfer fees paid and received by MLS clubs, season by season, as the press reported them{% endblock %}
+
+{% block content %}
+
+<h1>Transfers</h1>
+
+<p class="prose">What MLS clubs paid to sign players from abroad, what they were paid to sell
+them, and the fees clubs in the league paid each other. Clubs rarely announce fees; nearly every
+figure here is a press report, so these are anchors, not accounts. {{ count|intcomma }} moves are
+on record, thick from 2024 on and thin before, where only the deals later stories mention made it.
+{% if record_in %}The biggest fee in is {{ record_in.fee|dollars }} for
+<a href="{{ record_in.person.get_absolute_url }}">{{ record_in.person.name }}</a> ({{ record_in.season }}){% endif %}{% if record_out %};
+the biggest out is {{ record_out.fee|dollars }} for
+<a href="{{ record_out.person.get_absolute_url }}">{{ record_out.person.name }}</a> ({{ record_out.season }}){% endif %}.</p>
+
+{% value_chart None marks "Transfer fees by season, one mark per cash deal in dollars" 1996 names %}
+
+{% for year, transfers, cols in seasons %}
+<h2>{{ year }}</h2>
+{% include "money/_transfers.html" with player=True %}
+{% endfor %}
+
+<p class="table-legend">The season is the first one a move affects, so a winter sale is filed under
+the next year. The fee is the headline figure: the flat fee, or the guaranteed part before add-ons;
+up to is the most it can reach with them. Allocation money is league budget room traded between
+clubs, not cash. A bid is an offer that was turned down or came to nothing. Reported is the date of
+the earliest source. Sources are numbered links to the reports.</p>
+
+{% endblock %}

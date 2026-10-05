@@ -5,8 +5,12 @@ from django.template.defaultfilters import slugify
 
 from bios.models import Bio
 from competitions.models import Competition
-from money.models import ExpansionFee, Operator, Sale, Salary, Sponsorship, Valuation
+from money.models import ExpansionFee, Operator, Sale, Salary, Sponsorship, Transfer, Valuation
 from teams.models import Team
+
+# Which end of a move is a club in the league: those get team pages, the
+# clubs abroad stay names.
+LEAGUE_SIDE = {'in': ('to',), 'out': ('from',), 'within': ('from', 'to')}
 
 connection = pymongo.MongoClient()
 soccer_db = connection.soccer
@@ -25,18 +29,21 @@ def load():
     sales = list(soccer_db.sales.find())
     fees = list(soccer_db.expansion_fees.find())
     ownership = operators + sales + fees
+    transfers = list(soccer_db.transfers.find())
 
-    competitions = load_competitions({e['competition'] for e in salaries + sponsorships + valuations + ownership})
+    competitions = load_competitions({e['competition'] for e in salaries + sponsorships + valuations + ownership + transfers})
     teams = load_teams({e['team'] for e in salaries if e['team']} |
                        {e['club'] for e in sponsorships if e['club']} |
                        {e['team'] for e in valuations} |
-                       {e['club'] for e in ownership})
-    bios = load_bios({e['name'] for e in salaries})
+                       {e['club'] for e in ownership} |
+                       {e[k] for e in transfers for k in LEAGUE_SIDE[e['direction']]})
+    bios = load_bios({e['name'] for e in salaries + transfers})
 
     load_salaries(salaries, competitions, teams, bios)
     load_sponsorships(sponsorships, competitions, teams)
     load_valuations(valuations, competitions, teams)
     load_ownership(operators, sales, fees, competitions, teams)
+    load_transfers(transfers, competitions, teams, bios)
 
 
 def load_competitions(names):
@@ -163,3 +170,29 @@ def load_ownership(operators, sales, fees, competitions, teams):
     ExpansionFee.objects.bulk_create(
         ExpansionFee(awarded=e['awarded'], first_season=e['first_season'], fee=e['fee'], **common(e))
         for e in fees)
+
+
+def load_transfers(transfers, competitions, teams, bios):
+    print("loading {} transfers".format(len(transfers)))
+
+    def team(e, end):
+        return teams[e[end]] if end in LEAGUE_SIDE[e['direction']] and e[end] else None
+
+    Transfer.objects.bulk_create(
+        Transfer(
+            person_id=bios[slugify(e['name'])],
+            competition_id=competitions[e['competition']],
+            season=int(e['season']),
+            direction=e['direction'],
+            kind=e['kind'],
+            from_name=e['from'],
+            to_name=e['to'],
+            from_team_id=team(e, 'from'),
+            to_team_id=team(e, 'to'),
+            fee=e['fee'],
+            ceiling=e['ceiling'],
+            currency=e['currency'],
+            reported=e['reported'],
+            sources='\n'.join(e['sources']),
+            )
+        for e in transfers)

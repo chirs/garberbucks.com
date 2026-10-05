@@ -2,13 +2,13 @@ from collections import defaultdict
 from datetime import date
 from statistics import median
 
-from django.db.models import Count, Sum
+from django.db.models import Count, F, Q, Sum
 from django.http import Http404
 from django.shortcuts import get_object_or_404, render
 
 from bios.models import Bio
 from competitions.models import Competition
-from money.models import PAY, ExpansionFee, Operator, Sale, Salary, Sponsorship, Valuation
+from money.models import PAY, ExpansionFee, Operator, Sale, Salary, Sponsorship, Transfer, Valuation
 from teams.models import Team
 
 
@@ -140,6 +140,9 @@ def team_detail(request, slug):
         'sponsorships': list(Sponsorship.objects.filter(team=team).exclude(kind__in=Sponsorship.TV)
                              .order_by('kind', 'start')),
         'tv_deals': list(Sponsorship.objects.filter(team=team, kind__in=Sponsorship.TV).order_by('start')),
+        'transfers': (transfers := list(TRANSFERS.filter(Q(from_team=team) | Q(to_team=team))
+                                        .order_by('-season', F('fee').desc(nulls_last=True)))),
+        'transfer_cols': transfer_columns(transfers),
         'valuations': list(Valuation.objects.filter(team=team).order_by('-season', 'publisher')),
         'ownership': ownership_by_competition(
             ExpansionFee.objects.filter(team=team).select_related('competition'),
@@ -192,10 +195,16 @@ def person_detail(request, slug):
     salaries = list(Salary.objects.filter(person=bio)
                     .select_related('team', 'competition').order_by('season'))
 
+    transfers = list(TRANSFERS.filter(person=bio).order_by('season', 'reported'))
+    if not salaries and not transfers:
+        raise Http404("Nothing on record for %s" % bio)
+
     context = {
         'bio': bio,
         'salaries': salaries,
         'cols': columns(salaries),
+        'transfers': transfers,
+        'transfer_cols': transfer_columns(transfers),
         }
     return render(request, "money/person.html", context)
 
@@ -259,6 +268,53 @@ def tv_index(request):
     # MLS first: it is the league with the money and the record.
     leagues.sort(key=lambda l: l['competition'].slug != MLS)
     return render(request, "money/tv.html", {'leagues': leagues, 'count': tv.count()})
+
+
+TRANSFERS = Transfer.objects.select_related('person', 'competition', 'from_team', 'to_team')
+
+
+def transfer_columns(transfers):
+    """Columns worth showing: a ceiling or a kind other than a cash fee only where one is on record."""
+    return {
+        'ceiling': any(t.ceiling for t in transfers),
+        'kind': any(t.kind != Transfer.TRANSFER for t in transfers),
+    }
+
+
+# Mark styles for the transfer chart, by direction, reusing the valuation chart's
+# colours: blue in, orange out, faint grey between the league's own clubs.
+MOVES = {'in': 'fee', 'out': 'sale', 'within': 'club'}
+MOVE_NAMES = {'fee': 'Signed from abroad', 'sale': 'Sold abroad', 'club': 'Between MLS clubs'}
+
+
+def transfers_index(request):
+    """
+    Every transfer fee on record, season by season, biggest first, with a
+    chart of each cash fee in dollars.
+    """
+    transfers = list(TRANSFERS.order_by('-season', F('fee').desc(nulls_last=True), 'person__name'))
+
+    marks = [{'year': t.season, 'value': t.fee, 'kind': MOVES[t.direction],
+              'href': t.person.get_absolute_url(),
+              'title': '%s: %s, %s to %s, %s' % (t.season, t.person.name, t.from_name,
+                                                t.to_name or 'an unnamed club', money(t.fee))}
+             for t in transfers
+             if t.kind == Transfer.TRANSFER and t.fee and t.currency == 'USD']
+
+    seasons = defaultdict(list)
+    for t in transfers:
+        seasons[t.season].append(t)
+    cash = [t for t in transfers if t.kind == Transfer.TRANSFER and t.currency == 'USD' and t.fee]
+
+    context = {
+        'seasons': [(season, rows, transfer_columns(rows)) for season, rows in seasons.items()],
+        'marks': marks,
+        'names': MOVE_NAMES,
+        'count': len(transfers),
+        'record_in': max((t for t in cash if t.direction == 'in'), key=lambda t: t.fee, default=None),
+        'record_out': max((t for t in cash if t.direction == 'out'), key=lambda t: t.fee, default=None),
+        }
+    return render(request, "money/transfers.html", context)
 
 
 PUBLISHERS = (('Forbes', 'average'), ('Sportico', 'median'))

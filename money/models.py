@@ -192,3 +192,34 @@ class ExpansionFee(Sourced):
 
     class Meta:
         ordering = ('awarded', 'first_season')
+
+
+class Transfer(Sourced):
+    """
+    A player's move into, out of or within the league, with the fee the press
+    reported. Clubs on the league side are teams here, with pages; clubs
+    elsewhere are names only. A bid that came to nothing is kept as a bid.
+    """
+
+    TRANSFER = 'transfer'
+    ALLOCATION = 'allocation'
+    BID = 'bid'
+
+    person = models.ForeignKey(Bio, on_delete=models.CASCADE)
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE)
+    season = models.IntegerField()  # the first season the move affects
+    direction = models.CharField(max_length=10)  # in, out or within
+    kind = models.CharField(max_length=20)
+
+    from_name = models.CharField(max_length=200, blank=True)
+    to_name = models.CharField(max_length=200, blank=True)
+    from_team = models.ForeignKey(Team, null=True, related_name='transfers_out', on_delete=models.CASCADE)
+    to_team = models.ForeignKey(Team, null=True, related_name='transfers_in', on_delete=models.CASCADE)
+
+    fee = models.BigIntegerField(null=True)
+    ceiling = models.BigIntegerField(null=True)  # the most it can reach with add-ons
+    currency = models.CharField(max_length=3, default='USD')
+    reported = models.DateField(null=True)
+
+    def __str__(self):
+        return "%s: %s to %s (%s)" % (self.person, self.from_name, self.to_name, self.season)

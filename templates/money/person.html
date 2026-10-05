@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}{{ bio.name }} salary{% endblock %}
-{% block metadescription %}What {{ bio.name }} was paid, season by season{% endblock %}
+{% block title %}{{ bio.name }}{% if salaries %} salary{% else %} transfers{% endif %}{% endblock %}
+{% block metadescription %}What {{ bio.name }} was paid{% if transfers %} and the fees for {{ bio.name }}'s moves{% endif %}{% endblock %}
 
 {% block content %}
 
@@ -11,8 +11,18 @@
 {% elif bio.nationality %}{{ bio.nationality }}.
 {% endif %}Career record at <a href="{{ bio.soccerstats_url }}">soccerstats.us</a>.</p>
 
+{% if salaries %}
 <h2>Salary by season</h2>
 
 {% include "money/_salaries.html" with by="season" %}
+{% endif %}
+
+{% if transfers %}
+<h2>Transfers</h2>
+
+{% include "money/_transfers.html" with season=True player=False cols=transfer_cols %}
+
+<p class="table-legend">Fees as reported. <a href="{% url 'transfers_index' %}">Every transfer on record</a>.</p>
+{% endif %}
 
 {% endblock %}

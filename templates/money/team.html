@@ -100,6 +100,15 @@ out from the other figure and the deal's length. Seasons are the first and last 
 <a href="{% url 'sponsorships_index' %}">Every club's sponsorships</a>.</p>
 {% endif %}
 
+{% if transfers %}
+<h2>Transfers</h2>
+
+{% include "money/_transfers.html" with season=True player=True cols=transfer_cols %}
+
+<p class="table-legend">Fees paid and received, as reported; nearly all are press estimates.
+<a href="{% url 'transfers_index' %}">Every transfer on record</a>.</p>
+{% endif %}
+
 {% if tv_deals %}
 <h2>Local TV</h2>
 

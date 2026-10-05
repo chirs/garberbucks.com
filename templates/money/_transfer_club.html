@@ -1,0 +1,1 @@
+{% if team %}<td><a href="{{ team.get_absolute_url }}">{{ team.name }}</a></td>{% elif name %}<td>{{ name }}</td>{% else %}{% include "gap.html" with title="an unnamed club" %}{% endif %}

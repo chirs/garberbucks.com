@@ -9,7 +9,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.test import Client
 from django.urls import reverse
 
-from money.models import Salary
+from money.models import Salary, Transfer
 
 
 class Command(BaseCommand):
@@ -27,11 +27,17 @@ class Command(BaseCommand):
             reverse('valuations_index'),
             reverse('ownership_index'),
             reverse('tv_index'),
+            reverse('transfers_index'),
             reverse('season_detail', args=[salary.competition.slug, salary.season]),
             reverse('team_detail', args=[salary.team.slug]),
             reverse('team_season_detail', args=[salary.team.slug, salary.season]),
             reverse('person_detail', args=[salary.person.slug]),
         ]
+
+        # A player known only from a transfer has a page with no salaries.
+        transfer = Transfer.objects.exclude(person__salary__isnull=False).select_related('person').first()
+        if transfer:
+            urls.append(reverse('person_detail', args=[transfer.person.slug]))
 
         # Every season page: the columns on record differ from season to season.
         seasons = Salary.objects.values_list('competition__slug', 'season').distinct()

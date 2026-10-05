@@ -188,18 +188,19 @@ def log_ticks(lo, hi):
 
 
 @register.inclusion_tag("money/_value_chart.html")
-def value_chart(lines, points, label, first_year=None):
+def value_chart(lines, points, label, first_year=None, names=None):
     """
     Club values by year on a log scale: lines for series that run year to year,
     [(name, css, {year: dollars})], and single marks for one-off valuations,
     [{year, value, kind, title}] where kind is 'club' (a published value), 'fee'
-    (an expansion fee) or 'sale' (what a sale valued the club at).
+    (an expansion fee) or 'sale' (what a sale valued the club at). names
+    renames the kinds in the legend, for marks that are something else.
 
     A line joins only consecutive years, so a year with no list is a gap. The
     scale is logarithmic because values run from a few million dollars to more
     than a billion; on a linear one the early years would lie on the floor.
     """
-    lines = [(name, css, pts) for name, css, pts in lines if pts]
+    lines = [(name, css, pts) for name, css, pts in lines or [] if pts]
     values = [v for _, _, pts in lines for v in pts.values()] + [p['value'] for p in points]
     years = [y for _, _, pts in lines for y in pts] + [p['year'] for p in points]
     if len(set(years)) < 2:
@@ -234,7 +235,7 @@ def value_chart(lines, points, label, first_year=None):
     for line in drawn:
         legend.append({'kind': 'line', 'css': line['css'], 'text': line['name'], 'x': lx})
         lx += 36 + len(line['name']) * 6.3 + 24
-    names = {'club': 'A club on a published list', 'fee': 'Expansion fee', 'sale': 'Sale'}
+    names = names or {'club': 'A club on a published list', 'fee': 'Expansion fee', 'sale': 'Sale'}
     for kind in ('club', 'fee', 'sale'):
         if any(m['kind'] == kind for m in marks):
             legend.append({'kind': kind, 'css': kind, 'text': names[kind], 'x': lx})
@@ -258,8 +259,9 @@ def value_chart(lines, points, label, first_year=None):
         'left': LEFT,
         'right_edge': WIDTH - RIGHT,
         'label': label,
-        'caption': '%s, on a logarithmic scale: each gridline step is a doubling or more. '
-                   'A line joins only consecutive years, so a year with no list is a gap.' % label,
+        'caption': '%s, on a logarithmic scale: each gridline step is a doubling or more.%s'
+                   % (label, ' A line joins only consecutive years, so a year with no list is a gap.'
+                      if drawn else ''),
     }
 
 

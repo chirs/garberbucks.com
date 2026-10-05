@@ -5,7 +5,7 @@ import pytest
 
 from bios.models import Bio
 from build import load
-from money.models import ExpansionFee, Operator, Sale, Salary, Sponsorship, Valuation
+from money.models import ExpansionFee, Operator, Sale, Salary, Sponsorship, Transfer, Valuation
 from teams.models import Team
 
 
@@ -36,7 +36,7 @@ def salary(**kw):
 
 @pytest.fixture
 def mongo(monkeypatch):
-    def use(salaries, bios=(), sponsorships=(), valuations=(), operators=(), sales=(), fees=()):
+    def use(salaries, bios=(), sponsorships=(), valuations=(), operators=(), sales=(), fees=(), transfers=()):
         db = FakeDB(
             salaries=salaries,
             sponsorships=list(sponsorships),
@@ -44,6 +44,7 @@ def mongo(monkeypatch):
             operators=list(operators),
             sales=list(sales),
             expansion_fees=list(fees),
+            transfers=list(transfers),
             bios=list(bios),
             competitions=[{'name': 'Major League Soccer', 'abbreviation': 'MLS'}],
         )
@@ -168,3 +169,22 @@ def test_loads_ownership(mongo):
     assert sale.price == 26000000 and sale.valuation is None and sale.stake == ''
     assert sale.team_id == Salary.objects.get().team_id
     assert ExpansionFee.objects.get().fee == 20000000
+
+
+@pytest.mark.django_db
+def test_loads_transfers_with_teams_only_on_the_league_side(mongo):
+    base = {'competition': 'Major League Soccer', 'season': '2025', 'ceiling': None,
+            'currency': 'USD', 'kind': 'transfer', 'reported': '2025-02-04', 'sources': ['https://a.example']}
+    mongo([salary()], transfers=[
+        {**base, 'name': 'Emmanuel Latte Lath', 'direction': 'in', 'from': 'Middlesbrough',
+         'to': 'Atlanta United', 'fee': 22000000},
+        {**base, 'name': 'David Beckham', 'direction': 'within', 'from': 'LA Galaxy',
+         'to': 'Atlanta United', 'fee': None},
+    ])
+    load.load()
+
+    t = Transfer.objects.select_related('person', 'from_team', 'to_team').get(person__slug='emmanuel-latte-lath')
+    assert (t.from_name, t.from_team, t.to_team.slug, t.fee) == ('Middlesbrough', None, 'atlanta-united', 22000000)
+    assert not Team.objects.filter(name='Middlesbrough').exists()
+    within = Transfer.objects.get(person__slug='david-beckham')
+    assert (within.from_team.slug, within.to_team.slug) == ('la-galaxy', 'atlanta-united')

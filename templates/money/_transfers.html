@@ -1,0 +1,51 @@
+{% load money_tags %}
+{# One row per move. season=True adds a season column; player=False leaves out the player, on their own page. cols says whether a ceiling or a kind is on record. #}
+<table class="wide">
+
+<thead>
+  <tr>
+    {% if season %}<th scope="col">season</th>{% endif %}
+    {% if player %}<th scope="col">player</th>{% endif %}
+    <th scope="col">from</th>
+    <th scope="col">to</th>
+    <th scope="col" class="num">fee</th>
+    {% if cols.ceiling %}<th scope="col" class="num">up to</th>{% endif %}
+    {% if cols.kind %}<th scope="col">kind</th>{% endif %}
+    <th scope="col">reported</th>
+    <th scope="col">sources</th>
+  </tr>
+</thead>
+
+<tbody>
+{% for t in transfers %}
+<tr>
+  {% if season %}<td>{{ t.season }}</td>{% endif %}
+  {% if player %}<td><a href="{{ t.person.get_absolute_url }}">{{ t.person.name }}</a></td>{% endif %}
+  {% include "money/_transfer_club.html" with team=t.from_team name=t.from_name %}
+  {% include "money/_transfer_club.html" with team=t.to_team name=t.to_name %}
+  {% if t.fee is not None %}
+  <td class="num">{{ t.fee|dollars:t.currency }}</td>
+  {% else %}
+  {% include "gap.html" with num=True title="not reported" %}
+  {% endif %}
+  {% if cols.ceiling %}
+  {% if t.ceiling is not None %}
+  <td class="num">{{ t.ceiling|dollars:t.currency }}</td>
+  {% else %}
+  {% include "gap.html" with num=True title="no add-ons reported" %}
+  {% endif %}
+  {% endif %}
+  {% if cols.kind %}
+  <td>{% if t.kind == 'allocation' %}allocation money{% elif t.kind == 'bid' %}bid, no deal{% else %}cash{% endif %}</td>
+  {% endif %}
+  {% if t.reported %}
+  <td><time datetime="{{ t.reported|date:'Y-m-d' }}">{{ t.reported|date:'M j, Y' }}</time></td>
+  {% else %}
+  {% include "gap.html" %}
+  {% endif %}
+  <td>{% for url in t.source_list %}<a href="{{ url }}">{{ forloop.counter }}</a>{% if not forloop.last %} {% endif %}{% endfor %}</td>
+</tr>
+{% endfor %}
+</tbody>
+
+</table>

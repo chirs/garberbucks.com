@@ -3,15 +3,18 @@ from django.contrib.humanize.templatetags.humanize import intcomma
 
 register = template.Library()
 
+SYMBOLS = {'USD': '$', 'CAD': 'C$', 'GBP': '£', 'EUR': '€'}
+
 
 @register.filter
 def dollars(value, currency='USD'):
     """
     Whole dollars with thousands separators: 5500000.08 -> $5,500,000.
-    Canadian dollars say so: C$27,000,000. A loss puts its sign first: -$2,000,000.
+    Canadian dollars say so: C$27,000,000; pounds and euros take their own
+    sign: £5,000,000. A loss puts its sign first: -$2,000,000.
     """
     sign = '-' if value < 0 else ''
-    return '%s%s$%s' % (sign, 'C' if currency == 'CAD' else '', intcomma(round(abs(value))))
+    return '%s%s%s' % (sign, SYMBOLS.get(currency, '$'), intcomma(round(abs(value))))
 
 
 @register.filter

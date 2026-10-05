@@ -5,7 +5,7 @@ import pytest
 from bios.models import Bio
 from competitions.models import Competition
 from money.coverage import season_ranges
-from money.models import ExpansionFee, Operator, Sale, Salary, Sponsorship, Valuation
+from money.models import ExpansionFee, Operator, Sale, Salary, Sponsorship, Transfer, Valuation
 from money.templatetags.charts import compact, latest_run, log_ticks, payroll_chart, value_chart
 from money.templatetags.money_tags import dollars, millions
 from teams.models import Team
@@ -662,3 +662,95 @@ def test_tv_chart_keeps_seasons_with_no_deal_on_the_axis(client, mls):
 
     assert '>1974</text>' in chart and '&ndash;' not in chart
     assert chart.count('class="bar"') == 3
+
+
+
+def move(person, competition, season, direction, from_name, to_name, from_team=None, to_team=None, **kw):
+    bio, _ = Bio.objects.get_or_create(slug=person.lower().replace(' ', '-'), defaults={'name': person})
+    fields = {'kind': Transfer.TRANSFER, 'fee': None, 'ceiling': None, 'currency': 'USD',
+              'reported': '2025-02-04', 'sources': 'https://a.example'}
+    fields.update(kw)
+    return Transfer.objects.create(person=bio, competition=competition, season=season,
+                                   direction=direction, from_name=from_name, to_name=to_name,
+                                   from_team=from_team, to_team=to_team, **fields)
+
+
+@pytest.fixture
+def atlanta(db):
+    return Team.objects.create(name='Atlanta United', slug='atlanta-united')
+
+
+def test_transfers_page_lists_seasons_biggest_fee_first(client, mls, atlanta, galaxy):
+    move('Emmanuel Latte Lath', mls, 2025, 'in', 'Middlesbrough', 'Atlanta United',
+         to_team=atlanta, fee=22000000)
+    move('Gabriel Pec', mls, 2024, 'in', 'Vasco da Gama', 'LA Galaxy', to_team=galaxy, fee=9600000)
+    move('Riqui Puig', mls, 2025, 'in', 'Barcelona', 'LA Galaxy', to_team=galaxy, fee=None)
+    move('Thiago Almada', mls, 2025, 'out', 'Atlanta United', 'Botafogo', from_team=atlanta,
+         fee=21000000, ceiling=25000000)
+
+    html = client.get('/transfers/').content.decode()
+
+    assert html.index('<h2>2025</h2>') < html.index('<h2>2024</h2>')
+    assert '<th scope="col">season</th>' not in html   # each season has its own heading
+    assert html.index('Latte Lath') < html.index('Almada') < html.index('Riqui Puig')
+    assert '<td><a href="/teams/atlanta-united/">Atlanta United</a></td>' in html
+    assert '<td>Middlesbrough</td>' in html
+    assert '$25,000,000' in html and '<th scope="col" class="num">up to</th>' in html
+    assert 'title="not reported">&mdash;</td>' in html
+    assert 'The biggest fee in is $22,000,000' in html and 'the biggest out is $21,000,000' in html
+    chart = html.split('<figure')[1].split('</figure>')[0]
+    # one mark per deal, plus one of each kind in the legend
+    assert chart.count('class="mark-fee"') == 3 and chart.count('class="mark-sale"') == 2
+    assert 'Signed from abroad' in chart and 'Sold abroad' in chart
+    assert 'data-href="/bios/emmanuel-latte-lath/"' in chart
+
+
+def test_kind_and_ceiling_columns_only_where_on_record(client, mls, atlanta):
+    move('Latte Lath', mls, 2025, 'in', 'Middlesbrough', 'Atlanta United', to_team=atlanta, fee=22000000)
+    move('Jack McGlynn', mls, 2024, 'within', 'Philadelphia Union', 'Atlanta United',
+         to_team=atlanta, fee=500000, kind=Transfer.ALLOCATION)
+
+    html = client.get('/transfers/').content.decode()
+    s2025, s2024 = html.split('<h2>2025</h2>')[1].split('<h2>2024</h2>')
+
+    assert '>kind</th>' not in s2025 and '>up to</th>' not in s2025
+    assert '<td>allocation money</td>' in s2024
+
+
+def test_pounds_keep_their_sign(client, mls, galaxy):
+    move('Tyler Adams', mls, 2019, 'out', 'LA Galaxy', 'Leeds', from_team=galaxy, fee=5000000, currency='GBP')
+
+    assert '£5,000,000' in client.get('/transfers/').content.decode()
+
+
+def test_a_bid_from_an_unnamed_club_is_a_marked_gap(client, mls, galaxy):
+    move('Cade Cowell', mls, 2024, 'out', 'LA Galaxy', '', from_team=galaxy, fee=5000000, kind=Transfer.BID)
+
+    html = client.get('/transfers/').content.decode()
+
+    assert 'title="an unnamed club">&mdash;</td>' in html
+    assert '<td>bid, no deal</td>' in html
+
+
+def test_a_player_with_only_a_transfer_has_a_page(client, mls, atlanta):
+    move('Emmanuel Latte Lath', mls, 2025, 'in', 'Middlesbrough', 'Atlanta United',
+         to_team=atlanta, fee=22000000)
+
+    response = client.get('/bios/emmanuel-latte-lath/')
+    html = response.content.decode()
+
+    assert response.status_code == 200
+    assert '<h2>Transfers</h2>' in html and 'Salary by season' not in html
+    assert '$22,000,000' in html
+
+
+def test_a_club_page_lists_moves_both_ways(client, mls, atlanta, galaxy):
+    move('Emmanuel Latte Lath', mls, 2025, 'in', 'Middlesbrough', 'Atlanta United',
+         to_team=atlanta, fee=22000000)
+    move('Thiago Almada', mls, 2025, 'out', 'Atlanta United', 'Botafogo', from_team=atlanta, fee=21000000)
+    move('Gabriel Pec', mls, 2024, 'in', 'Vasco da Gama', 'LA Galaxy', to_team=galaxy, fee=9600000)
+
+    html = client.get('/teams/atlanta-united/').content.decode()
+    section = html.split('<h2>Transfers</h2>')[1]
+
+    assert 'Latte Lath' in section and 'Almada' in section and 'Pec' not in section
