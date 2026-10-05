@@ -95,7 +95,31 @@ Open work only; completed items are removed as they land (see git history).
   Bradley's and Arena's first terms, the union's first decade).
 - [ ] MLS executives beyond Garber's one reported contract, from the press.
 - [ ] Referees: per-match fees and retainers from the PSRA agreements with PRO.
-- [ ] MLS coaches and general managers, as reported, like the NASL salaries.
+- [ ] More reported MLS coach pay. Only Gullit's and Rooney's are on record; the
+  widely repeated figures (Bradley at LAFC, Henry, Martino, Vermes, Neville)
+  trace only to salary sites. The Athletic, the Washington Post and the Globe
+  and Mail are where real reports would be.
+
+## Coaches
+
+- [ ] The rows were researched in one pass and spot-checked, not verified one by
+  one; a check found one wrong date in three (Spencer's Portland start). Go
+  through head-coach rows club by club against their sources.
+- [ ] Nine stints with no start date are `*` lines in `jobs/mls` (NYCFC's
+  Ballouchy and Vartughian, Montreal's Morara and Jordan, Portland's Dodgshon,
+  San Jose's Spencer, RSL's DeLass, Nashville's Guppy, Charlotte's Quy); date
+  them.
+- [ ] Year-only dates leave a length out: Tampa Bay's coaches, 1990s GMs, and
+  most recent assistants, whose years came from coaches' infoboxes.
+- [ ] GM gaps: Chivas USA 2006–08 and 2012–14, Colorado 1996, Austin from May to
+  August 2026, DC 2001–03.
+- [ ] Assistants before about 2008 are sparse at most clubs, and Sporting KC's are
+  thin throughout.
+- [ ] A coach announced before taking over starts at the announcement, so Jim
+  Curtin is Austin's coach from June 2026 while Davy Arnaud is still in charge.
+  Record when a coach took charge as well, if it matters.
+- [ ] Other leagues' coaches: NASL, NWSL, USL; soccerdata has old lists to seed
+  them.
 
 ## Stadiums
 
