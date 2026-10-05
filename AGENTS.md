@@ -9,8 +9,14 @@ Garberbucks is a reference site for money in American soccer. Read
   deals and ownership are files in `../money_data`, parsed by `../parse/parse/`,
   loaded into mongo by `../build`, and copied into postgres by `build/load.py`
   here. A wrong figure is fixed in `money_data`.
-- `money/` holds the salary model and every view. `bios/`, `teams/` and
+- `money/` holds every money model and every view. `bios/`, `teams/` and
   `competitions/` hold only the identity models the money hangs on.
+- The site follows the data: league → club → player, with topic pages across
+  them. The nav is six sections, MLS (the league hub, also `/`), clubs, pay,
+  transfers, value & ownership (valuations, ownership) and revenue
+  (sponsorships, TV). A new page joins one of them, marks it with `section`
+  in its context, and a page below a club or league sets `crumbs`; it does not
+  get a nav link of its own.
 - `archive/` is the old site. Leave it alone.
 
 ## Rules

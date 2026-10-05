@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% load charts money_tags %}
+
+{% block title %}{% if competition %}{{ competition.name }}{% else %}Garberbucks{% endif %}{% endblock %}
+{% block metadescription %}The money in {% if competition %}{{ competition.name }}{% else %}American soccer{% endif %}: what players are paid, transfer fees, what clubs are worth and what the league is paid{% endblock %}
+
+{% block content %}
+
+{% if not competition %}
+<h1>Garberbucks</h1>
+<p class="prose">The money in American soccer. Nothing is on record yet.</p>
+{% else %}
+
+<h1>{{ competition.name }}</h1>
+
+<p class="prose">The money in {{ competition.name }}, a section for each part of this site.
+{% if latest_pay %}In {{ latest_pay.season }} its players were paid {{ latest_pay.total|millions }} in all.{% endif %}
+{% if latest_value %}By {{ latest_value.1|cut:", average club" }}'s {{ latest_value.0 }} list its average club was worth {{ latest_value.2|millions }}.{% endif %}
+{% if latest_rights %}Its national TV deals paid {{ latest_rights.value|millions }} in {{ latest_rights.year }}.{% endif %}
+Everything about its games and players is at <a href="{{ competition.soccerstats_url }}">soccerstats.us</a>.</p>
+
+{% if seasons %}
+<h2><a href="{% url 'pay_index' %}">Pay</a></h2>
+
+{% payroll_chart seasons %}
+
+{% include "money/_seasons.html" with league=True %}
+{% endif %}
+
+{% if recent_transfers %}
+<h2><a href="{% url 'transfers_index' %}">Transfers</a></h2>
+
+<p class="prose">{% if record_in %}The biggest fee paid by one of its clubs is {{ record_in.fee|fee }}, for
+<a href="{{ record_in.person.get_absolute_url }}">{{ record_in.person.name }}</a> ({{ record_in.season }}){% endif %}{% if record_out %};
+the biggest received is {{ record_out.fee|fee }}, for
+<a href="{{ record_out.person.get_absolute_url }}">{{ record_out.person.name }}</a> ({{ record_out.season }}){% endif %}.
+The biggest fees of {{ transfer_season }}:</p>
+
+{% include "money/_transfers.html" with transfers=recent_transfers cols=recent_cols player=True %}
+
+<p class="table-legend"><a href="{% url 'transfers_index' %}">Every transfer on record</a>, with a chart and filters.</p>
+{% endif %}
+
+{% if value_lines or value_marks %}
+<h2><a href="{% url 'valuations_index' %}">Value &amp; ownership</a></h2>
+
+{% value_chart value_lines value_marks "Average club value by year, with expansion fees and sales" 1996 %}
+
+{% if value_rows %}
+<table>
+<thead>
+  <tr>
+    <th scope="col">year</th>
+    {% for name in value_names %}<th scope="col" class="num">{{ name }}</th>{% endfor %}
+  </tr>
+</thead>
+<tbody>
+{% for row in value_rows %}
+<tr>
+  <td>{{ row.year }}</td>
+  {% for v in row.values %}{% if v is not None %}<td class="num">{{ v|millions }}</td>{% else %}{% include "gap.html" with num=True title="no list that year" %}{% endif %}{% endfor %}
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% endif %}
+
+<p class="table-legend">Every club on each list is on the <a href="{% url 'valuations_index' %}">valuations</a>
+page, and every fee, sale and owner on the <a href="{% url 'ownership_index' %}">ownership</a> page.</p>
+{% endif %}
+
+{% if national or league_sponsors %}
+<h2><a href="{% url 'sponsorships_index' %}">Revenue</a></h2>
+
+{% if rights %}
+{% rights_chart rights competition.name|add:" national TV money by season" %}
+{% endif %}
+
+{% if national %}
+<h3>National TV</h3>
+{% include "money/_sponsorships.html" with deals=national club=False tv=True %}
+{% endif %}
+
+{% if league_sponsors %}
+<h3>League sponsors</h3>
+{% include "money/_sponsorships.html" with deals=league_sponsors club=False %}
+{% endif %}
+
+<p class="table-legend">Figures are as reported; one in grey italics is worked out from the other
+figure and the deal's length. Clubs' own deals are on the <a href="{% url 'sponsorships_index' %}">sponsorships</a>
+and <a href="{% url 'tv_index' %}">TV rights</a> pages.</p>
+{% endif %}
+
+{% endif %}
+{% endblock %}

@@ -1,0 +1,10 @@
+{# The pages of a merged section, as a switch under its heading. group is 'value' or 'revenue'; here is this page's url name. #}
+<nav class="filters" aria-label="Pages in this section">
+  {% if group == 'value' %}
+  <a href="{% url 'valuations_index' %}"{% if here == 'valuations_index' %} aria-current="page"{% endif %}>Valuations</a>
+  <a href="{% url 'ownership_index' %}"{% if here == 'ownership_index' %} aria-current="page"{% endif %}>Owners, sales and expansion fees</a>
+  {% else %}
+  <a href="{% url 'sponsorships_index' %}"{% if here == 'sponsorships_index' %} aria-current="page"{% endif %}>Sponsorships</a>
+  <a href="{% url 'tv_index' %}"{% if here == 'tv_index' %} aria-current="page"{% endif %}>TV rights</a>
+  {% endif %}
+</nav>

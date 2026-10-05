@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="{% block metadescription %}What American soccer players are paid{% endblock %}">
 
-  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=14" media="screen">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=16" media="screen">
 </head>
 
 <body>
@@ -16,18 +16,20 @@
     <div class="header-inner">
       <a href="{% url 'index' %}" id="maintitle">{% include "garber.svg" %}Garberbucks</a>
       <nav id="nav">
-        <a href="{% url 'index' %}">salaries</a>
-        <a href="{% url 'competition_detail' 'major-league-soccer' %}" title="Major League Soccer">MLS</a>
-        <a href="{% url 'transfers_index' %}">transfers</a>
-        <a href="{% url 'valuations_index' %}">valuations</a>
-        <a href="{% url 'sponsorships_index' %}">sponsorships</a>
-        <a href="{% url 'tv_index' %}" title="TV and streaming rights">TV</a>
-        <a href="{% url 'ownership_index' %}">ownership</a>
+        <a href="{% url 'index' %}" title="Major League Soccer"{% if section == 'mls' %} aria-current="page"{% endif %}>MLS</a>
+        <a href="{% url 'clubs_index' %}"{% if section == 'clubs' %} aria-current="page"{% endif %}>clubs</a>
+        <a href="{% url 'pay_index' %}" title="Salaries"{% if section == 'pay' %} aria-current="page"{% endif %}>pay</a>
+        <a href="{% url 'transfers_index' %}"{% if section == 'transfers' %} aria-current="page"{% endif %}>transfers</a>
+        <a href="{% url 'valuations_index' %}" title="Valuations, sales, expansion fees and owners"{% if section == 'value' %} aria-current="page"{% endif %}>value &amp; ownership</a>
+        <a href="{% url 'sponsorships_index' %}" title="Sponsorships and TV rights"{% if section == 'revenue' %} aria-current="page"{% endif %}>revenue</a>
       </nav>
     </div>
   </header>
 
   <main id="content">
+    {% if crumbs %}
+    <nav class="crumbs" aria-label="Breadcrumb">{% for url, name in crumbs %}<a href="{{ url }}">{{ name }}</a> <span aria-hidden="true">›</span> {% endfor %}</nav>
+    {% endif %}
     {% block content %}{% endblock %}
   </main>
 

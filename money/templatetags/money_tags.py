@@ -24,7 +24,7 @@ def millions(value):
     1350000000 -> $1,350M, -2000000 -> -$2M.
     """
     sign = '-' if value < 0 else ''
-    m = abs(value) / 1e6
+    m = abs(float(value)) / 1e6
     text = intcomma(round(m)) if m >= 10 or m == round(m) else ('%.1f' % m)
     return '%s$%sM' % (sign, text)
 

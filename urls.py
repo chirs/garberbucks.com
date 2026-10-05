@@ -4,6 +4,8 @@ from money import views
 
 urlpatterns = [
     path('', views.index, name='index'),
+    path('pay/', views.pay_index, name='pay_index'),
+    path('clubs/', views.clubs_index, name='clubs_index'),
     path('sponsorships/', views.sponsorships_index, name='sponsorships_index'),
     path('valuations/', views.valuations_index, name='valuations_index'),
     path('ownership/', views.ownership_index, name='ownership_index'),

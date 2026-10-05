@@ -69,27 +69,132 @@ def columns(salaries):
     }
 
 
-def index(request):
+def pay_index(request):
     """
     Every season with salaries on record.
     """
     context = {
         'seasons': season_summaries(Salary.objects.all()),
+        'section': 'pay',
         }
-    return render(request, "money/index.html", context)
+    return render(request, "money/pay.html", context)
+
+
+def index(request):
+    """The home page, for now MLS's hub."""
+    return league_hub(request, Competition.objects.filter(slug=MLS).first())
 
 
 def competition_detail(request, competition_slug):
+    return league_hub(request, get_object_or_404(Competition, slug=competition_slug))
+
+
+def league_hub(request, competition):
     """
-    A league's payroll, season by season.
+    Everything on record at a league's level, a section per part of the site:
+    payroll, transfers, what its clubs are worth, and what it is paid. Each
+    section is the headline and leads to the full page.
     """
-    competition = get_object_or_404(Competition, slug=competition_slug)
+    context = {'competition': competition, 'section': 'mls' if competition and competition.slug == MLS else None}
+    if competition is None:
+        return render(request, "money/hub.html", context)
+
+    seasons = season_summaries(Salary.objects.filter(competition=competition))
+
+    transfers = TRANSFERS.filter(competition=competition)
+    cash = [t for t in transfers if t.kind == Transfer.TRANSFER and t.currency == 'USD' and t.fee]
+    latest = max((t.season for t in transfers), default=None)
+    recent = sorted((t for t in transfers if t.season == latest and t.fee), key=lambda t: -t.fee)[:8]
+
+    valuations = list(Valuation.objects.filter(competition=competition))
+    lines = average_lines(valuations)
+    years = sorted({y for _, _, pts in lines for y in pts}, reverse=True)
+    deals = deal_values(ExpansionFee.objects.filter(competition=competition).select_related('team'),
+                        Sale.objects.filter(competition=competition).select_related('team'))
+
+    national = list(Sponsorship.objects.filter(competition=competition, kind=Sponsorship.NATIONAL_TV)
+                    .order_by('start', 'sponsor'))
+    rights = rights_by_year(national, date.today().year)
+
+    context.update({
+        'seasons': seasons,
+        'latest_pay': next((s for s in seasons if s['period'] == 'year'), None),
+        'record_in': max((t for t in cash if t.direction == 'in'), key=lambda t: t.fee, default=None),
+        'record_out': max((t for t in cash if t.direction == 'out'), key=lambda t: t.fee, default=None),
+        'transfer_season': latest,
+        'recent_transfers': recent,
+        'recent_cols': transfer_columns(recent),
+        'value_lines': lines,
+        'value_marks': [d for d in deals if d['kind'] != 'club'],
+        'value_rows': [{'year': y, 'values': [pts.get(y) for _, _, pts in lines]} for y in years],
+        'value_names': [name for name, _, _ in lines],
+        'latest_value': next(((y, name, pts[y]) for y in years for name, _, pts in lines if y in pts), None),
+        'rights': rights,
+        'national': national,
+        'latest_rights': next((r for r in reversed(rights) if r['value']), None),
+        'league_sponsors': list(Sponsorship.objects.filter(competition=competition, kind=Sponsorship.LEAGUE)
+                                .order_by('start')),
+        })
+    return render(request, "money/hub.html", context)
+
+
+def average_lines(valuations):
+    """A line per publisher of its average club value by season: [(name, css, {season: dollars})]."""
+    lines = []
+    for publisher, css in PUBLISHERS:
+        by_season = defaultdict(list)
+        for v in valuations:
+            if v.publisher == publisher:
+                by_season[v.season].append(v.value)
+        if by_season:
+            lines.append(('%s, average club' % publisher, css,
+                          {s: sum(vs) / len(vs) for s, vs in by_season.items()}))
+    return lines
+
+
+def clubs_index(request):
+    """
+    Every club in the league's latest season, one row each: what it pays, what
+    it is worth, who owns it, where it plays and its biggest transfer. Clubs
+    from other seasons and leagues follow as a list.
+    """
+    league = Salary.objects.filter(competition__slug=MLS, period='year')
+    season = max((s for s in league.values_list('season', flat=True).distinct() if s.isdigit()),
+                 key=int, default=None)
+    payrolls = dict(league.filter(season=season).exclude(team=None).values_list('team')
+                    .annotate(total=Sum(PAY)).values_list('team', 'total'))
+    teams = Team.objects.filter(id__in=payrolls).order_by('name')
+
+    def latest(rows):
+        return max(rows, key=lambda r: r[0], default=None)
+
+    values, owners, stadiums, biggest = {}, {}, {}, {}
+    for v in Valuation.objects.filter(team__in=teams):
+        values[v.team_id] = latest([values.get(v.team_id) or (0, None), (v.season, v)])
+    for o in Operator.objects.filter(team__in=teams, end=None):
+        owners[o.team_id] = latest([owners.get(o.team_id) or (0, None), (o.start or 0, o)])
+    this_year = date.today().year
+    for s in Sponsorship.objects.filter(team__in=teams, kind=Sponsorship.NAMING_RIGHTS, start__lte=this_year):
+        if s.end is None or s.end >= this_year:
+            stadiums[s.team_id] = latest([stadiums.get(s.team_id) or (0, None), (s.start, s)])
+    for t in TRANSFERS.filter(kind=Transfer.TRANSFER, currency='USD').exclude(fee=None):
+        for team_id in {t.from_team_id, t.to_team_id} - {None}:
+            if team_id in payrolls and (team_id not in biggest or t.fee > biggest[team_id].fee):
+                biggest[team_id] = t
+
+    rows = [{'team': team, 'payroll': payrolls[team.id],
+             'value': values.get(team.id, (0, None))[1],
+             'owner': owners.get(team.id, (0, None))[1],
+             'stadium': stadiums.get(team.id, (0, None))[1],
+             'transfer': biggest.get(team.id)} for team in teams]
 
     context = {
-        'competition': competition,
-        'seasons': season_summaries(Salary.objects.filter(competition=competition)),
+        'season': season,
+        'rows': rows,
+        'others': Team.objects.exclude(id__in=payrolls).order_by('name'),
+        'section': 'clubs',
         }
-    return render(request, "money/competition.html", context)
+    return render(request, "money/clubs.html", context)
 
 
 def season_detail(request, competition_slug, season):
@@ -126,6 +231,8 @@ def season_detail(request, competition_slug, season):
         'period': salaries[0].period,
         'sources': sorted(set(s.source for s in salaries if s.source)),
         }
+    context['section'] = 'pay'
+    context['crumbs'] = [(competition.get_absolute_url(), competition.name)]
     return render(request, "money/season.html", context)
 
 
@@ -155,6 +262,8 @@ def team_detail(request, slug):
             ExpansionFee.objects.filter(team=team, competition__slug=MLS).select_related('team'),
             Sale.objects.filter(team=team, competition__slug=MLS).select_related('team')),
         }
+    context['section'] = 'clubs'
+    context['crumbs'] = [('/clubs/', 'Clubs')]
     return render(request, "money/team.html", context)
 
 
@@ -184,6 +293,8 @@ def team_season_detail(request, slug, season):
         'median': median(s.pay for s in salaries),
         'period': salaries[0].period,
         }
+    context['section'] = 'pay'
+    context['crumbs'] = [('/clubs/', 'Clubs'), (team.get_absolute_url(), team.name)]
     return render(request, "money/team_season.html", context)
 
 
@@ -207,6 +318,12 @@ def person_detail(request, slug):
         'transfers': transfers,
         'transfer_cols': transfer_columns(transfers),
         }
+    context['section'] = 'pay'
+    # The player's latest club, from their pay or, failing that, their last move.
+    club = next((s.team for s in reversed(salaries) if s.team), None)
+    if club is None and transfers:
+        club = transfers[-1].to_team or transfers[-1].from_team
+    context['crumbs'] = [('/clubs/', 'Clubs')] + ([(club.get_absolute_url(), club.name)] if club else [])
     return render(request, "money/person.html", context)
 
 
@@ -225,6 +342,7 @@ def sponsorships_index(request):
         'count': deals.count(),
         'with_figure': deals.exclude(annual=None, total=None).count(),
         }
+    context['section'] = 'revenue'
     return render(request, "money/sponsorships.html", context)
 
 
@@ -268,7 +386,7 @@ def tv_index(request):
         leagues.append({'competition': competition, 'national': national, 'local': local, 'years': years})
     # MLS first: it is the league with the money and the record.
     leagues.sort(key=lambda l: l['competition'].slug != MLS)
-    return render(request, "money/tv.html", {'leagues': leagues, 'count': tv.count()})
+    return render(request, "money/tv.html", {'leagues': leagues, 'count': tv.count(), 'section': 'revenue'})
 
 
 TRANSFERS = Transfer.objects.select_related('person', 'competition', 'from_team', 'to_team')
@@ -321,6 +439,7 @@ def transfers_index(request):
         'record_in': max((t for t in cash if t.direction == 'in'), key=lambda t: t.fee, default=None),
         'record_out': max((t for t in cash if t.direction == 'out'), key=lambda t: t.fee, default=None),
         }
+    context['section'] = 'transfers'
     return render(request, "money/transfers.html", context)
 
 
@@ -384,19 +503,12 @@ def valuations_index(request):
     """
     valuations = list(Valuation.objects.select_related('team').order_by('season', 'rank'))
 
-    lines, grids = [], []
-    for publisher, css in PUBLISHERS:
-        mine = [v for v in valuations if v.publisher == publisher]
-        if not mine:
-            continue
-        by_season = defaultdict(list)
-        for v in mine:
-            by_season[v.season].append(v.value)
-        lines.append(('%s, average club' % publisher, css,
-                      {s: sum(vs) / len(vs) for s, vs in by_season.items()}))
-        seasons, rows = valuation_grid(mine)
+    lines, grids = average_lines(valuations), []
+    for name, _, averages in lines:
+        publisher = name.split(',')[0]
+        seasons, rows = valuation_grid([v for v in valuations if v.publisher == publisher])
         grids.append({'publisher': publisher, 'seasons': seasons, 'rows': rows,
-                      'averages': [sum(by_season[s]) / len(by_season[s]) for s in seasons]})
+                      'averages': [averages[s] for s in seasons]})
 
     deals = deal_values(
         ExpansionFee.objects.filter(competition__slug=MLS).select_related('team'),
@@ -412,6 +524,7 @@ def valuations_index(request):
         'grids': grids,
         'lists': len({(v.publisher, v.season) for v in valuations}),
         }
+    context['section'] = 'value'
     return render(request, "money/valuations.html", context)
 
 
@@ -442,4 +555,5 @@ def ownership_index(request):
             Sale.objects.select_related('team', 'competition'),
             Operator.objects.select_related('team', 'competition')),
         }
+    context['section'] = 'value'
     return render(request, "money/ownership.html", context)

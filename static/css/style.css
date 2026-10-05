@@ -105,6 +105,11 @@ h3 { font-size: 0.95em; color: var(--ink-soft); }
 
 #nav a { color: var(--ink); font-weight: 500; }
 #nav a:hover { color: var(--accent); text-decoration: none; }
+#nav a[aria-current] { color: var(--accent); box-shadow: inset 0 -2px 0 var(--accent); }
+
+/* Where a page sits: league, club, season. */
+.crumbs { font-size: .9em; color: var(--ink-soft); margin: 0 0 4px; }
+.crumbs a { color: var(--ink-soft); }
 
 
 /* ---- Footer ---- */
@@ -199,6 +204,8 @@ table.wide td { white-space: nowrap; }
 tr.total td { border-top: 2px solid var(--ink); font-weight: 600; }
 
 /* A note is prose; it wraps, but not to a sliver. */
+/* A name long enough to wrap, in ink, unlike a note. */
+table.wide td.wrap { white-space: normal; min-width: 14ch; max-width: 26ch; }
 table.wide td.note { white-space: normal; min-width: 24ch; max-width: 40ch; color: var(--ink-soft); }
 
 /* Money and counts sit right so the digits line up by place. */

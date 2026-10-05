@@ -23,6 +23,8 @@ class Command(BaseCommand):
 
         urls = [
             reverse('index'),
+            reverse('pay_index'),
+            reverse('clubs_index'),
             reverse('sponsorships_index'),
             reverse('valuations_index'),
             reverse('ownership_index'),

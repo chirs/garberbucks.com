@@ -63,10 +63,10 @@ def season_2007(mls, galaxy):
     pay('Kenny Schoeni', mls, '2007', 17700, 17700, None, position='GK')
 
 
-def test_index_lists_each_season_with_its_total_and_top_earner(client, season_2007, mls):
+def test_pay_lists_each_season_with_its_total_and_top_earner(client, season_2007, mls):
     pay('Marcelo Balboa', mls, '1996', 175000)
 
-    html = client.get('/').content.decode()
+    html = client.get('/pay/').content.decode()
 
     assert html.index('>2007<') < html.index('>1996<')
     assert '$7,417,700' in html
@@ -75,8 +75,9 @@ def test_index_lists_each_season_with_its_total_and_top_earner(client, season_20
     assert 'MLS 1996, 2007' in html
 
 
-def test_index_renders_with_nothing_on_record(client, db):
-    response = client.get('/')
+def test_pay_and_home_render_with_nothing_on_record(client, db):
+    assert client.get('/').status_code == 200
+    response = client.get('/pay/')
     assert response.status_code == 200
     assert 'none yet' in response.content.decode()
 
@@ -183,12 +184,12 @@ def test_a_weekly_wage_says_so(client, db):
     wonder_workers = Team.objects.create(name='Boston Wonder Workers', slug='boston-wonder-workers')
     pay('Alex McNab', asl, '1925', 25, None, wonder_workers, period='week')
 
-    for url in ('/', '/c/american-soccer-league-1921-1933/1925/', '/teams/boston-wonder-workers/',
+    for url in ('/pay/', '/c/american-soccer-league-1921-1933/1925/', '/teams/boston-wonder-workers/',
                 '/teams/boston-wonder-workers/1925/', '/bios/alex-mcnab/'):
         assert '$25 a week' in client.get(url).content.decode(), url
 
     # A weekly wage is not a season's coverage.
-    assert 'ASL1' not in client.get('/').content.decode()
+    assert 'ASL1' not in client.get('/pay/').content.decode()
 
 
 def test_a_person_who_does_not_exist_is_not_found(client, db):
@@ -306,7 +307,7 @@ def test_a_league_that_does_not_exist_is_not_found(client, db):
 
 
 def test_home_links_each_season_to_its_league(client, season_2007):
-    assert 'href="/c/major-league-soccer/"' in client.get('/').content.decode()
+    assert 'href="/c/major-league-soccer/"' in client.get('/pay/').content.decode()
 
 
 def test_median_team_payroll_is_the_club_in_the_middle(client, mls, galaxy):
@@ -401,7 +402,7 @@ def test_team_page_lists_its_sponsorships(client, mls, galaxy):
 
     html = client.get('/teams/la-galaxy/').content.decode()
 
-    assert '<h2>Sponsorships</h2>' in html
+    assert '<h3>Sponsorships</h3>' in html
     assert 'Herbalife' in html
     assert '>club<' not in html
 
@@ -473,7 +474,7 @@ def test_team_page_lists_its_valuations(client, mls, galaxy):
 
     html = client.get('/teams/la-galaxy/').content.decode()
 
-    assert '<h2>Valuations</h2>' in html
+    assert '<h3>Valuations</h3>' in html
     assert '$320,000,000' in html and '$63,000,000' in html
     assert 'title="not given">&mdash;' in html
     assert 'href="https://a.example">1</a>' in html
@@ -510,7 +511,7 @@ def test_ownership_page(client, chicago):
 def test_team_page_shows_ownership(client, chicago):
     html = client.get('/teams/chicago-fire/').content.decode()
 
-    assert '<h2>Ownership</h2>' in html
+    assert '<h3>Ownership</h3>' in html
     assert 'joined MLS in 1998' in html and 'expansion fee of $5,000,000' in html
     assert 'Joe Mansueto' in html
     assert '>club<' not in html
@@ -533,12 +534,12 @@ def test_ownership_is_grouped_by_league(client, chicago, db):
     assert html.index('<h2>Major League Soccer</h2>') < html.index('<h2>North American Soccer League</h2>')
 
     html = client.get('/teams/seattle-sounders/').content.decode()
-    assert '<h3>Major League Soccer</h3>' in html and '<h3>North American Soccer League</h3>' in html
+    assert '<h4>Major League Soccer</h4>' in html and '<h4>North American Soccer League</h4>' in html
     assert 'expansion fee of $75,000' in html and 'expansion fee of $30,000,000' in html
 
 
 def test_a_club_in_one_league_has_no_league_heading(client, chicago):
-    assert '<h3>Major League Soccer</h3>' not in client.get('/teams/chicago-fire/').content.decode()
+    assert '<h4>Major League Soccer</h4>' not in client.get('/teams/chicago-fire/').content.decode()
 
 
 def test_valuations_page_charts_fees_and_sales(client, mls, galaxy, chicago):
@@ -649,7 +650,7 @@ def test_a_club_page_lists_its_local_tv_deals_apart_from_sponsorships(client, ml
 
     html = client.get('/teams/la-galaxy/').content.decode()
 
-    sponsorships, local = html.split('<h2>Sponsorships</h2>')[1].split('<h2>Local TV</h2>')
+    sponsorships, local = html.split('<h3>Sponsorships</h3>')[1].split('<h3>Local TV</h3>')
     assert 'BMO' in sponsorships and 'Time Warner' not in sponsorships
     assert 'Time Warner' in local
 
@@ -751,7 +752,7 @@ def test_a_club_page_lists_moves_both_ways(client, mls, atlanta, galaxy):
     move('Gabriel Pec', mls, 2024, 'in', 'Vasco da Gama', 'LA Galaxy', to_team=galaxy, fee=9600000)
 
     html = client.get('/teams/atlanta-united/').content.decode()
-    section = html.split('<h2>Transfers</h2>')[1]
+    section = html.split('<h3>Transfers</h3>')[1]
 
     assert 'Latte Lath' in section and 'Almada' in section and 'Pec' not in section
 
@@ -781,3 +782,76 @@ def test_transfers_filter_by_move(client, mls, atlanta, galaxy):
     # the records are the league's, whatever the filter
     assert 'The biggest fee in is $22M' in out
     assert 'aria-current' in client.get('/transfers/?move=bogus').content.decode().split('All</a>')[0].split('class="filters"')[1]
+
+
+
+def test_home_is_the_mls_hub_with_a_section_per_part_of_the_site(client, season_2007, mls, galaxy):
+    Valuation.objects.create(team=galaxy, competition=mls, publisher='Forbes', season=2008, rank=1,
+                             value=100000000, sources='https://a.example')
+    move('David Beckham', mls, 2007, 'in', 'Real Madrid', 'LA Galaxy', to_team=galaxy, fee=None)
+    move('Landon Donovan', mls, 2007, 'out', 'LA Galaxy', 'Everton', from_team=galaxy, fee=1000000)
+    tv(mls, sponsor='ESPN', property='TV', start=2007, end=2008, annual=8000000, total=None)
+
+    html = client.get('/').content.decode()
+
+    assert '<h1>Major League Soccer</h1>' in html
+    for heading in ('Pay', 'Transfers', 'Value &amp; ownership', 'Revenue'):
+        assert '">%s</a></h2>' % heading in html, heading
+    assert 'the biggest received is $1M' in html
+    assert 'its average club was worth $100M' in html
+    assert 'aria-current="page" title' not in html and 'title="Major League Soccer" aria-current="page">MLS</a>' in html
+    assert 'class="bar"' in html          # the TV chart; payroll and value need more seasons to draw
+
+
+def test_another_league_gets_the_same_hub(client, db):
+    nasl = Competition.objects.create(name='North American Soccer League', slug='north-american-soccer-league')
+    tv(nasl, sponsor='ABC', property='TV', start=1979, end=1980, annual=None, total=1800000)
+
+    html = client.get('/c/north-american-soccer-league/').content.decode()
+
+    assert '<h1>North American Soccer League</h1>' in html
+    assert '">Revenue</a></h2>' in html and '">Pay</a></h2>' not in html
+
+
+def test_clubs_page_sets_each_current_club_side_by_side(client, mls, galaxy, atlanta):
+    pay('David Beckham', mls, '2026', 5000000, 6000000, galaxy)
+    pay('Old Player', mls, '2007', 100000, None, atlanta)
+    Valuation.objects.create(team=galaxy, competition=mls, publisher='Sportico', season=2025, rank=2,
+                             value=1000000000, sources='')
+    Valuation.objects.create(team=galaxy, competition=mls, publisher='Forbes', season=2026, rank=1,
+                             value=1200000000, sources='')
+    Operator.objects.create(team=galaxy, competition=mls, operator='AEG', start=1998, end=None)
+    deal(mls, galaxy, property='Dignity Health Sports Park', start=2019, end=None)
+    move('Riqui Puig', mls, 2022, 'in', 'Barcelona', 'LA Galaxy', to_team=galaxy, fee=3000000)
+    move('Gabriel Pec', mls, 2024, 'in', 'Vasco da Gama', 'LA Galaxy', to_team=galaxy, fee=9600000)
+
+    html = client.get('/clubs/').content.decode()
+    table, others = html.split('<tbody>')[1].split('Other clubs on record')
+
+    assert 'LA Galaxy' in table and 'Atlanta United' not in table
+    assert '$6M' in table and '$1,200M' in table and 'Forbes 2026' in table
+    assert '<td class="wrap">AEG</td>' in table and '<td class="wrap">Dignity Health Sports Park</td>' in table
+    assert 'Gabriel Pec</a>, in</td>' in table and '$9.6M' in table
+    assert 'Atlanta United' in others
+
+
+def test_deep_pages_carry_breadcrumbs_and_mark_their_section(client, season_2007):
+    team = client.get('/teams/la-galaxy/').content.decode()
+    team_season = client.get('/teams/la-galaxy/2007/').content.decode()
+    season = client.get('/c/major-league-soccer/2007/').content.decode()
+    player = client.get('/bios/david-beckham/').content.decode()
+
+    assert 'class="crumbs"' in team and '<a href="/clubs/">Clubs</a>' in team
+    assert '<a href="/teams/la-galaxy/">LA Galaxy</a>' in team_season.split('class="crumbs"')[1].split('</nav>')[0]
+    assert '<a href="/c/major-league-soccer/">Major League Soccer</a>' in season
+    assert '<a href="/teams/la-galaxy/">LA Galaxy</a>' in player.split('class="crumbs"')[1].split('</nav>')[0]
+    assert 'aria-current="page">clubs</a>' in team and 'aria-current="page">pay</a>' in season
+
+
+def test_merged_sections_switch_between_their_pages(client, db):
+    for url, here in (('/valuations/', 'Valuations'), ('/ownership/', 'Owners, sales and expansion fees'),
+                      ('/sponsorships/', 'Sponsorships'), ('/tv/', 'TV rights')):
+        html = client.get(url).content.decode()
+        assert 'aria-current="page">%s</a>' % here in html, url
+    assert 'aria-current="page">value &amp; ownership</a>' in client.get('/ownership/').content.decode()
+    assert 'aria-current="page">revenue</a>' in client.get('/tv/').content.decode()

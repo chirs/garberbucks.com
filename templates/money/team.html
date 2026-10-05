@@ -1,17 +1,20 @@
 {% extends "base.html" %}
 {% load charts money_tags %}
 
-{% block title %}{{ team.name }} payroll{% endblock %}
-{% block metadescription %}What {{ team.name }} paid its players, season by season{% endblock %}
+{% block title %}{{ team.name }}{% endblock %}
+{% block metadescription %}The money at {{ team.name }}: payroll, transfers, valuations, owners and sponsors{% endblock %}
 
 {% block content %}
 
-<h1>{{ team.name }} payroll</h1>
+<h1>{{ team.name }}</h1>
 
-<p class="prose">What {{ team.name }} paid its players in each season on record. The club's
-games, rosters and history are at <a href="{{ team.soccerstats_url }}">soccerstats.us</a>.</p>
+<p class="prose">The money at {{ team.name }}: what it pays its players, what it is worth and who
+owns it, and what it is paid. The club's games, rosters and history are at
+<a href="{{ team.soccerstats_url }}">soccerstats.us</a>.</p>
 
-<h2>Seasons on record</h2>
+<h2>Pay</h2>
+
+<h3>Payroll by season</h3>
 
 {% if seasons %}
 {% include "money/_seasons.html" %}
@@ -20,8 +23,20 @@ games, rosters and history are at <a href="{{ team.soccerstats_url }}">soccersta
 2004 on; a club from outside those years has none yet.</p>
 {% endif %}
 
+{% if transfers %}
+<h3>Transfers</h3>
+
+{% include "money/_transfers.html" with season=True player=True cols=transfer_cols %}
+
+<p class="table-legend">Fees paid and received, as reported; nearly all are press estimates.
+<a href="{% url 'transfers_index' %}">Every transfer on record</a>.</p>
+{% endif %}
+
+{% if valuations or ownership %}
+<h2>Value &amp; ownership</h2>
+
 {% if valuations %}
-<h2>Valuations</h2>
+<h3>Valuations</h3>
 
 {% value_chart value_series deal_marks "Estimated value by year, with any expansion fee and sale" 1996 %}
 
@@ -66,10 +81,10 @@ related businesses. <a href="{% url 'valuations_index' %}">Every club's valuatio
 {% endif %}
 
 {% if ownership %}
-<h2>Ownership</h2>
+<h3>Ownership</h3>
 
 {% for league in ownership %}
-{% if ownership|length > 1 %}<h3>{{ league.competition.name }}</h3>{% endif %}
+{% if ownership|length > 1 %}<h4>{{ league.competition.name }}</h4>{% endif %}
 
 {% for fee in league.fees %}
 <p class="prose">{{ team.name }} joined {{ league.competition.abbreviation|default:league.competition.name }} in {{ fee.first_season }}{% if fee.fee is not None %}
@@ -89,9 +104,13 @@ Note: {{ fee.note }}.{% endif %}</p>
 <p class="table-legend"><a href="{% url 'ownership_index' %}">Every club's ownership, sales and
 expansion fees</a>.</p>
 {% endif %}
+{% endif %}
+
+{% if sponsorships or tv_deals %}
+<h2>Revenue</h2>
 
 {% if sponsorships %}
-<h2>Sponsorships</h2>
+<h3>Sponsorships</h3>
 
 {% include "money/_sponsorships.html" with deals=sponsorships club=False %}
 
@@ -100,22 +119,14 @@ out from the other figure and the deal's length. Seasons are the first and last 
 <a href="{% url 'sponsorships_index' %}">Every club's sponsorships</a>.</p>
 {% endif %}
 
-{% if transfers %}
-<h2>Transfers</h2>
-
-{% include "money/_transfers.html" with season=True player=True cols=transfer_cols %}
-
-<p class="table-legend">Fees paid and received, as reported; nearly all are press estimates.
-<a href="{% url 'transfers_index' %}">Every transfer on record</a>.</p>
-{% endif %}
-
 {% if tv_deals %}
-<h2>Local TV</h2>
+<h3>Local TV</h3>
 
 {% include "money/_sponsorships.html" with deals=tv_deals club=False tv=True %}
 
 <p class="table-legend">Figures are as reported; one in grey italics is worked out from the other
 figure and the deal's length. <a href="{% url 'tv_index' %}">The league's TV deals</a>.</p>
+{% endif %}
 {% endif %}
 
 {% endblock %}

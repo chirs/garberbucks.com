@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Pay{% endblock %}
+
+{% block content %}
+
+<h1>Pay</h1>
+
+<p class="prose">What American soccer players have been paid, as their union and the press
+published it. The record is incomplete, and the seasons below are all of it so far. Each
+season leads to every player's pay that year, by club. Transfer fees are on
+<a href="{% url 'transfers_index' %}">their own page</a>.</p>
+
+<h2>Seasons on record</h2>
+
+{% include "money/_seasons.html" %}
+
+{% endblock %}
