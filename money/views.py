@@ -235,6 +235,7 @@ def deal_values(fees, sales):
     for f in fees:
         if f.fee is not None:
             rows.append({'year': f.awarded, 'value': f.fee, 'kind': 'fee', 'team': f.team,
+                         'href': f.team.get_absolute_url(),
                          'what': 'expansion fee, first season %s' % f.first_season,
                          'title': '%s %s expansion fee: %s' % (f.awarded, f.team.name, money(f.fee))})
     for s in sales:
@@ -245,6 +246,7 @@ def deal_values(fees, sales):
         else:
             continue
         rows.append({'year': s.year, 'value': value, 'kind': 'sale', 'team': s.team, 'what': what,
+                     'href': s.team.get_absolute_url(),
                      'title': '%s %s sale (%s): club valued at %s' % (s.year, s.team.name, what, money(value))})
     return sorted(rows, key=lambda r: (r['year'], r['team'].name))
 
@@ -290,8 +292,8 @@ def valuations_index(request):
     deals = deal_values(
         ExpansionFee.objects.filter(competition__slug=MLS).select_related('team'),
         Sale.objects.filter(competition__slug=MLS).select_related('team'))
-    marks = [{'year': v.season, 'value': v.value, 'kind': 'club',
-              'title': '%s %s, %s: %s' % (v.season, v.publisher, v.team.name, money(v.value))}
+    marks = [{'year': v.season, 'value': v.value, 'kind': 'club', 'href': v.team.get_absolute_url(),
+              'title': '%s %s value of %s: %s' % (v.season, v.publisher, v.team.name, money(v.value))}
              for v in valuations] + deals
 
     context = {

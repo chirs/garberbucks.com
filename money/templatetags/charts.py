@@ -259,6 +259,5 @@ def value_chart(lines, points, label, first_year=None):
         'right_edge': WIDTH - RIGHT,
         'label': label,
         'caption': '%s, on a logarithmic scale: each gridline step is a doubling or more. '
-                   'A line joins only consecutive years, so a year with no list is a gap. '
-                   'Hover or focus a mark for its figure.' % label,
+                   'A line joins only consecutive years, so a year with no list is a gap.' % label,
     }

@@ -11,6 +11,8 @@
     --hairline: #e5e7e9;   /* hairlines */
     --fill: #f6f7f8;       /* subtle panel/row ground */
     --fill-hover: #eef4f1; /* row hover highlight */
+    --fee: #2a78d6;        /* valuation chart: an expansion fee */
+    --sale: #eb6834;       /* valuation chart: a sale; checked against --fee for colour-blind separation */
 }
 
 * { box-sizing: border-box; }
@@ -239,11 +241,14 @@ figure.chart figcaption { font-size: .9em; color: var(--ink-soft); margin-top: 6
 /* The point is small; what the pointer has to find is not. */
 .chart .hit { fill: transparent; }
 .chart a:hover .dot, .chart a:focus-visible .dot { r: 6px; }
-/* Single valuations. Published values are faint context; deals are the point,
-   in ink, told apart by shape: a hollow square for a fee, a diamond for a sale. */
+/* Single valuations, all circles. Published values are faint grey context; fees
+   and sales are the point, in two colours the legend names. */
 .chart .mark-club { fill: var(--ink-soft); opacity: 0.35; }
-.chart .mark-fee { fill: #fff; stroke: var(--ink); stroke-width: 1.5; }
-.chart .mark-sale { fill: var(--ink); stroke: #fff; stroke-width: 1; }
+.chart .mark-fee { fill: var(--fee); stroke: #fff; stroke-width: 1.5; }
+.chart .mark-sale { fill: var(--sale); stroke: #fff; stroke-width: 1.5; }
+.chart [data-tip] { cursor: pointer; }
+.chart .selected { stroke: var(--ink); stroke-width: 2.5; opacity: 1; }
+.chart-readout { margin: 6px 0 0; font-size: .95em; min-height: 1.5em; }
 .chart [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .chart a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 /* A surface halo keeps a value legible where a gridline crosses it. */

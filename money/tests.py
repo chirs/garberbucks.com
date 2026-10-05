@@ -549,6 +549,9 @@ def test_valuations_page_charts_fees_and_sales(client, mls, galaxy, chicago):
     assert '<h2>Expansion fees and sales</h2>' in html
     assert 'class="mark-fee"' in html and 'class="mark-sale"' in html
     assert 'class="mark-club"' in html
+    assert '<rect' not in html.split('<figure')[1].split('</figure>')[0]   # circles only
+    assert 'data-href="/teams/chicago-fire/"' in html
+    assert 'class="chart-readout"' in html
     # Mansueto's 51% stated a $400M valuation; the 49% with no figure is left off.
     assert '$400,000,000' in html and '51% sold for $204,000,000' in html
     assert '49% sold' not in html

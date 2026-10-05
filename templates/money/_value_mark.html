@@ -1,5 +1,2 @@
-{# One valuation mark: a faint dot for a club on a published list, a hollow square for an expansion fee, a diamond for a sale. #}
-{% if kind == 'club' %}<circle class="mark-club" cx="{{ cx|floatformat:1 }}" cy="{{ cy|floatformat:1 }}" r="2.5"{% if title %} tabindex="0"><title>{{ title }}</title></circle>{% else %}/>{% endif %}
-{% elif kind == 'fee' %}<rect class="mark-fee" x="{{ cx|add:-5 }}" y="{{ cy|floatformat:1 }}" width="10" height="10" transform="translate(0,-5)"{% if title %} tabindex="0"><title>{{ title }}</title></rect>{% else %}/>{% endif %}
-{% else %}<path class="mark-sale" d="M{{ cx|floatformat:1 }},{{ cy|floatformat:1 }}m0,-7l6,7l-6,7l-6,-7z"{% if title %} tabindex="0"><title>{{ title }}</title></path>{% else %}/>{% endif %}
-{% endif %}
+{# One valuation mark, a circle: faint grey for a club on a published list, blue for an expansion fee, orange for a sale. #}
+<circle class="mark-{{ kind }}" cx="{{ cx|floatformat:1 }}" cy="{{ cy|floatformat:1 }}" r="{% if kind == 'club' %}2.5{% else %}5{% endif %}"{% if tip %} tabindex="0" role="button" data-tip="{{ tip }}"{% if href %} data-href="{{ href }}"{% endif %}><title>{{ tip }}</title></circle>{% else %}/>{% endif %}

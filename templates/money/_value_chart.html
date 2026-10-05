@@ -16,21 +16,51 @@
   {% endfor %}
   <line class="axis" x1="{{ left }}" x2="{{ right_edge }}" y1="{{ base }}" y2="{{ base }}"/>
   {% for m in marks %}{% if m.kind == 'club' %}
-  {% include "money/_value_mark.html" with kind='club' cx=m.x cy=m.y title=m.title %}
+  {% include "money/_value_mark.html" with kind='club' cx=m.x cy=m.y tip=m.title href=m.href %}
   {% endif %}{% endfor %}
   {% for line in lines %}
   <path class="line {{ line.css }}" d="{{ line.path }}"/>
   {% endfor %}
   {% for line in lines %}{% for pt in line.points %}
-  <circle class="dot {{ line.css }}" cx="{{ pt.x|floatformat:1 }}" cy="{{ pt.y|floatformat:1 }}" r="4" tabindex="0"><title>{{ pt.title }}</title></circle>
+  <circle class="dot {{ line.css }}" cx="{{ pt.x|floatformat:1 }}" cy="{{ pt.y|floatformat:1 }}" r="4" tabindex="0" role="button" data-tip="{{ pt.title }}"><title>{{ pt.title }}</title></circle>
   {% endfor %}{% endfor %}
   {% for m in marks %}{% if m.kind != 'club' %}
-  {% include "money/_value_mark.html" with kind=m.kind cx=m.x cy=m.y title=m.title %}
+  {% include "money/_value_mark.html" with kind=m.kind cx=m.x cy=m.y tip=m.title href=m.href %}
   {% endif %}{% endfor %}
   {% for l in labels %}
   <text x="{{ l.x|floatformat:1 }}" y="{{ label_y }}" text-anchor="middle">{{ l.text }}</text>
   {% endfor %}
 </svg>
+<p class="chart-readout" aria-live="polite">Click or tap a mark to see what it is.</p>
 <figcaption>{{ caption }}</figcaption>
 </figure>
+<script>
+// Clicking, tapping or pressing Enter on a mark names it under the chart,
+// with a link to the club where there is one.
+document.querySelectorAll('figure.chart').forEach(function (figure) {
+  if (figure.dataset.readout) return;
+  figure.dataset.readout = '1';
+  var readout = figure.querySelector('.chart-readout');
+  if (!readout) return;
+  function show(mark) {
+    figure.querySelectorAll('.selected').forEach(function (m) { m.classList.remove('selected'); });
+    mark.classList.add('selected');
+    readout.textContent = mark.dataset.tip + ' ';
+    if (mark.dataset.href) {
+      var a = document.createElement('a');
+      a.href = mark.dataset.href;
+      a.textContent = 'Go to the club';
+      readout.appendChild(a);
+    }
+  }
+  figure.addEventListener('click', function (e) {
+    var mark = e.target.closest('[data-tip]');
+    if (mark) show(mark);
+  });
+  figure.addEventListener('keydown', function (e) {
+    var mark = e.target.closest('[data-tip]');
+    if (mark && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); show(mark); }
+  });
+});
+</script>
 {% endif %}
