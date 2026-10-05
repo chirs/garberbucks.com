@@ -138,9 +138,10 @@ def team_detail(request, slug):
         'seasons': season_summaries(Salary.objects.filter(team=team)),
         'sponsorships': list(Sponsorship.objects.filter(team=team).order_by('kind', 'start')),
         'valuations': list(Valuation.objects.filter(team=team).order_by('-season', 'publisher')),
-        'operators': list(Operator.objects.filter(team=team).order_by('start')),
-        'sales': list(Sale.objects.filter(team=team).order_by('year')),
-        'expansion_fee': ExpansionFee.objects.filter(team=team).first(),
+        'ownership': ownership_by_competition(
+            ExpansionFee.objects.filter(team=team).select_related('competition'),
+            Sale.objects.filter(team=team).select_related('competition').order_by('year'),
+            Operator.objects.filter(team=team).select_related('competition').order_by('start')),
         'value_series': [(p, css, {v.season: v.value for v in Valuation.objects.filter(team=team, publisher=p)})
                          for p, css in PUBLISHERS],
         }
@@ -261,14 +262,31 @@ def valuations_index(request):
     return render(request, "money/valuations.html", context)
 
 
+def ownership_by_competition(fees, sales, operators):
+    """
+    [{competition, fees, sales, operators}], one per league with any record,
+    the league with the most recent record first.
+    """
+    leagues = {}
+    for kind, rows in (('fees', fees), ('sales', sales), ('operators', operators)):
+        for row in rows:
+            league = leagues.setdefault(row.competition_id, {
+                'competition': row.competition, 'fees': [], 'sales': [], 'operators': []})
+            league[kind].append(row)
+    latest = lambda l: max([r.start or 0 for r in l['operators']] + [r.year for r in l['sales']] +
+                           [r.first_season for r in l['fees']] + [0])
+    return sorted(leagues.values(), key=latest, reverse=True)
+
+
 def ownership_index(request):
     """
-    What clubs have paid to join the league, what they have sold for, and who
+    What clubs have paid to join each league, what they have sold for, and who
     has run each of them.
     """
     context = {
-        'fees': list(ExpansionFee.objects.select_related('team')),
-        'sales': list(Sale.objects.select_related('team')),
-        'operators': list(Operator.objects.select_related('team')),
+        'leagues': ownership_by_competition(
+            ExpansionFee.objects.select_related('team', 'competition'),
+            Sale.objects.select_related('team', 'competition'),
+            Operator.objects.select_related('team', 'competition')),
         }
     return render(request, "money/ownership.html", context)

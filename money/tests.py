@@ -483,7 +483,7 @@ def chicago(mls):
 def test_ownership_page(client, chicago):
     html = client.get('/ownership/').content.decode()
 
-    assert html.index('<h2>Expansion fees</h2>') < html.index('<h2>Sales</h2>') < html.index('<h2>Operators</h2>')
+    assert html.index('<h3>Expansion fees</h3>') < html.index('<h3>Sales</h3>') < html.index('<h3>Operators</h3>')
     assert '$5,000,000' in html and '$204,000,000' in html and '$400,000,000' in html
     assert html.index('>2018<') < html.index('>2019<')
     assert 'present' in html
@@ -495,7 +495,7 @@ def test_team_page_shows_ownership(client, chicago):
     html = client.get('/teams/chicago-fire/').content.decode()
 
     assert '<h2>Ownership</h2>' in html
-    assert 'joined the league in 1998' in html and 'expansion fee of $5,000,000' in html
+    assert 'joined MLS in 1998' in html and 'expansion fee of $5,000,000' in html
     assert 'Joe Mansueto' in html
     assert '>club<' not in html
 
@@ -503,3 +503,23 @@ def test_team_page_shows_ownership(client, chicago):
 def test_team_page_for_a_club_with_no_salaries(client, chicago):
     html = client.get('/teams/chicago-fire/').content.decode()
     assert 'No salaries are on record for Chicago Fire' in html
+
+
+def test_ownership_is_grouped_by_league(client, chicago, db):
+    nasl = Competition.objects.create(name='North American Soccer League',
+                                      slug='north-american-soccer-league', abbreviation='NASL')
+    sounders = Team.objects.create(name='Seattle Sounders', slug='seattle-sounders')
+    mls = Competition.objects.get(slug='major-league-soccer')
+    ExpansionFee.objects.create(team=sounders, competition=nasl, awarded=1973, first_season=1974, fee=75000)
+    ExpansionFee.objects.create(team=sounders, competition=mls, awarded=2007, first_season=2009, fee=30000000)
+
+    html = client.get('/ownership/').content.decode()
+    assert html.index('<h2>Major League Soccer</h2>') < html.index('<h2>North American Soccer League</h2>')
+
+    html = client.get('/teams/seattle-sounders/').content.decode()
+    assert '<h3>Major League Soccer</h3>' in html and '<h3>North American Soccer League</h3>' in html
+    assert 'expansion fee of $75,000' in html and 'expansion fee of $30,000,000' in html
+
+
+def test_a_club_in_one_league_has_no_league_heading(client, chicago):
+    assert '<h3>Major League Soccer</h3>' not in client.get('/teams/chicago-fire/').content.decode()

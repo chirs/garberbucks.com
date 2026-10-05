@@ -2,17 +2,21 @@
 {% load money_tags %}
 
 {% block title %}Ownership{% endblock %}
-{% block metadescription %}What MLS clubs paid to join the league, what they have sold for, and who has run them{% endblock %}
+{% block metadescription %}What American soccer clubs paid to join their leagues, what they have sold for, and who has run them{% endblock %}
 
 {% block content %}
 
 <h1>Ownership</h1>
 
-<p class="prose">What it has cost to own an MLS club: the fee each paid the league to join, what
-clubs and stakes in them have sold for, and who has run each one. The figures are as reported,
-mostly by the business press; owners rarely announce them.</p>
+<p class="prose">What it has cost to own a club: the fee each paid its league to join, what clubs and
+stakes in them have sold for, and who has run each one. The figures are as reported, mostly by the
+press; owners rarely announce them. The NASL record is thinner and its years approximate.</p>
 
-<h2>Expansion fees</h2>
+{% for league in leagues %}
+<h2>{{ league.competition.name }}</h2>
+
+{% if league.fees %}
+<h3>Expansion fees</h3>
 
 <table class="wide">
 <thead>
@@ -26,7 +30,7 @@ mostly by the business press; owners rarely announce them.</p>
   </tr>
 </thead>
 <tbody>
-{% for f in fees %}
+{% for f in league.fees %}
 <tr>
   <td><a href="{{ f.team.get_absolute_url }}">{{ f.team.name }}</a></td>
   <td>{{ f.awarded }}</td>
@@ -38,19 +42,24 @@ mostly by the business press; owners rarely announce them.</p>
 {% endfor %}
 </tbody>
 </table>
+{% endif %}
 
-<p class="table-legend">The ten clubs that began play in 1996 were run by investor-operators who
-paid no expansion fee, and are not listed.</p>
+{% if league.sales %}
+<h3>Sales</h3>
 
-<h2>Sales</h2>
+{% include "money/_sales.html" with sales=league.sales club=True %}
+{% endif %}
 
-{% include "money/_sales.html" with club=True %}
+{% if league.operators %}
+<h3>Operators</h3>
+
+{% include "money/_operators.html" with operators=league.operators club=True %}
+{% endif %}
+{% endfor %}
 
 <p class="table-legend">Price is what was paid for the stake; club valued at is what the deal valued
-the whole club at. A sale that included a stadium, real estate or a sister club says so in the note.</p>
-
-<h2>Operators</h2>
-
-{% include "money/_operators.html" with club=True %}
+the whole club at. A sale that included a stadium, real estate or a sister club says so in the note.
+Clubs that began play in a league's first season paid no expansion fee and are not listed under
+fees.</p>
 
 {% endblock %}

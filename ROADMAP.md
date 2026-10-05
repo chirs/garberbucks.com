@@ -63,7 +63,10 @@ Open work only; completed items are removed as they land (see git history).
   raise, Portland, Minnesota's partners, LAFC's earlier stake sales, Nashville's
   minority investors), exact dates rather than years, and stakes for the
   operators file.
-- [ ] Ownership before MLS: the NASL and ASL clubs' owners and sale prices.
+- [ ] NASL ownership: the first pass is in; fill operator years and owners for
+  the clubs with none (Kansas City Spurs, Washington Darts, Denver Dynamos,
+  Tulsa Roughnecks, Toronto Blizzard before 1979) and more sale prices.
+- [ ] ASL ownership, 1921–1933.
 - [ ] Owners' net worth.
 - [ ] Forbes's MLS valuations before 2008 and for 2014, if any were published;
   Sportico's 2023, if it exists. Forbes 2008 and 2019 come from write-ups of the

@@ -65,22 +65,26 @@ operating income are for the season before the list; Sportico includes the team'
 related businesses. <a href="{% url 'valuations_index' %}">Every club's valuations</a>.</p>
 {% endif %}
 
-{% if operators or sales or expansion_fee %}
+{% if ownership %}
 <h2>Ownership</h2>
 
-{% if expansion_fee %}
-<p class="prose">{{ team.name }} joined the league in {{ expansion_fee.first_season }}{% if expansion_fee.fee is not None %}
-for an expansion fee of {{ expansion_fee.fee|dollars }}{% endif %}, awarded in {{ expansion_fee.awarded }}.{% if expansion_fee.note %}
-Note: {{ expansion_fee.note }}.{% endif %}</p>
+{% for league in ownership %}
+{% if ownership|length > 1 %}<h3>{{ league.competition.name }}</h3>{% endif %}
+
+{% for fee in league.fees %}
+<p class="prose">{{ team.name }} joined {{ league.competition.abbreviation|default:league.competition.name }} in {{ fee.first_season }}{% if fee.fee is not None %}
+for an expansion fee of {{ fee.fee|dollars }}{% endif %}, awarded in {{ fee.awarded }}.{% if fee.note %}
+Note: {{ fee.note }}.{% endif %}</p>
+{% endfor %}
+
+{% if league.operators %}
+{% include "money/_operators.html" with operators=league.operators club=False %}
 {% endif %}
 
-{% if operators %}
-{% include "money/_operators.html" with club=False %}
+{% if league.sales %}
+{% include "money/_sales.html" with sales=league.sales club=False %}
 {% endif %}
-
-{% if sales %}
-{% include "money/_sales.html" with club=False %}
-{% endif %}
+{% endfor %}
 
 <p class="table-legend"><a href="{% url 'ownership_index' %}">Every club's ownership, sales and
 expansion fees</a>.</p>
