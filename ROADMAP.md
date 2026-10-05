@@ -62,11 +62,13 @@ Open work only; completed items are removed as they land (see git history).
 
 ## Beyond salaries
 
-- [ ] Rules for 1997–2005, the 2009 salary budget, and allocation money before
-  2015. The league's rules page is archived only from 2011; 2006–2010 come from
-  the press.
-- [ ] Owners' net worths for 2025 and 2026 (the archive holds Forbes's lists only
-  in pages of 50), and before 2019 from Forbes's earlier lists or the Forbes 400.
+- [ ] Salary budgets for 1997–2005 and 2009, and allocation money before 2015.
+  The league's rules page is archived only from 2011, the Fraser testimony
+  covers 1996, and media guides of the era print the rules without figures;
+  archived mlsnet.com releases or newspapers are what is left.
+- [ ] Owners' net worths before 2017: a Forbes profile's wealth history shows its
+  last ten lists, so older archived captures of each profile would reach back
+  further. Clark Hunt's profile has no history; only 2024 is on record.
 - [ ] Rules not yet on record: the U22 Initiative slots, the third-DP fee, the
   homegrown subsidy, and the 2025 cash-for-GAM conversion. Define them in prose
   first, then model what can be.
