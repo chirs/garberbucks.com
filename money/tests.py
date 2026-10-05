@@ -6,7 +6,7 @@ from bios.models import Bio
 from competitions.models import Competition
 from money.coverage import season_ranges
 from money.views import PARTIAL_LIST, SQUAD as SQUAD_SIZE
-from money.models import ExpansionFee, NetWorth, Operator, Owner, Rule, StadiumCost, Sale, Salary, Sponsorship, Transfer, Valuation
+from money.models import ExpansionFee, NetWorth, Operator, Owner, Rule, StadiumCost, StaffPay, Sale, Salary, Sponsorship, Transfer, Valuation
 from money.templatetags.charts import compact, latest_run, log_ticks, payroll_chart, value_chart
 from money.templatetags.money_tags import billions, dollars, fee, millions
 from teams.models import Team
@@ -1196,3 +1196,30 @@ def test_a_club_page_shows_its_stadium(client, mls, galaxy):
     StadiumCost.objects.create(team=galaxy, competition=mls, stadium='Home Depot Center', opened=2003, kind='built',
                                cost=150000000)
     assert '<h3>Stadium</h3>' in client.get('/teams/la-galaxy/').content.decode()
+
+
+
+def test_staff_page_grids_each_organizations_pay_and_charts_the_key_jobs(client, db):
+    ussf = 'United States Soccer Federation'
+    for year, name, role, pay in ((2023, 'Gregg Berhalter', 'Head Coach, Mnt', 1600000),
+                                  (2024, 'Gregg Berhalter', 'Head Coach, Mnt, thru 7/24', 1774981),
+                                  (2024, 'Mauricio Pochettino', 'Head Coach, Mnt, as of 8/24', 5016917),
+                                  (2023, 'Vlatko Andonovski', 'Wnt Head Coach', 900000),
+                                  (2024, 'Emma Hayes', 'Head Coach, Wnt', 1469557),
+                                  (2024, 'Twila Kaufman', '2nd Assistant Coach, Wnt', 435209),
+                                  (2024, 'John Batson', 'Chief Execut. Off & Secretary Gen.', 898787)):
+        StaffPay.objects.create(organization=ussf, year=year, name=name, role=role, pay=pay, sources='https://pp.example')
+    StaffPay.objects.create(organization='Major League Soccer', year=2014, name='Don Garber', role='Commissioner',
+                            pay=5000000, coverage='reported')
+
+    html = client.get('/staff/').content.decode()
+
+    assert html.index('<h2>United States Soccer Federation</h2>') < html.index('<h2>Major League Soccer</h2>')
+    chart = html.split('<figure')[1].split('</figure>')[0]
+    assert "2024 men&#x27;s national team coach: $6.8M (Mauricio Pochettino, Gregg Berhalter)" in chart
+    assert "women&#x27;s national team coach: $1.5M (Emma Hayes)" in chart        # not the assistant
+    assert 'chief executive: $898.8K (John Batson)' in chart or 'chief executive: $899K (John Batson)' in chart
+    grid = html.split('<h2>United States Soccer Federation</h2>')[1].split('</figure>')[1]
+    assert grid.index('Mauricio Pochettino') < grid.index('Gregg Berhalter')
+    assert '$5.02M' in grid and 'not on that year' in grid
+    assert 'aria-current="page">Staff</a>' in html and 'aria-current="page">pay</a>' in html

@@ -494,3 +494,35 @@ def minimum_chart(rows):
                     'in the middle of that season\'s list. A season with no rule on record breaks its line. '
                     'Hover or focus a point for its figure.'),
     }
+
+
+@register.inclusion_tag("money/_payroll_chart.html")
+def key_roles_chart(rows, roles):
+    """
+    What an organization paid its key jobs year by year, on one scale: a line
+    per job, broken where no one held it on the filing. roles is
+    [(name, css, pattern)].
+    """
+    if len(rows) < 2:
+        return {}
+    slot = (WIDTH - LEFT - RIGHT) / (len(rows) - 1)
+    xs = [LEFT + i * slot for i in range(len(rows))]
+    measures = [(name, css, name) for name, css, _ in roles if any(r[name] for r in rows)]
+    p = panel('Key jobs', rows, measures, xs, 0)
+    for line in p['lines']:
+        for pt, row in zip(line['points'], [r for r in rows if r[line['name']] is not None]):
+            pt['title'] = '%s %s: %s (%s)' % (row['season'], line['name'].lower(), compact(pt['value']), row['who'][line['name']])
+    first, last = rows[0]['season'], rows[-1]['season']
+    return {
+        'panels': [p],
+        'labels': [{'x': x, 'text': r['season']} for r, x in zip(rows, xs)],
+        'label_y': p['base'] + LABEL_H - 10,
+        'width': WIDTH,
+        'height': p['base'] + LABEL_H,
+        'left': LEFT,
+        'right_edge': WIDTH - RIGHT,
+        'label': 'Pay for the key jobs, %s to %s' % (first, last),
+        'caption': ('Reportable pay by calendar year, as the federation\'s Form 990 lists it. Where a '
+                    'job changed hands during a year, both people\'s pay is added together. Hover or '
+                    'focus a point for the figure and who held the job.'),
+    }

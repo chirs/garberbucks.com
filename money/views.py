@@ -1,3 +1,4 @@
+import re
 from collections import defaultdict
 from datetime import date
 from statistics import median
@@ -9,7 +10,7 @@ from django.urls import reverse
 
 from bios.models import Bio
 from competitions.models import Competition
-from money.models import PAY, ExpansionFee, NetWorth, Operator, Owner, Rule, StadiumCost, Sale, Salary, Sponsorship, Transfer, Valuation
+from money.models import PAY, ExpansionFee, NetWorth, Operator, Owner, Rule, StadiumCost, StaffPay, Sale, Salary, Sponsorship, Transfer, Valuation
 from money.templatetags.money_tags import fee
 from teams.models import Team
 
@@ -112,6 +113,67 @@ def minimum_rows(seasons):
             'share': at_minimum / summary['players'] if at_minimum is not None else None,
         })
     return rows
+
+
+# The jobs a federation's chart follows, each matched on how the 990 words the role.
+KEY_ROLES = (
+    ("Men's national team coach", 'average', r'^(?=.*\bmnt\b)(?=.*coach)(?!.*assistant)'),
+    ("Women's national team coach", 'median', r'^(?=.*\bwnt\b)(?=.*coach)(?!.*assistant)'),
+    ('Chief executive', 'budget', r'^(?!.*(?:former|associate|deputy|assistant)).*(?:\bceo\b|chief execut|secretary gen)'),
+)
+
+
+def key_role_rows(staff):
+    """
+    Each year's pay for the key jobs, adding up two people where one handed over
+    to another during the year, oldest first: rows for the chart's panel.
+    """
+    years = sorted({s.year for s in staff})
+    rows = []
+    for year in years:
+        row = {'season': str(year), 'period': 'year', 'url': None, 'who': {}}
+        for name, _, pattern in KEY_ROLES:
+            people = [s for s in staff if s.year == year and s.pay and re.search(pattern, s.role, re.I)]
+            row[name] = sum(s.pay for s in people) or None
+            row['who'][name] = ', '.join(s.name for s in people)
+        rows.append(row)
+    return rows
+
+
+def staff_grid(staff):
+    """A row per person, a column per year of their pay, the best paid at their peak first."""
+    years = sorted({s.year for s in staff})
+    people = {}
+    for s in staff:
+        row = people.setdefault(s.name, {'name': s.name, 'role': s.role, 'by_year': {}, 'sources': []})
+        row['by_year'][s.year] = (row['by_year'].get(s.year) or 0) + (s.pay or 0)
+        row['role'] = s.role       # the latest, since staff comes oldest first
+        row['sources'] += [u for u in s.source_list() if u not in row['sources']]
+    rows = sorted(people.values(), key=lambda r: -max(r['by_year'].values()))
+    for row in rows:
+        row['values'] = [row['by_year'].get(y) for y in years]
+    return years, rows
+
+
+def staff_index(request):
+    """
+    What the organizations around the league pay the people who run them: the
+    federation and the players' union from their public tax filings, the league
+    from what the press reported.
+    """
+    organizations = []
+    for name in StaffPay.objects.values_list('organization', flat=True).distinct().order_by('organization'):
+        staff = list(StaffPay.objects.filter(organization=name).order_by('year', '-pay'))
+        years, rows = staff_grid(staff)
+        organizations.append({'name': name, 'years': years, 'rows': rows,
+                              'reported': all(s.coverage == 'reported' for s in staff),
+                              'key_roles': key_role_rows(staff) if any(
+                                  re.search(KEY_ROLES[0][2], s.role, re.I) for s in staff) else None})
+    # The federation first: it has the most, then the union, then the league's reports.
+    order = {'United States Soccer Federation': 0, 'MLS Players Association': 1}
+    organizations.sort(key=lambda o: order.get(o['name'], 2))
+    return render(request, "money/staff.html", {'organizations': organizations, 'key_roles': KEY_ROLES,
+                                                'section': 'pay'})
 
 
 def pay_index(request):

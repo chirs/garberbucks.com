@@ -88,6 +88,15 @@ Open work only; completed items are removed as they land (see git history).
   lists, not Forbes's own pages; replace them if the tables turn up.
 - [ ] Other leagues: Liga MX, NASL, ASL, ALPF, then the big European five.
 
+## Staff
+
+- [ ] U.S. Soccer's and the union's 990s before 2014: the IRS has only the
+  e-filed years; earlier ones are scanned PDFs on Nonprofit Explorer (Gulati's,
+  Bradley's and Arena's first terms, the union's first decade).
+- [ ] MLS executives beyond Garber's one reported contract, from the press.
+- [ ] Referees: per-match fees and retainers from the PSRA agreements with PRO.
+- [ ] MLS coaches and general managers, as reported, like the NASL salaries.
+
 ## Stadiums
 
 - [ ] Public money for the 21 stadiums without it on record: land, bonds,

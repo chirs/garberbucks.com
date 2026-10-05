@@ -7,7 +7,7 @@ from django.template.defaultfilters import slugify
 
 from bios.models import Bio
 from competitions.models import Competition
-from money.models import ExpansionFee, NetWorth, Operator, Owner, StadiumCost, Rule, Salary, Sale, Sponsorship, Transfer, Valuation
+from money.models import ExpansionFee, NetWorth, Operator, Owner, StadiumCost, StaffPay, Rule, Salary, Sale, Sponsorship, Transfer, Valuation
 from teams.models import Team
 
 # Which end of a move is a club in the league: those get team pages, the
@@ -52,6 +52,7 @@ def load():
     load_transfers(transfers, competitions, teams, bios)
     load_rules(rules, competitions)
     load_stadiums(stadiums, competitions, teams)
+    load_staff(list(soccer_db.staff_pay.find()))
 
 
 def load_competitions(names):
@@ -266,3 +267,13 @@ def load_stadiums(stadiums, competitions, teams):
                     public=e['public'], currency=e['currency'], note=e['note'],
                     sources='\n'.join(e['sources']))
         for e in stadiums)
+
+
+def load_staff(staff):
+    print("loading {} staff pay figures".format(len(staff)))
+
+    StaffPay.objects.bulk_create(
+        StaffPay(organization=e['organization'], year=e['year'], name=e['name'], role=e['role'],
+                 pay=e['pay'], related=e['related'], other=e['other'], coverage=e['coverage'],
+                 sources='\n'.join(e['sources']))
+        for e in staff)

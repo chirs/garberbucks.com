@@ -326,3 +326,30 @@ class StadiumCost(Sourced):
 
     def public_share(self):
         return self.public / self.cost if self.public is not None and self.cost else None
+
+
+class StaffPay(models.Model):
+    """
+    What an organization paid one of the people who run it in a calendar year:
+    from the Form 990 a tax-exempt body files ('full'), or a press report
+    ('reported') where it files nothing public.
+    """
+
+    organization = models.CharField(max_length=200)
+    year = models.IntegerField()
+    name = models.CharField(max_length=200)
+    role = models.CharField(max_length=300, blank=True)
+    pay = models.BigIntegerField(null=True)       # reportable compensation
+    related = models.BigIntegerField(null=True)   # from related organizations
+    other = models.BigIntegerField(null=True)     # benefits and deferred pay
+    coverage = models.CharField(max_length=10, default='full')
+    sources = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ('organization', 'year', '-pay')
+
+    def __str__(self):
+        return "%s %s %s" % (self.organization, self.year, self.name)
+
+    def source_list(self):
+        return self.sources.split()

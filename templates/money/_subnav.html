@@ -1,6 +1,9 @@
 {# The pages of a merged section, as a switch under its heading. group is 'value' or 'revenue'; here is this page's url name. #}
 <nav class="filters" aria-label="Pages in this section">
-  {% if group == 'value' %}
+  {% if group == 'pay' %}
+  <a href="{% url 'pay_index' %}"{% if here == 'pay_index' %} aria-current="page"{% endif %}>Players</a>
+  <a href="{% url 'staff_index' %}"{% if here == 'staff_index' %} aria-current="page"{% endif %}>Staff</a>
+  {% elif group == 'value' %}
   <a href="{% url 'valuations_index' %}"{% if here == 'valuations_index' %} aria-current="page"{% endif %}>Valuations</a>
   <a href="{% url 'ownership_index' %}"{% if here == 'ownership_index' %} aria-current="page"{% endif %}>Owners, sales and expansion fees</a>
   <a href="{% url 'stadiums_index' %}"{% if here == 'stadiums_index' %} aria-current="page"{% endif %}>Stadiums</a>

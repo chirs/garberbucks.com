@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load charts money_tags %}
+
+{% block title %}Staff pay{% endblock %}
+{% block metadescription %}What U.S. Soccer, the MLS Players Association and MLS pay the people who run them: coaches, executives and staff{% endblock %}
+
+{% block content %}
+
+<h1>Staff pay</h1>
+
+{% include "money/_subnav.html" with group='pay' here='staff_index' %}
+
+<p class="prose">What the organizations around the league pay the people who run them. U.S. Soccer
+and the MLS Players Association are tax-exempt, so each year they must list their officers, key staff
+and best-paid employees on the Form 990 they file with the IRS; those lists are below, by the calendar
+year the pay is for. MLS is a private company and files nothing public, so its figures are the few the
+press has reported.</p>
+
+{% for org in organizations %}
+<h2>{{ org.name }}</h2>
+
+{% if org.key_roles %}
+{% key_roles_chart org.key_roles key_roles %}
+{% endif %}
+
+<table class="wide worths">
+<thead>
+  <tr>
+    <th scope="col">name</th>
+    <th scope="col">role</th>
+    {% for year in org.years %}<th scope="col" class="num">{{ year }}</th>{% endfor %}
+    <th scope="col">sources</th>
+  </tr>
+</thead>
+<tbody>
+{% for row in org.rows %}
+<tr>
+  <td>{{ row.name }}</td>
+  <td class="note">{{ row.role }}</td>
+  {% for v in row.values %}{% if v %}<td class="num">{{ v|fee }}</td>{% else %}{% include "gap.html" with num=True title="not on that year's list" %}{% endif %}{% endfor %}
+  <td>{% for url in row.sources %}<a href="{{ url }}">{{ forloop.counter }}</a>{% if not forloop.last %} {% endif %}{% endfor %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+<p class="table-legend">{% if org.reported %}Figures as the press reported them; the league publishes
+none.{% else %}Reportable pay, before benefits, as the Form 990 lists it, in millions. A filing lists
+officers, key staff and the five best-paid others, so someone is missing from a year when they fell
+outside that, not because they were unpaid. Names are as filed; national team players appear in years
+the federation paid them bonuses.{% endif %}</p>
+{% endfor %}
+
+{% endblock %}
