@@ -9,7 +9,7 @@ from django.urls import reverse
 
 from bios.models import Bio
 from competitions.models import Competition
-from money.models import PAY, ExpansionFee, NetWorth, Operator, Rule, Sale, Salary, Sponsorship, Transfer, Valuation
+from money.models import PAY, ExpansionFee, NetWorth, Operator, Owner, Rule, Sale, Salary, Sponsorship, Transfer, Valuation
 from money.templatetags.money_tags import fee
 from teams.models import Team
 
@@ -176,7 +176,7 @@ def clubs_index(request):
     values, owners, stadiums, biggest = {}, {}, {}, {}
     for v in Valuation.objects.filter(team__in=teams):
         values[v.team_id] = latest([values.get(v.team_id) or (0, None), (v.season, v)])
-    for o in Operator.objects.filter(team__in=teams, end=None):
+    for o in Operator.objects.filter(team__in=teams, end=None).select_related('owner'):
         owners[o.team_id] = latest([owners.get(o.team_id) or (0, None), (o.start or 0, o)])
     this_year = date.today().year
     for s in Sponsorship.objects.filter(team__in=teams, kind=Sponsorship.NAMING_RIGHTS, start__lte=this_year):
@@ -259,7 +259,7 @@ def team_detail(request, slug):
         'team': team,
         'seasons': season_summaries(Salary.objects.filter(team=team)),
         'budget': budget_positions([team]).get(team.id, []),
-        'worths': net_worth_grid(list(NetWorth.objects.filter(team=team).select_related('team'))),
+        'worths': net_worth_grid(list(NetWorth.objects.filter(team=team).select_related('team', 'club_owner'))),
         'sponsorships': list(Sponsorship.objects.filter(team=team).exclude(kind__in=Sponsorship.TV)
                              .order_by('kind', 'start')),
         'tv_deals': list(Sponsorship.objects.filter(team=team, kind__in=Sponsorship.TV).order_by('start')),
@@ -270,7 +270,7 @@ def team_detail(request, slug):
         'ownership': ownership_by_competition(
             ExpansionFee.objects.filter(team=team).select_related('competition'),
             Sale.objects.filter(team=team).select_related('competition').order_by('year'),
-            Operator.objects.filter(team=team).select_related('competition').order_by('start')),
+            Operator.objects.filter(team=team).select_related('competition', 'owner').order_by('start')),
         'value_series': [(p, css, {v.season: v.value for v in Valuation.objects.filter(team=team, publisher=p)})
                          for p, css in PUBLISHERS],
         'deal_marks': deal_values(
@@ -656,7 +656,7 @@ def net_worth_grid(worths):
     owners = {}
     for w in worths:
         row = owners.setdefault((w.owner, w.team_id), {'owner': w.owner, 'team': w.team, 'note': w.note,
-                                                      'by_year': {}, 'sources': []})
+                                                      'club_owner': w.club_owner, 'by_year': {}, 'sources': []})
         row['by_year'][w.year] = w.net_worth
         row['sources'] += [s for s in w.source_list() if s not in row['sources']]
     rows = list(owners.values())
@@ -667,19 +667,48 @@ def net_worth_grid(worths):
     return years, rows
 
 
+def owner_detail(request, slug):
+    """
+    One owner: the clubs they ran, the groups they ran clubs as part of, the
+    stakes they bought and sold, and what Forbes said they were worth.
+    """
+    owner = get_object_or_404(Owner, slug=slug)
+
+    operated = list(Operator.objects.filter(owner=owner).select_related('team', 'competition', 'owner')
+                    .order_by('start', 'team__name'))
+    # A group's record names its members; a member with a page of their own sees it too.
+    groups = [o for o in Operator.objects.exclude(owner=owner).select_related('team', 'competition', 'owner')
+              .order_by('start') if len(owner.name) > 4 and owner.name in o.operator]
+    sales = list(Sale.objects.filter(Q(buyer__contains=owner.name) | Q(seller__contains=owner.name))
+                 .select_related('team', 'competition').order_by('year'))
+    worths = list(NetWorth.objects.filter(club_owner=owner).select_related('team', 'club_owner'))
+
+    context = {
+        'owner': owner,
+        'operated': operated,
+        'groups': groups,
+        'sales': sales,
+        'worths': net_worth_grid(worths),
+        'worth_list': worths,
+        'section': 'value',
+        'crumbs': [(reverse('ownership_index'), 'Ownership')],
+        }
+    return render(request, "money/owner.html", context)
+
+
 def ownership_index(request):
     """
     What clubs have paid to join each league, what they have sold for, and who
     has run each of them.
     """
-    years, worths = net_worth_grid(list(NetWorth.objects.select_related('team')))
+    years, worths = net_worth_grid(list(NetWorth.objects.select_related('team', 'club_owner')))
     context = {
         'worth_years': years,
         'worths': worths,
         'leagues': ownership_by_competition(
             ExpansionFee.objects.select_related('team', 'competition'),
             Sale.objects.select_related('team', 'competition'),
-            Operator.objects.select_related('team', 'competition')),
+            Operator.objects.select_related('team', 'competition', 'owner')),
         }
     context['section'] = 'value'
     return render(request, "money/ownership.html", context)

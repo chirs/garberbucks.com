@@ -1,4 +1,5 @@
 from django.db import models
+from django.urls import reverse
 from django.db.models.functions import Coalesce
 
 from bios.models import Bio
@@ -149,12 +150,33 @@ class Sourced(models.Model):
         return self.sources.split()
 
 
+class Owner(models.Model):
+    """
+    Whoever ran a club, as the ownership record names them: a person, a family,
+    a company or a group. One page each; the record's spellings of one owner
+    ("Robert Kraft", "Robert Kraft and family") share it.
+    """
+
+    name = models.CharField(max_length=300, unique=True)
+    slug = models.SlugField(max_length=300, unique=True)
+
+    class Meta:
+        ordering = ('name',)
+
+    def __str__(self):
+        return self.name
+
+    def get_absolute_url(self):
+        return reverse('owner_detail', args=[self.slug])
+
+
 class Operator(Sourced):
     """Who ran a club, and when. An empty end is the current operator."""
 
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
     competition = models.ForeignKey(Competition, on_delete=models.CASCADE)
     operator = models.CharField(max_length=300)
+    owner = models.ForeignKey(Owner, null=True, on_delete=models.CASCADE)
     start = models.IntegerField(null=True)
     end = models.IntegerField(null=True)
 
@@ -265,7 +287,8 @@ class NetWorth(Sourced):
 
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
     competition = models.ForeignKey(Competition, on_delete=models.CASCADE)
-    owner = models.CharField(max_length=200)
+    owner = models.CharField(max_length=200)  # the person, as Forbes names them
+    club_owner = models.ForeignKey(Owner, null=True, on_delete=models.CASCADE)  # who ran the club that year
     year = models.IntegerField()
     net_worth = models.BigIntegerField()
     publisher = models.CharField(max_length=50)

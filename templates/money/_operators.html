@@ -1,8 +1,9 @@
-{# One row per operator. club=False leaves out the club column, on a club's own page. #}
+{# One row per operator. club=False leaves out the club column, on a club's own page; league=True adds the league, on an owner's. #}
 <table class="wide">
 <thead>
   <tr>
     {% if club %}<th scope="col">club</th>{% endif %}
+    {% if league %}<th scope="col">league</th>{% endif %}
     <th scope="col">operator</th>
     <th scope="col">from</th>
     <th scope="col">to</th>
@@ -12,9 +13,10 @@
 </thead>
 <tbody>
 {% for o in operators %}
-<tr{% if club and not forloop.first %}{% ifchanged o.team_id %} class="group-start"{% endifchanged %}{% endif %}>
-  {% if club %}<td>{% ifchanged o.team_id %}<a href="{{ o.team.get_absolute_url }}">{{ o.team.name }}</a>{% endifchanged %}</td>{% endif %}
-  <td>{{ o.operator }}</td>
+<tr{% if club and not league and not forloop.first %}{% ifchanged o.team_id %} class="group-start"{% endifchanged %}{% endif %}>
+  {% if club %}<td>{% if league %}<a href="{{ o.team.get_absolute_url }}">{{ o.team.name }}</a>{% else %}{% ifchanged o.team_id %}<a href="{{ o.team.get_absolute_url }}">{{ o.team.name }}</a>{% endifchanged %}{% endif %}</td>{% endif %}
+  {% if league %}<td><a href="{{ o.competition.get_absolute_url }}">{{ o.competition.abbreviation|default:o.competition.name }}</a></td>{% endif %}
+  <td>{% if o.owner %}<a href="{{ o.owner.get_absolute_url }}">{{ o.operator }}</a>{% else %}{{ o.operator }}{% endif %}</td>
   {% if o.start %}<td>{{ o.start }}</td>{% else %}{% include "gap.html" %}{% endif %}
   <td>{% if o.end %}{{ o.end }}{% else %}present{% endif %}</td>
   <td class="note">{{ o.note }}</td>

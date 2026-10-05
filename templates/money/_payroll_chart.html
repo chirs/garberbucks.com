@@ -17,7 +17,7 @@
   <path class="line {{ line.css }}" d="{{ line.path }}"/>
   {% endfor %}
   {% for line in p.lines %}{% for pt in line.points %}
-  <a href="{{ pt.url }}"><circle class="dot {{ line.css }}" cx="{{ pt.x|floatformat:1 }}" cy="{{ pt.y|floatformat:1 }}" r="4"/><circle class="hit" cx="{{ pt.x|floatformat:1 }}" cy="{{ pt.y|floatformat:1 }}" r="9"><title>{{ pt.title }}</title></circle></a>
+  {% if pt.url %}<a href="{{ pt.url }}">{% else %}<g tabindex="0">{% endif %}<circle class="dot {{ line.css }}" cx="{{ pt.x|floatformat:1 }}" cy="{{ pt.y|floatformat:1 }}" r="4"/><circle class="hit" cx="{{ pt.x|floatformat:1 }}" cy="{{ pt.y|floatformat:1 }}" r="9"><title>{{ pt.title }}</title></circle>{% if pt.url %}</a>{% else %}</g>{% endif %}
   {% endfor %}{% endfor %}
   {% for e in p.ends %}
   <text class="label value" x="{{ e.x|floatformat:1 }}" y="{{ e.y|floatformat:1 }}" dy="4">{{ e.text }}</text>

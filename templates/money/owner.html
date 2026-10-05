@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load charts money_tags %}
+
+{% block title %}{{ owner.name }}{% endblock %}
+{% block metadescription %}The clubs {{ owner.name }} ran in American soccer, the stakes bought and sold, and the fortune behind them{% endblock %}
+
+{% block content %}
+
+<h1>{{ owner.name }}</h1>
+
+<p class="prose">{% if operated %}{{ owner.name }} ran {{ operated|length }} club{{ operated|length|pluralize }}
+on record{% if groups %}, and was part of the group running {{ groups|length }} more{% endif %}.{% elif groups %}{{ owner.name }} was part of the group running {{ groups|length }} club{{ groups|length|pluralize }} on record.{% endif %}
+Owners are named as the ownership record names them: a person, a family, a company or a group.</p>
+
+{% if operated %}
+<h2>Clubs</h2>
+{% include "money/_operators.html" with operators=operated club=True league=True %}
+{% endif %}
+
+{% if groups %}
+<h2>As part of a group</h2>
+{% include "money/_operators.html" with operators=groups club=True league=True %}
+{% endif %}
+
+{% if sales %}
+<h2>Stakes bought and sold</h2>
+{% include "money/_sales.html" with sales=sales club=True %}
+{% endif %}
+
+{% if worths.1 %}
+<h2>Net worth</h2>
+
+{% worth_chart worth_list %}
+
+{% include "money/_net_worths.html" with years=worths.0 rows=worths.1 club=True %}
+{% endif %}
+
+{% endblock %}

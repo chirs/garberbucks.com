@@ -1,3 +1,5 @@
+import re
+
 import pymongo
 
 from django.db import transaction
@@ -5,7 +7,7 @@ from django.template.defaultfilters import slugify
 
 from bios.models import Bio
 from competitions.models import Competition
-from money.models import ExpansionFee, NetWorth, Operator, Rule, Salary, Sale, Sponsorship, Transfer, Valuation
+from money.models import ExpansionFee, NetWorth, Operator, Owner, Rule, Salary, Sale, Sponsorship, Transfer, Valuation
 from teams.models import Team
 
 # Which end of a move is a club in the league: those get team pages, the
@@ -45,7 +47,7 @@ def load():
     load_sponsorships(sponsorships, competitions, teams)
     load_valuations(valuations, competitions, teams)
     load_ownership(operators, sales, fees, competitions, teams)
-    load_net_worths(worths, competitions, teams)
+    load_net_worths(worths, competitions, teams, operators)
     load_transfers(transfers, competitions, teams, bios)
     load_rules(rules, competitions)
 
@@ -157,15 +159,29 @@ def load_valuations(valuations, competitions, teams):
         for e in valuations)
 
 
+def owner_name(operator):
+    """
+    The owner an operator record names, without the holding company in
+    parentheses or a trailing "and family": "Anthony Precourt (Two Oak
+    Ventures)" and "Anthony Precourt (Precourt Sports Ventures)" are one owner.
+    """
+    name = re.sub(r'\s*\([^()]*\)$', '', operator)
+    return re.sub(r' and family$', '', name)
+
+
 def load_ownership(operators, sales, fees, competitions, teams):
     print("loading {} operators, {} sales, {} expansion fees".format(len(operators), len(sales), len(fees)))
+
+    names = sorted({owner_name(e['operator']) for e in operators})
+    owners = {o.name: o.id for o in Owner.objects.bulk_create(Owner(name=n, slug=slugify(n)) for n in names)}
 
     def common(e):
         return {'team_id': teams[e['club']], 'competition_id': competitions[e['competition']],
                 'note': e['note'], 'sources': '\n'.join(e['sources'])}
 
     Operator.objects.bulk_create(
-        Operator(operator=e['operator'], start=e['start'], end=e['end'], **common(e))
+        Operator(operator=e['operator'], owner_id=owners[owner_name(e['operator'])],
+                 start=e['start'], end=e['end'], **common(e))
         for e in operators)
     Sale.objects.bulk_create(
         Sale(year=e['year'], seller=e['seller'], buyer=e['buyer'], stake=e['stake'] or '',
@@ -176,12 +192,21 @@ def load_ownership(operators, sales, fees, competitions, teams):
         for e in fees)
 
 
-def load_net_worths(worths, competitions, teams):
+def load_net_worths(worths, competitions, teams, operators):
     print("loading {} owners' net worths".format(len(worths)))
+
+    owners = {o.name: o.id for o in Owner.objects.all()}
+
+    def running(club, year):
+        """Who ran the club that year: of the operators covering it, the one who took over last."""
+        spans = [o for o in operators if o['club'] == club and (o['start'] or 0) <= year <= (o['end'] or year)]
+        latest = max(spans, key=lambda o: o['start'] or 0, default=None)
+        return owners.get(owner_name(latest['operator'])) if latest else None
 
     NetWorth.objects.bulk_create(
         NetWorth(team_id=teams[e['club']], competition_id=competitions[e['competition']],
-                 owner=e['owner'], year=e['year'], net_worth=e['net_worth'], publisher=e['publisher'],
+                 owner=e['owner'], club_owner_id=running(e['club'], e['year']),
+                 year=e['year'], net_worth=e['net_worth'], publisher=e['publisher'],
                  note=e['note'], sources='\n'.join(e['sources']))
         for e in worths)
 

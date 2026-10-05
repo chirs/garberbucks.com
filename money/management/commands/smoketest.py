@@ -42,6 +42,13 @@ class Command(BaseCommand):
         if transfer:
             urls.append(reverse('person_detail', args=[transfer.person.slug]))
 
+        # An owner who ran clubs in more than one league or was part of a group.
+        from money.models import Owner
+        urls += [o.get_absolute_url() for o in Owner.objects.all()[:3]]
+        aeg = Owner.objects.filter(slug='anschutz-entertainment-group').first()
+        if aeg:
+            urls.append(aeg.get_absolute_url())
+
         # Every season page: the columns on record differ from season to season.
         seasons = Salary.objects.values_list('competition__slug', 'season').distinct()
         urls += [reverse('season_detail', args=season) for season in seasons]

@@ -68,7 +68,7 @@ def series(name, css, rows, key, xs, base, scale):
         drawing = True
         points.append({
             'x': x, 'y': y, 'value': value,
-            'url': row.get('url') or reverse('season_detail', args=[row['competition__slug'], row['season']]),
+            'url': row['url'] if 'url' in row else reverse('season_detail', args=[row['competition__slug'], row['season']]),
             'title': '%s %s: $%s' % (row['season'], name.lower(), format(round(value), ',')),
         })
     return {'name': name, 'css': css, 'path': ''.join(path), 'points': points}
@@ -421,4 +421,37 @@ def pay_chart(salaries):
         'right_edge': WIDTH - RIGHT,
         'label': 'Pay by season, %s to %s' % (first, last),
         'caption': caption,
+    }
+
+
+@register.inclusion_tag("money/_payroll_chart.html")
+def worth_chart(worths):
+    """
+    What the people behind an owner were worth, a line per person by year, on
+    one scale. Years they were off the list break their line.
+    """
+    years = sorted({w.year for w in worths})
+    if len(years) < 2:
+        return {}
+    people = sorted({w.owner for w in worths}, key=lambda p: -max(w.net_worth for w in worths if w.owner == p))[:2]
+    values = {(w.owner, w.year): w.net_worth for w in worths}
+    rows = [dict({p: values.get((p, y)) for p in people}, season=str(y), url=None)
+            for y in range(years[0], years[-1] + 1)]
+    slot = (WIDTH - LEFT - RIGHT) / (len(rows) - 1)
+    xs = [LEFT + i * slot for i in range(len(rows))]
+    p = panel('Net worth', rows, [(name, css, name) for name, css in zip(people, ('average', 'median'))], xs, 0)
+    for line in p['lines']:
+        for pt, row in zip(line['points'], [r for r in rows if r[line['name']] is not None]):
+            pt['title'] = '%s %s: %s' % (row['season'], line['name'], compact(pt['value']))
+    return {
+        'panels': [p],
+        'labels': [{'x': x, 'text': r['season']} for r, x in zip(rows, xs)],
+        'label_y': p['base'] + LABEL_H - 10,
+        'width': WIDTH,
+        'height': p['base'] + LABEL_H,
+        'left': LEFT,
+        'right_edge': WIDTH - RIGHT,
+        'label': 'Net worth by year, %s to %s' % (years[0], years[-1]),
+        'caption': ("Forbes's estimate each spring, in the years they ran the club. A year off the "
+                    'list breaks the line. Hover or focus a point for its figure.'),
     }

@@ -12,7 +12,7 @@
 <tbody>
 {% for row in rows %}
 <tr>
-  <td>{{ row.owner }}{% if row.note %} <span class="aside">({{ row.note }})</span>{% endif %}</td>
+  <td>{% if row.club_owner %}<a href="{{ row.club_owner.get_absolute_url }}">{{ row.owner }}</a>{% else %}{{ row.owner }}{% endif %}{% if row.note %} <span class="aside">({{ row.note }})</span>{% endif %}</td>
   {% if club %}<td><a href="{{ row.team.get_absolute_url }}">{{ row.team.name }}</a></td>{% endif %}
   {% for v in row.values %}{% if v is not None %}<td class="num">{{ v|billions }}</td>{% else %}{% include "gap.html" with num=True title="not on that year's list" %}{% endif %}{% endfor %}
   <td>{% for url in row.sources %}<a href="{{ url }}">{{ forloop.counter }}</a>{% if not forloop.last %} {% endif %}{% endfor %}</td>

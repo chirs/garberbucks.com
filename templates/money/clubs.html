@@ -44,7 +44,7 @@ paid or received. Each club's page has the history behind every figure.</p>
   {% else %}
   {% include "gap.html" with num=True title="on no published list" %}
   {% endif %}
-  {% if row.owner %}<td class="wrap">{{ row.owner.operator }}</td>{% else %}{% include "gap.html" with title="not on record" %}{% endif %}
+  {% if row.owner %}<td class="wrap">{% if row.owner.owner %}<a href="{{ row.owner.owner.get_absolute_url }}">{{ row.owner.operator }}</a>{% else %}{{ row.owner.operator }}{% endif %}</td>{% else %}{% include "gap.html" with title="not on record" %}{% endif %}
   {% if row.worth %}<td class="num" title="{{ row.worth.owner }}, Forbes {{ row.worth.year }}">{{ row.worth.net_worth|billions }}</td>{% else %}{% include "gap.html" with num=True title="not on Forbes's billionaires list" %}{% endif %}
   {% if row.stadium %}<td class="wrap">{{ row.stadium.property }}</td>{% else %}{% include "gap.html" with title="no naming-rights deal on record" %}{% endif %}
   {% if row.transfer %}

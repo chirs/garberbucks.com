@@ -5,7 +5,7 @@ import pytest
 
 from bios.models import Bio
 from build import load
-from money.models import ExpansionFee, NetWorth, Operator, Rule, Sale, Salary, Sponsorship, Transfer, Valuation
+from money.models import ExpansionFee, NetWorth, Operator, Owner, Rule, Sale, Salary, Sponsorship, Transfer, Valuation
 from teams.models import Team
 
 
@@ -212,3 +212,24 @@ def test_loads_owners_net_worths_with_their_clubs(mongo):
 
     w = NetWorth.objects.select_related('team').get()
     assert (w.team.slug, w.owner, w.year, w.net_worth) == ('atlanta-united', 'Arthur Blank', 2024, 9200000000)
+
+
+def test_owner_name_drops_the_holding_company_and_family():
+    assert load.owner_name('Anthony Precourt (Two Oak Ventures)') == 'Anthony Precourt'
+    assert load.owner_name('Robert Kraft and family') == 'Robert Kraft'
+    assert load.owner_name('Taylor family (Carolyn Kindle) and Jim Kavanaugh') == 'Taylor family (Carolyn Kindle) and Jim Kavanaugh'
+
+
+@pytest.mark.django_db
+def test_operators_share_an_owner_and_net_worths_find_who_ran_the_club(mongo):
+    op = {'competition': 'Major League Soccer', 'note': '', 'sources': []}
+    mongo([salary()],
+          operators=[{**op, 'club': 'New England Revolution', 'operator': 'Robert Kraft and family', 'start': 1995, 'end': None},
+                     {**op, 'club': 'San Jose Earthquakes', 'operator': 'Robert Kraft', 'start': 1999, 'end': 2000}],
+          worths=[{**op, 'club': 'New England Revolution', 'owner': 'Robert Kraft', 'year': 2024,
+                   'net_worth': 11100000000, 'publisher': 'Forbes'}])
+    load.load()
+
+    kraft = Owner.objects.get()
+    assert (kraft.name, kraft.slug, kraft.operator_set.count()) == ('Robert Kraft', 'robert-kraft', 2)
+    assert NetWorth.objects.get().club_owner == kraft

@@ -6,7 +6,7 @@ from bios.models import Bio
 from competitions.models import Competition
 from money.coverage import season_ranges
 from money.views import SQUAD as SQUAD_SIZE
-from money.models import ExpansionFee, NetWorth, Operator, Rule, Sale, Salary, Sponsorship, Transfer, Valuation
+from money.models import ExpansionFee, NetWorth, Operator, Owner, Rule, Sale, Salary, Sponsorship, Transfer, Valuation
 from money.templatetags.charts import compact, latest_run, log_ticks, payroll_chart, value_chart
 from money.templatetags.money_tags import billions, dollars, fee, millions
 from teams.models import Team
@@ -1005,3 +1005,35 @@ def test_a_player_page_charts_pay_by_season_with_gaps(client, mls, galaxy):
 
 def test_one_season_is_not_a_chart(client, season_2007):
     assert '<figure' not in client.get('/bios/david-beckham/').content.decode()
+
+
+
+def test_an_owner_page_lists_clubs_groups_sales_and_net_worth(client, mls, galaxy, atlanta):
+    aeg = Owner.objects.create(name='Anschutz Entertainment Group', slug='anschutz-entertainment-group')
+    group = Owner.objects.create(name='Anschutz Entertainment Group, Oscar De La Hoya and Gabriel Brener',
+                                 slug='aeg-group')
+    Operator.objects.create(team=galaxy, competition=mls, operator='Anschutz Entertainment Group', owner=aeg, start=1998)
+    Operator.objects.create(team=atlanta, competition=mls, owner=group, start=2005, end=2014,
+                            operator='Anschutz Entertainment Group, Oscar De La Hoya and Gabriel Brener')
+    Sale.objects.create(team=galaxy, competition=mls, year=1998, seller='L.A. Soccer Partners',
+                        buyer='Anschutz Entertainment Group', stake='100%')
+    for year, value in ((2023, 10900000000), (2024, 15300000000)):
+        NetWorth.objects.create(team=galaxy, competition=mls, owner='Philip Anschutz', club_owner=aeg,
+                                year=year, net_worth=value, publisher='Forbes')
+
+    html = client.get('/owners/anschutz-entertainment-group/').content.decode()
+
+    assert '<h1>Anschutz Entertainment Group</h1>' in html
+    clubs, rest = html.split('<h2>Clubs</h2>')[1].split('<h2>As part of a group</h2>')
+    assert 'LA Galaxy' in clubs and 'Atlanta United' in rest.split('<h2>')[0]
+    assert '<h2>Stakes bought and sold</h2>' in html and 'L.A. Soccer Partners' in html
+    assert '<h2>Net worth</h2>' in html and '2024 Philip Anschutz: $15.3B' in html
+    assert 'aria-current="page">value &amp; ownership</a>' in html
+
+
+def test_operators_link_to_their_owner(client, mls, galaxy):
+    aeg = Owner.objects.create(name='Anschutz Entertainment Group', slug='anschutz-entertainment-group')
+    Operator.objects.create(team=galaxy, competition=mls, operator='Anschutz Entertainment Group', owner=aeg, start=1998)
+
+    for url in ('/ownership/', '/teams/la-galaxy/'):
+        assert 'href="/owners/anschutz-entertainment-group/">Anschutz Entertainment Group</a>' in client.get(url).content.decode(), url
