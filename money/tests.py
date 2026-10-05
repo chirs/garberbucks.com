@@ -7,7 +7,7 @@ from competitions.models import Competition
 from money.coverage import season_ranges
 from money.models import ExpansionFee, Operator, Sale, Salary, Sponsorship, Transfer, Valuation
 from money.templatetags.charts import compact, latest_run, log_ticks, payroll_chart, value_chart
-from money.templatetags.money_tags import dollars, millions
+from money.templatetags.money_tags import dollars, fee, millions
 from teams.models import Team
 
 GAP = '&mdash;'
@@ -695,9 +695,9 @@ def test_transfers_page_lists_seasons_biggest_fee_first(client, mls, atlanta, ga
     assert html.index('Latte Lath') < html.index('Almada') < html.index('Riqui Puig')
     assert '<td><a href="/teams/atlanta-united/">Atlanta United</a></td>' in html
     assert '<td>Middlesbrough</td>' in html
-    assert '$25,000,000' in html and '<th scope="col" class="num">up to</th>' in html
+    assert '$25M' in html and '<th scope="col" class="num">up to</th>' in html
     assert 'title="not reported">&mdash;</td>' in html
-    assert 'The biggest fee in is $22,000,000' in html and 'the biggest out is $21,000,000' in html
+    assert 'The biggest fee in is $22M' in html and 'the biggest out is $21M' in html
     chart = html.split('<figure')[1].split('</figure>')[0]
     # one mark per deal, plus one of each kind in the legend
     assert chart.count('class="mark-fee"') == 3 and chart.count('class="mark-sale"') == 2
@@ -720,7 +720,7 @@ def test_kind_and_ceiling_columns_only_where_on_record(client, mls, atlanta):
 def test_pounds_keep_their_sign(client, mls, galaxy):
     move('Tyler Adams', mls, 2019, 'out', 'LA Galaxy', 'Leeds', from_team=galaxy, fee=5000000, currency='GBP')
 
-    assert '£5,000,000' in client.get('/transfers/').content.decode()
+    assert '£5M' in client.get('/transfers/').content.decode()
 
 
 def test_a_bid_from_an_unnamed_club_is_a_marked_gap(client, mls, galaxy):
@@ -741,7 +741,7 @@ def test_a_player_with_only_a_transfer_has_a_page(client, mls, atlanta):
 
     assert response.status_code == 200
     assert '<h2>Transfers</h2>' in html and 'Salary by season' not in html
-    assert '$22,000,000' in html
+    assert '$22M' in html
 
 
 def test_a_club_page_lists_moves_both_ways(client, mls, atlanta, galaxy):
@@ -754,3 +754,30 @@ def test_a_club_page_lists_moves_both_ways(client, mls, atlanta, galaxy):
     section = html.split('<h2>Transfers</h2>')[1]
 
     assert 'Latte Lath' in section and 'Almada' in section and 'Pec' not in section
+
+
+def test_fee_is_always_in_millions():
+    assert fee(22000000) == '$22M'
+    assert fee(12250000) == '$12.25M'
+    assert fee(3960000) == '$3.96M'
+    assert fee(500000) == '$0.5M'
+    assert fee(7000000, 'GBP') == '£7M'
+
+
+def test_transfers_filter_by_move(client, mls, atlanta, galaxy):
+    move('Emmanuel Latte Lath', mls, 2025, 'in', 'Middlesbrough', 'Atlanta United', to_team=atlanta, fee=22000000)
+    move('Thiago Almada', mls, 2024, 'out', 'Atlanta United', 'Botafogo', from_team=atlanta, fee=21000000)
+    move('Jack McGlynn', mls, 2025, 'within', 'LA Galaxy', 'Atlanta United', from_team=galaxy,
+         to_team=atlanta, fee=2100000)
+
+    everything = client.get('/transfers/').content.decode()
+    out = client.get('/transfers/?move=out').content.decode()
+    within = client.get('/transfers/?move=within').content.decode()
+
+    assert '<td>in</td>' in everything and '<td>out</td>' in everything and '<td>within MLS</td>' in everything
+    assert 'Almada' in out and 'Latte Lath' not in out.split('</nav>', 2)[2] and '<h2>2025</h2>' not in out
+    assert '?move=out" aria-current="page">Out of MLS</a>' in out
+    assert 'McGlynn' in within and 'Almada' not in within.split('</nav>', 2)[2]
+    # the records are the league's, whatever the filter
+    assert 'The biggest fee in is $22M' in out
+    assert 'aria-current' in client.get('/transfers/?move=bogus').content.decode().split('All</a>')[0].split('class="filters"')[1]

@@ -250,6 +250,11 @@ figure.chart figcaption { font-size: .9em; color: var(--ink-soft); margin-top: 6
 .chart .selected { stroke: var(--ink); stroke-width: 2.5; opacity: 1; }
 .chart .bar { fill: var(--accent); }
 .chart .zero { fill: var(--ink-soft); }
+/* A row of filter links above a chart and its tables; the current one is set solid. */
+.filters { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: baseline; margin: 0 0 12px; }
+.filters a { padding: 3px 10px; border: 1px solid var(--accent); border-radius: 999px; text-decoration: none; }
+.filters a[aria-current] { background: var(--accent); color: #fff; }
+.filters .count { color: var(--ink-soft); margin-left: 4px; }
 .chart-readout { margin: 6px 0 0; font-size: .95em; min-height: 1.5em; }
 .chart [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .chart a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

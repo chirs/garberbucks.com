@@ -8,6 +8,7 @@
     {% if player %}<th scope="col">player</th>{% endif %}
     <th scope="col">from</th>
     <th scope="col">to</th>
+    <th scope="col">move</th>
     <th scope="col" class="num">fee</th>
     {% if cols.ceiling %}<th scope="col" class="num">up to</th>{% endif %}
     {% if cols.kind %}<th scope="col">kind</th>{% endif %}
@@ -23,14 +24,15 @@
   {% if player %}<td><a href="{{ t.person.get_absolute_url }}">{{ t.person.name }}</a></td>{% endif %}
   {% include "money/_transfer_club.html" with team=t.from_team name=t.from_name %}
   {% include "money/_transfer_club.html" with team=t.to_team name=t.to_name %}
+  <td>{% if t.direction == 'within' %}within MLS{% else %}{{ t.direction }}{% endif %}</td>
   {% if t.fee is not None %}
-  <td class="num">{{ t.fee|dollars:t.currency }}</td>
+  <td class="num">{{ t.fee|fee:t.currency }}</td>
   {% else %}
   {% include "gap.html" with num=True title="not reported" %}
   {% endif %}
   {% if cols.ceiling %}
   {% if t.ceiling is not None %}
-  <td class="num">{{ t.ceiling|dollars:t.currency }}</td>
+  <td class="num">{{ t.ceiling|fee:t.currency }}</td>
   {% else %}
   {% include "gap.html" with num=True title="no add-ons reported" %}
   {% endif %}

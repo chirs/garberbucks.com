@@ -27,3 +27,13 @@ def millions(value):
     m = abs(value) / 1e6
     text = intcomma(round(m)) if m >= 10 or m == round(m) else ('%.1f' % m)
     return '%s$%sM' % (sign, text)
+
+
+@register.filter
+def fee(value, currency='USD'):
+    """
+    A transfer fee, always in millions, to two places at most: 22000000 -> $22M,
+    12250000 -> $12.25M, 3960000 -> $3.96M, 7000000 in pounds -> £7M.
+    """
+    text = ('%.2f' % (value / 1e6)).rstrip('0').rstrip('.')
+    return '%s%sM' % (SYMBOLS.get(currency, '$'), text)

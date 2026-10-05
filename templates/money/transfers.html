@@ -10,12 +10,19 @@
 
 <p class="prose">What MLS clubs paid to sign players from abroad, what they were paid to sell
 them, and the fees clubs in the league paid each other. Clubs rarely announce fees; nearly every
-figure here is a press report, so these are anchors, not accounts. {{ count|intcomma }} moves are
-on record, thick from 2024 on and thin before, where only the deals later stories mention made it.
-{% if record_in %}The biggest fee in is {{ record_in.fee|dollars }} for
+figure here is a press report, so these are anchors, not accounts. The record is thick from 2024
+on and thin before, where only the deals later stories mention made it.
+{% if record_in %}The biggest fee in is {{ record_in.fee|fee }} for
 <a href="{{ record_in.person.get_absolute_url }}">{{ record_in.person.name }}</a> ({{ record_in.season }}){% endif %}{% if record_out %};
-the biggest out is {{ record_out.fee|dollars }} for
+the biggest out is {{ record_out.fee|fee }} for
 <a href="{{ record_out.person.get_absolute_url }}">{{ record_out.person.name }}</a> ({{ record_out.season }}){% endif %}.</p>
+
+<nav class="filters" aria-label="Which moves">
+  {% for value, name in moves %}
+  <a href="{% url 'transfers_index' %}{% if value %}?move={{ value }}{% endif %}"{% if value == move %} aria-current="page"{% endif %}>{{ name }}</a>
+  {% endfor %}
+  <span class="count">{{ count|intcomma }} move{{ count|pluralize }}</span>
+</nav>
 
 {% value_chart None marks "Transfer fees by season, one mark per cash deal in dollars" 1996 names %}
 

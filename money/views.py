@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404, render
 from bios.models import Bio
 from competitions.models import Competition
 from money.models import PAY, ExpansionFee, Operator, Sale, Salary, Sponsorship, Transfer, Valuation
+from money.templatetags.money_tags import fee
 from teams.models import Team
 
 
@@ -292,25 +293,31 @@ def transfers_index(request):
     Every transfer fee on record, season by season, biggest first, with a
     chart of each cash fee in dollars.
     """
-    transfers = list(TRANSFERS.order_by('-season', F('fee').desc(nulls_last=True), 'person__name'))
+    everything = TRANSFERS.order_by('-season', F('fee').desc(nulls_last=True), 'person__name')
+    move = request.GET.get('move')
+    if move not in MOVES:
+        move = None
+    transfers = list(everything.filter(direction=move) if move else everything)
 
     marks = [{'year': t.season, 'value': t.fee, 'kind': MOVES[t.direction],
               'href': t.person.get_absolute_url(),
               'title': '%s: %s, %s to %s, %s' % (t.season, t.person.name, t.from_name,
-                                                t.to_name or 'an unnamed club', money(t.fee))}
+                                                t.to_name or 'an unnamed club', fee(t.fee))}
              for t in transfers
              if t.kind == Transfer.TRANSFER and t.fee and t.currency == 'USD']
 
     seasons = defaultdict(list)
     for t in transfers:
         seasons[t.season].append(t)
-    cash = [t for t in transfers if t.kind == Transfer.TRANSFER and t.currency == 'USD' and t.fee]
+    cash = [t for t in everything if t.kind == Transfer.TRANSFER and t.currency == 'USD' and t.fee]
 
     context = {
         'seasons': [(season, rows, transfer_columns(rows)) for season, rows in seasons.items()],
         'marks': marks,
         'names': MOVE_NAMES,
         'count': len(transfers),
+        'move': move,
+        'moves': [(None, 'All'), ('in', 'Into MLS'), ('out', 'Out of MLS'), ('within', 'Within MLS')],
         'record_in': max((t for t in cash if t.direction == 'in'), key=lambda t: t.fee, default=None),
         'record_out': max((t for t in cash if t.direction == 'out'), key=lambda t: t.fee, default=None),
         }
