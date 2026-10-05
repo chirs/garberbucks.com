@@ -1,0 +1,29 @@
+{% if rows %}
+<figure class="chart tenure">
+<svg viewBox="0 0 {{ width }} {{ height }}" role="img" aria-label="{{ label }}">
+  <defs>
+    <pattern id="interim-hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="5" height="5" class="hatch-ground"/>
+      <line x1="0" y1="0" x2="0" y2="5" class="hatch-line"/>
+    </pattern>
+  </defs>
+  {% for t in ticks %}
+  <line class="grid" x1="{{ t.x|floatformat:1 }}" x2="{{ t.x|floatformat:1 }}" y1="{{ top }}" y2="{{ base }}"/>
+  <text x="{{ t.x|floatformat:1 }}" y="{{ top|add:"-6" }}" text-anchor="middle">{{ t.text }}</text>
+  <text x="{{ t.x|floatformat:1 }}" y="{{ label_y }}" text-anchor="middle">{{ t.text }}</text>
+  {% endfor %}
+  {% for r in rows %}
+  <a href="{{ r.href }}"><text class="label" x="{{ left|add:"-8" }}" y="{{ r.text_y|floatformat:1 }}" text-anchor="end">{{ r.name }}</text></a>
+  {% for b in r.bars %}
+  <rect class="stint stint-{{ b.tone }}" x="{{ b.x|floatformat:1 }}" y="{{ r.bar_y|floatformat:1 }}" width="{{ b.w|floatformat:1 }}" height="{{ bar_h }}" rx="2" tabindex="0" role="button" data-tip="{{ b.title }}"><title>{{ b.title }}</title></rect>
+  {% if b.text %}<text class="stint-name" x="{{ b.mid|floatformat:1 }}" y="{{ r.text_y|floatformat:1 }}" text-anchor="middle" aria-hidden="true">{{ b.text }}</text>{% endif %}
+  {% endfor %}
+  {% endfor %}
+  <line class="axis" x1="{{ left }}" x2="{{ width|add:"-16" }}" y1="{{ base }}" y2="{{ base }}"/>
+</svg>
+<p class="chart-readout" aria-live="polite">Click or tap a bar to see the coach and their dates.</p>
+<figcaption>{{ label }}. Neighbouring coaches alternate shades; a hatched bar is an interim. A date
+known only to the year is drawn across the whole year, so those bars can overlap.</figcaption>
+</figure>
+{% include "money/_chart_readout.html" %}
+{% endif %}

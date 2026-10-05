@@ -1,0 +1,28 @@
+{% load money_tags %}
+{# One row per stint in a job. club=True adds the club; title=True adds the job's title, for front-office jobs and assistants. #}
+<table class="wide">
+<thead>
+  <tr>
+    {% if club %}<th scope="col">club</th>{% endif %}
+    <th scope="col">name</th>
+    {% if title %}<th scope="col">title</th>{% endif %}
+    <th scope="col">from</th>
+    <th scope="col">to</th>
+    <th scope="col" class="num">years</th>
+    <th scope="col">sources</th>
+  </tr>
+</thead>
+<tbody>
+{% for j in jobs %}
+<tr>
+  {% if club %}<td><a href="{{ j.team.get_absolute_url }}">{{ j.team.name }}</a></td>{% endif %}
+  <td>{{ j.name }}{% if j.role == 'interim' %} <span class="note">(interim)</span>{% endif %}</td>
+  {% if title %}<td class="note">{{ j.title }}</td>{% endif %}
+  <td>{{ j.display_start }}</td>
+  <td>{% if j.end %}{{ j.display_end }}{% else %}now{% endif %}</td>
+  {% with years=j.length_years %}{% if years is not None %}<td class="num">{{ years|floatformat:1 }}</td>{% else %}{% include "gap.html" with num=True title="dates known only to the year" %}{% endif %}{% endwith %}
+  <td>{% for url in j.source_list %}<a href="{{ url }}">{{ forloop.counter }}</a>{% if not forloop.last %} {% endif %}{% endfor %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>

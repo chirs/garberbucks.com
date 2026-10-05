@@ -1,3 +1,5 @@
+import datetime
+
 from django.db import models
 from django.urls import reverse
 from django.db.models.functions import Coalesce
@@ -326,6 +328,60 @@ class StadiumCost(Sourced):
 
     def public_share(self):
         return self.public / self.cost if self.public is not None and self.cost else None
+
+
+class Job(Sourced):
+    """
+    One person's stint in one club job: head coach, interim, first-team
+    assistant, or the club's top soccer executive ('gm', whatever it was
+    called; title keeps what it was called). A date is as precise as its
+    source: start and end hold the first day of the day, month or year the
+    precision names. An empty end is a job still held.
+    """
+
+    HEAD = 'head'
+    INTERIM = 'interim'
+    ASSISTANT = 'assistant'
+    GM = 'gm'
+    COACHES = (HEAD, INTERIM)
+
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    competition = models.ForeignKey(Competition, on_delete=models.CASCADE)
+    name = models.CharField(max_length=200)
+    role = models.CharField(max_length=10)
+    title = models.CharField(max_length=200, blank=True)
+    start = models.DateField()
+    start_precision = models.CharField(max_length=5)   # day, month, year
+    end = models.DateField(null=True)
+    end_precision = models.CharField(max_length=5, blank=True)
+
+    class Meta:
+        ordering = ('start', 'name')
+
+    def __str__(self):
+        return "%s, %s %s" % (self.name, self.team, self.role)
+
+    @staticmethod
+    def show(date, precision):
+        return {'day': '%s %d, %d' % (date.strftime('%b'), date.day, date.year),
+                'month': '%s %d' % (date.strftime('%b'), date.year),
+                'year': str(date.year)}[precision]
+
+    def display_start(self):
+        return self.show(self.start, self.start_precision)
+
+    def display_end(self):
+        return self.show(self.end, self.end_precision) if self.end else ''
+
+    def length_days(self, today=None):
+        """Days in the job, to today if still held; None where either end is only a year."""
+        if self.start_precision == 'year' or self.end_precision == 'year':
+            return None
+        return ((self.end or today or datetime.date.today()) - self.start).days
+
+    def length_years(self, today=None):
+        days = self.length_days(today)
+        return None if days is None else days / 365.25
 
 
 class StaffPay(models.Model):

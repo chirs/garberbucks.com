@@ -10,7 +10,7 @@ from django.urls import reverse
 
 from bios.models import Bio
 from competitions.models import Competition
-from money.models import PAY, ExpansionFee, NetWorth, Operator, Owner, Rule, StadiumCost, StaffPay, Sale, Salary, Sponsorship, Transfer, Valuation
+from money.models import PAY, ExpansionFee, Job, NetWorth, Operator, Owner, Rule, StadiumCost, StaffPay, Sale, Salary, Sponsorship, Transfer, Valuation
 from money.templatetags.money_tags import fee
 from teams.models import Team
 
@@ -162,7 +162,9 @@ def staff_index(request):
     from what the press reported.
     """
     organizations = []
-    for name in StaffPay.objects.values_list('organization', flat=True).distinct().order_by('organization'):
+    # Clubs' reported coach pay is on the coaches page.
+    for name in (StaffPay.objects.exclude(organization__in=club_names())
+                 .values_list('organization', flat=True).distinct().order_by('organization')):
         staff = list(StaffPay.objects.filter(organization=name).order_by('year', '-pay'))
         years, rows = staff_grid(staff)
         organizations.append({'name': name, 'years': years, 'rows': rows,
@@ -174,6 +176,68 @@ def staff_index(request):
     organizations.sort(key=lambda o: order.get(o['name'], 2))
     return render(request, "money/staff.html", {'organizations': organizations, 'key_roles': KEY_ROLES,
                                                 'section': 'pay'})
+
+
+def club_names():
+    return set(Team.objects.values_list('name', flat=True))
+
+
+def coach_rows(jobs):
+    """Head-coach stints, interims included, grouped by club in order of the club's first one."""
+    by_team = defaultdict(list)
+    for job in sorted((j for j in jobs if j.role in Job.COACHES), key=lambda j: j.start):
+        by_team[job.team].append(job)
+    return sorted(by_team.items(), key=lambda kv: (kv[1][0].start, kv[0].name))
+
+
+def coach_changes(jobs, today):
+    """
+    For each year from the first stint on: how many permanent head coaches left
+    their job, and the median years they had held it, of those whose dates are
+    known closely enough to measure.
+    """
+    heads = [j for j in jobs if j.role == Job.HEAD]
+    if not heads:
+        return []
+    left = defaultdict(list)
+    for j in heads:
+        if j.end:
+            left[j.end.year].append(j)
+    rows = []
+    for year in range(today.year, min(j.start.year for j in heads) - 1, -1):
+        lengths = [j.length_years() for j in left[year] if j.length_years() is not None]
+        rows.append({'year': year, 'left': len(left[year]),
+                     'hired': sum(1 for j in heads if j.start.year == year),
+                     'median': median(lengths) if lengths else None})
+    return rows
+
+
+def coaches_index(request):
+    """
+    Every MLS club's head coaches and who ran its soccer side, and what the
+    press has reported coaches were paid.
+    """
+    today = date.today()
+    jobs = list(Job.objects.select_related('team'))
+    current = sorted((j for j in jobs if j.role == Job.HEAD and j.end is None),
+                     key=lambda j: (j.start, j.team.name))
+    clubs = club_names()
+    teams = {t.name: t for t in Team.objects.filter(name__in=clubs)}
+    pay = [{'staff': s, 'team': teams.get(s.organization)}
+           for s in StaffPay.objects.filter(organization__in=clubs).order_by('-year', '-pay')]
+    coaches = coach_rows(jobs)
+    context = {
+        'current': current,
+        'coaches': coaches,
+        'stints': [j for _, stints in coaches for j in stints],
+        'changes': coach_changes(jobs, today),
+        'gms': sorted((j for j in jobs if j.role == Job.GM and j.end is None),
+                      key=lambda j: (j.team.name, j.start)),
+        'pay': pay,
+        'today': today,
+        'section': 'pay',
+        }
+    return render(request, "money/coaches.html", context)
 
 
 def pay_index(request):
@@ -233,6 +297,9 @@ def league_hub(request, competition):
                     .order_by('start', 'sponsor'))
     rights = rights_by_year(national, date.today().year)
 
+    heads = list(Job.objects.filter(competition=competition, role=Job.HEAD).select_related('team'))
+    last_year = date.today().year - 1
+
     context.update({
         'seasons': seasons,
         'latest_pay': next((s for s in seasons if s['period'] == 'year'), None),
@@ -252,6 +319,9 @@ def league_hub(request, competition):
         'league_sponsors': list(Sponsorship.objects.filter(competition=competition, kind=Sponsorship.LEAGUE)
                                 .order_by('start')),
         'has_rules': any(budgets.values()) or any(minimums.values()),
+        'longest_coach': min((j for j in heads if j.end is None), key=lambda j: j.start, default=None),
+        'coach_changes': {'year': last_year,
+                          'left': sum(1 for j in heads if j.end and j.end.year == last_year)},
         'reported': list(Salary.objects.filter(competition=competition, coverage='reported')
                          .annotate(pay=PAY).select_related('person', 'team', 'competition').order_by('season', '-pay')),
         })
@@ -441,6 +511,9 @@ def team_detail(request, slug):
         'budget': budget_positions([team]).get(team.id, []),
         'worths': net_worth_grid(list(NetWorth.objects.filter(team=team).select_related('team', 'club_owner'))),
         'stadiums': list(StadiumCost.objects.filter(team=team)),
+        'coaches': coach_rows(jobs := list(Job.objects.filter(team=team).select_related('team'))),
+        'gms': [j for j in jobs if j.role == Job.GM],
+        'assistants': [j for j in jobs if j.role == Job.ASSISTANT],
         'sponsorships': list(Sponsorship.objects.filter(team=team).exclude(kind__in=Sponsorship.TV)
                              .order_by('kind', 'start')),
         'tv_deals': list(Sponsorship.objects.filter(team=team, kind__in=Sponsorship.TV).order_by('start')),

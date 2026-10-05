@@ -269,6 +269,16 @@ figure.chart figcaption { font-size: .9em; color: var(--ink-soft); margin-top: 6
 .chart .selected { stroke: var(--ink); stroke-width: 2.5; opacity: 1; }
 .chart .bar { fill: var(--accent); }
 .chart .zero { fill: var(--ink-soft); }
+/* Coaching stints: two greens only to tell neighbours apart, a white edge between
+   them, and an interim hatched rather than given a colour of its own. */
+.chart .stint { stroke: #fff; stroke-width: 1; }
+.chart .stint-a { fill: var(--accent); }
+.chart .stint-b { fill: var(--accent-dark); }
+.chart .stint-interim { fill: url(#interim-hatch); }
+.chart .hatch-ground { fill: var(--fill-hover); }
+.chart .hatch-line { stroke: var(--accent); stroke-width: 2; }
+.chart .stint.selected { stroke: var(--ink); stroke-width: 2.5; }
+.chart text.stint-name { fill: #fff; font-size: 10px; pointer-events: none; }
 /* A row of filter links above a chart and its tables; the current one is set solid. */
 .filters { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: baseline; margin: 0 0 12px; }
 .filters a { padding: 3px 10px; border: 1px solid var(--accent); border-radius: 999px; text-decoration: none; }

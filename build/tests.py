@@ -5,7 +5,7 @@ import pytest
 
 from bios.models import Bio
 from build import load
-from money.models import ExpansionFee, NetWorth, Operator, Owner, Rule, Sale, Salary, Sponsorship, Transfer, Valuation
+from money.models import ExpansionFee, Job, NetWorth, Operator, Owner, Rule, Sale, Salary, Sponsorship, Transfer, Valuation
 from teams.models import Team
 
 
@@ -36,7 +36,7 @@ def salary(**kw):
 
 @pytest.fixture
 def mongo(monkeypatch):
-    def use(salaries, bios=(), sponsorships=(), valuations=(), operators=(), sales=(), fees=(), transfers=(), rules=(), worths=(), stadiums=(), staff=()):
+    def use(salaries, bios=(), sponsorships=(), valuations=(), operators=(), sales=(), fees=(), transfers=(), rules=(), worths=(), stadiums=(), staff=(), jobs=()):
         db = FakeDB(
             salaries=salaries,
             sponsorships=list(sponsorships),
@@ -49,6 +49,7 @@ def mongo(monkeypatch):
             net_worths=list(worths),
             stadium_costs=list(stadiums),
             staff_pay=list(staff),
+            jobs=list(jobs),
             bios=list(bios),
             competitions=[{'name': 'Major League Soccer', 'abbreviation': 'MLS'}],
         )
@@ -235,3 +236,21 @@ def test_operators_share_an_owner_and_net_worths_find_who_ran_the_club(mongo):
     kraft = Owner.objects.get()
     assert (kraft.name, kraft.slug, kraft.operator_set.count()) == ('Robert Kraft', 'robert-kraft', 2)
     assert NetWorth.objects.get().club_owner == kraft
+
+
+@pytest.mark.django_db
+def test_loads_jobs_with_their_clubs_and_how_precise_each_date_is(mongo):
+    mongo([], jobs=[
+        {'club': 'Chicago Fire', 'name': 'Bob Bradley', 'role': 'head', 'title': 'Head Coach',
+         'start': '1997-10-30', 'end': '2002', 'sources': ['https://a.example'],
+         'competition': 'Major League Soccer'},
+        {'club': 'Chicago Fire', 'name': 'Peter Wilt', 'role': 'gm', 'title': 'General Manager',
+         'start': '1997-06', 'end': None, 'sources': [], 'competition': 'Major League Soccer'}])
+    load.load()
+
+    bradley, wilt = Job.objects.select_related('team').order_by('name')
+    assert bradley.team.slug == 'chicago-fire' and bradley.competition.slug == 'major-league-soccer'
+    assert (bradley.start, bradley.start_precision) == (datetime.date(1997, 10, 30), 'day')
+    assert (bradley.end, bradley.end_precision) == (datetime.date(2002, 1, 1), 'year')
+    assert bradley.sources == 'https://a.example'
+    assert (wilt.start, wilt.start_precision, wilt.end, wilt.end_precision) == (datetime.date(1997, 6, 1), 'month', None, '')

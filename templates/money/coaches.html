@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% load charts money_tags %}
+
+{% block title %}Coaches{% endblock %}
+{% block metadescription %}Every MLS club's head coaches and how long they lasted, who ran each club's soccer side, and what coaches were reported to be paid{% endblock %}
+
+{% block content %}
+
+<h1>Coaches</h1>
+
+{% include "money/_subnav.html" with group='pay' here='coaches_index' %}
+
+<p class="prose">Every MLS club's head coaches since 1996, how long each lasted, and who ran the
+club's soccer side above them. Clubs publish no coach pay, so the figures at the foot of the page
+are the few the press has reported. Dates are as precise as the announcement that gives them;
+a length is left out where a date is known only to the year.</p>
+
+{% if current %}
+<h2>Head coaches now</h2>
+
+<table>
+<thead>
+  <tr>
+    <th scope="col">club</th>
+    <th scope="col">head coach</th>
+    <th scope="col">since</th>
+    <th scope="col" class="num">years</th>
+  </tr>
+</thead>
+<tbody>
+{% for j in current %}
+<tr>
+  <td><a href="{{ j.team.get_absolute_url }}">{{ j.team.name }}</a></td>
+  <td>{{ j.name }}</td>
+  <td>{{ j.display_start }}</td>
+  {% with years=j.length_years %}{% if years is not None %}<td class="num">{{ years|floatformat:1 }}</td>{% else %}{% include "gap.html" with num=True title="start known only to the year" %}{% endif %}{% endwith %}
+</tr>
+{% endfor %}
+</tbody>
+</table>
+<p class="table-legend">Longest-serving first. An interim in charge now is not counted.</p>
+{% endif %}
+
+{% if coaches %}
+<h2>Every head coach</h2>
+
+{% tenure_chart coaches "MLS head coaches by club, from each club's first to now" %}
+
+{% include "money/_jobs.html" with jobs=stints club=True %}
+
+<p class="table-legend">Clubs in the order they first named a coach. A date is when the hire or the
+departure was announced. Sources are numbered links to the reports.</p>
+{% endif %}
+
+{% if changes %}
+<h2>Coaching changes by year</h2>
+
+<table>
+<thead>
+  <tr>
+    <th scope="col">year</th>
+    <th scope="col" class="num">hired</th>
+    <th scope="col" class="num">left</th>
+    <th scope="col" class="num">median years, those who left</th>
+  </tr>
+</thead>
+<tbody>
+{% for r in changes %}
+<tr>
+  <td>{{ r.year }}</td>
+  <td class="num">{{ r.hired }}</td>
+  <td class="num">{{ r.left }}</td>
+  {% if r.median is not None %}<td class="num">{{ r.median|floatformat:1 }}</td>{% else %}{% include "gap.html" with num=True title="no measurable departure" %}{% endif %}
+</tr>
+{% endfor %}
+</tbody>
+</table>
+<p class="table-legend">Permanent head coaches only; an interim is neither a hire nor a departure.
+A year's departures are counted by the year the coach left.</p>
+{% endif %}
+
+{% if gms %}
+<h2>Who runs the soccer side</h2>
+
+{% include "money/_jobs.html" with jobs=gms club=True title=True %}
+
+<p class="table-legend">Each club's top soccer executive now, under whatever title the club gives
+the job. Every one before them is on the club's page.</p>
+{% endif %}
+
+{% if pay %}
+<h2>Reported pay</h2>
+
+<table class="wide">
+<thead>
+  <tr>
+    <th scope="col">year</th>
+    <th scope="col">name</th>
+    <th scope="col">club</th>
+    <th scope="col">as reported</th>
+    <th scope="col" class="num">pay</th>
+    <th scope="col">sources</th>
+  </tr>
+</thead>
+<tbody>
+{% for p in pay %}
+<tr>
+  <td>{{ p.staff.year }}</td>
+  <td>{{ p.staff.name }}</td>
+  <td>{% if p.team %}<a href="{{ p.team.get_absolute_url }}">{{ p.team.name }}</a>{% else %}{{ p.staff.organization }}{% endif %}</td>
+  <td class="note">{{ p.staff.role }}</td>
+  {% if p.staff.pay is not None %}<td class="num">{{ p.staff.pay|dollars }}</td>{% else %}{% include "gap.html" with num=True title="no figure reported" %}{% endif %}
+  <td>{% for url in p.staff.source_list %}<a href="{{ url }}">{{ forloop.counter }}</a>{% if not forloop.last %} {% endif %}{% endfor %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+<p class="table-legend">Figures as the press reported them, one at a time: a reported salary says
+nothing about anyone else's, so nothing here is added up. "As reported" gives the period where a
+figure is not a year's pay. The national team coaches' pay, from U.S. Soccer's tax filings, is on the
+<a href="{% url 'staff_index' %}">staff</a> page.</p>
+{% endif %}
+
+{% endblock %}

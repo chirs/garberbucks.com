@@ -1,3 +1,4 @@
+import datetime
 from decimal import Decimal
 
 import pytest
@@ -6,7 +7,7 @@ from bios.models import Bio
 from competitions.models import Competition
 from money.coverage import season_ranges
 from money.views import PARTIAL_LIST, SQUAD as SQUAD_SIZE
-from money.models import ExpansionFee, NetWorth, Operator, Owner, Rule, StadiumCost, StaffPay, Sale, Salary, Sponsorship, Transfer, Valuation
+from money.models import ExpansionFee, Job, NetWorth, Operator, Owner, Rule, StadiumCost, StaffPay, Sale, Salary, Sponsorship, Transfer, Valuation
 from money.templatetags.charts import compact, latest_run, log_ticks, payroll_chart, value_chart
 from money.templatetags.money_tags import billions, dollars, fee, millions
 from teams.models import Team
@@ -1223,3 +1224,90 @@ def test_staff_page_grids_each_organizations_pay_and_charts_the_key_jobs(client,
     assert grid.index('Mauricio Pochettino') < grid.index('Gregg Berhalter')
     assert '$5.02M' in grid and 'not on that year' in grid
     assert 'aria-current="page">Staff</a>' in html and 'aria-current="page">pay</a>' in html
+
+
+def job(team, competition, name, start, end=None, role=Job.HEAD, title='Head Coach', **kw):
+    """start and end as (date, precision)."""
+    return Job.objects.create(team=team, competition=competition, name=name, role=role, title=title,
+                              start=start[0], start_precision=start[1],
+                              end=end[0] if end else None, end_precision=end[1] if end else '', **kw)
+
+
+def day(y, m, d):
+    return (datetime.date(y, m, d), 'day')
+
+
+def test_a_job_length_needs_both_ends_closer_than_a_year(db):
+    known = Job(start=datetime.date(2010, 1, 1), start_precision='month',
+                end=datetime.date(2012, 1, 1), end_precision='day')
+    assert round(known.length_years(), 1) == 2.0
+    assert Job(start=datetime.date(2010, 1, 1), start_precision='year', end=None).length_years() is None
+    still = Job(start=datetime.date(2020, 1, 1), start_precision='day', end=None, end_precision='')
+    assert still.length_days(today=datetime.date(2020, 1, 31)) == 30
+    assert still.display_start() == 'Jan 1, 2020' and still.display_end() == ''
+
+
+def test_coaches_page_lists_current_coaches_longest_first_and_charts_every_stint(client, mls, galaxy, atlanta):
+    job(galaxy, mls, 'Bruce Arena', day(2008, 8, 18), day(2016, 12, 1))
+    job(galaxy, mls, 'Dave Sarachan', day(2016, 12, 2), day(2017, 1, 5), role=Job.INTERIM)
+    job(galaxy, mls, 'Greg Vanney', day(2021, 1, 5))
+    job(atlanta, mls, 'Gerardo Martino', (datetime.date(2016, 1, 1), 'year'))
+    job(atlanta, mls, 'Carlos Bocanegra', day(2015, 4, 1), role=Job.GM, title='Technical Director')
+    StaffPay.objects.create(organization='LA Galaxy', year=2021, name='Greg Vanney', role='Head Coach',
+                            pay=1500000, coverage='reported', sources='https://a.example')
+
+    html = client.get('/coaches/').content.decode()
+
+    now = html.split('<h2>Head coaches now</h2>')[1].split('</table>')[0]
+    assert now.index('Gerardo Martino') < now.index('Greg Vanney')
+    assert 'title="start known only to the year"' in now
+    chart = html.split('<figure')[1].split('</figure>')[0]
+    assert chart.count('class="stint ') == 4 and 'stint-interim' in chart
+    assert 'LA Galaxy: Bruce Arena, Aug 18, 2008–Dec 1, 2016, 8.3 years' in chart
+    every = html.split('<h2>Every head coach</h2>')[1].split('<h2>')[0]
+    assert every.index('Bruce Arena') < every.index('Gerardo Martino')   # the Galaxy named a coach first
+    assert 'Technical Director' in html.split('<h2>Who runs the soccer side</h2>')[1]
+    assert '$1,500,000' in html.split('<h2>Reported pay</h2>')[1]
+    assert 'aria-current="page">Coaches</a>' in html
+
+
+def test_coaching_changes_count_permanent_coaches_by_the_year_they_left(client, mls, galaxy):
+    job(galaxy, mls, 'Bruce Arena', day(2008, 8, 18), day(2016, 12, 1))
+    job(galaxy, mls, 'Dave Sarachan', day(2016, 12, 2), day(2017, 1, 5), role=Job.INTERIM)
+    job(galaxy, mls, 'Sigi Schmid', day(2017, 7, 1), (datetime.date(2018, 1, 1), 'year'))
+
+    html = client.get('/coaches/').content.decode()
+    rows = html.split('<h2>Coaching changes by year</h2>')[1].split('</table>')[0]
+    row_2016 = rows.split('<td>2016</td>')[1].split('</tr>')[0]
+    row_2017 = rows.split('<td>2017</td>')[1].split('</tr>')[0]
+    assert '>1<' in row_2016 and '8.3' in row_2016
+    assert row_2017.count('>0<') == 1 and '>1<' in row_2017       # Schmid hired; Sarachan not counted
+
+
+def test_club_coach_pay_stays_off_the_staff_page(client, galaxy):
+    StaffPay.objects.create(organization='LA Galaxy', year=2021, name='Greg Vanney', role='Head Coach',
+                            pay=1500000, coverage='reported')
+    StaffPay.objects.create(organization='Major League Soccer', year=2014, name='Don Garber', role='Commissioner',
+                            pay=5000000, coverage='reported')
+    html = client.get('/staff/').content.decode()
+    assert 'Don Garber' in html and 'Greg Vanney' not in html
+
+
+def test_a_club_page_shows_its_coaches_and_front_office(client, mls, galaxy):
+    job(galaxy, mls, 'Bruce Arena', day(2008, 8, 18), day(2016, 12, 1))
+    job(galaxy, mls, 'Dennis te Kloese', day(2018, 12, 12), role=Job.GM, title='General Manager')
+    job(galaxy, mls, 'Dave Sarachan', (datetime.date(2008, 1, 1), 'year'), (datetime.date(2016, 1, 1), 'year'),
+        role=Job.ASSISTANT, title='Assistant Coach')
+
+    html = client.get('/teams/la-galaxy/').content.decode()
+    section = html.split('Coaches and front office</a></h2>')[1]
+    assert '<figure' in section and 'Bruce Arena' in section
+    assert 'Dennis te Kloese' in section.split('<h3>Running the soccer side</h3>')[1]
+    assert 'Dave Sarachan' in section.split('<h3>Assistant coaches</h3>')[1]
+
+
+def test_hub_names_the_longest_serving_coach(client, mls, galaxy, atlanta):
+    job(galaxy, mls, 'Greg Vanney', day(2021, 1, 5))
+    job(atlanta, mls, 'Gerardo Martino', day(2016, 9, 27))
+    html = ' '.join(client.get('/').content.decode().split())
+    assert 'longest-serving head coach in the league is Gerardo Martino' in html

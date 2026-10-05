@@ -1,3 +1,4 @@
+import datetime
 import re
 
 import pymongo
@@ -7,7 +8,7 @@ from django.template.defaultfilters import slugify
 
 from bios.models import Bio
 from competitions.models import Competition
-from money.models import ExpansionFee, NetWorth, Operator, Owner, StadiumCost, StaffPay, Rule, Salary, Sale, Sponsorship, Transfer, Valuation
+from money.models import ExpansionFee, Job, NetWorth, Operator, Owner, StadiumCost, StaffPay, Rule, Salary, Sale, Sponsorship, Transfer, Valuation
 from teams.models import Team
 
 # Which end of a move is a club in the league: those get team pages, the
@@ -35,12 +36,13 @@ def load():
     transfers = list(soccer_db.transfers.find())
     rules = list(soccer_db.rules.find())
     stadiums = list(soccer_db.stadium_costs.find())
+    jobs = list(soccer_db.jobs.find())
 
-    competitions = load_competitions({e['competition'] for e in salaries + sponsorships + valuations + ownership + transfers + rules + stadiums})
+    competitions = load_competitions({e['competition'] for e in salaries + sponsorships + valuations + ownership + transfers + rules + stadiums + jobs})
     teams = load_teams({e['team'] for e in salaries if e['team']} |
                        {e['club'] for e in sponsorships if e['club']} |
                        {e['team'] for e in valuations} |
-                       {e['club'] for e in ownership + stadiums} |
+                       {e['club'] for e in ownership + stadiums + jobs} |
                        {e[k] for e in transfers for k in LEAGUE_SIDE[e['direction']]})
     bios = load_bios({e['name'] for e in salaries + transfers})
 
@@ -52,6 +54,7 @@ def load():
     load_transfers(transfers, competitions, teams, bios)
     load_rules(rules, competitions)
     load_stadiums(stadiums, competitions, teams)
+    load_jobs(jobs, competitions, teams)
     load_staff(list(soccer_db.staff_pay.find()))
 
 
@@ -267,6 +270,26 @@ def load_stadiums(stadiums, competitions, teams):
                     public=e['public'], currency=e['currency'], note=e['note'],
                     sources='\n'.join(e['sources']))
         for e in stadiums)
+
+
+def job_date(text):
+    """A YYYY-MM-DD, YYYY-MM or YYYY date as the first day it covers, and how precise it is."""
+    parts = [int(e) for e in text.split('-')]
+    return datetime.date(*parts, *[1] * (3 - len(parts))), ('year', 'month', 'day')[len(parts) - 1]
+
+
+def load_jobs(jobs, competitions, teams):
+    print("loading {} club jobs".format(len(jobs)))
+
+    rows = []
+    for e in jobs:
+        start, start_precision = job_date(e['start'])
+        end, end_precision = job_date(e['end']) if e['end'] else (None, '')
+        rows.append(Job(team_id=teams[e['club']], competition_id=competitions[e['competition']],
+                        name=e['name'], role=e['role'], title=e['title'], start=start,
+                        start_precision=start_precision, end=end, end_precision=end_precision,
+                        sources='\n'.join(e['sources'])))
+    Job.objects.bulk_create(rows)
 
 
 def load_staff(staff):

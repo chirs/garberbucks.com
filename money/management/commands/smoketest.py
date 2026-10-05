@@ -28,6 +28,7 @@ class Command(BaseCommand):
             reverse('rules_index'),
             reverse('stadiums_index'),
             reverse('staff_index'),
+            reverse('coaches_index'),
             reverse('sponsorships_index'),
             reverse('valuations_index'),
             reverse('ownership_index'),

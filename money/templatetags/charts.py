@@ -5,6 +5,7 @@ the template emits the markup. Every chart is followed by a table carrying the
 same numbers, so nothing is only readable from the picture.
 """
 
+import datetime
 import math
 
 from django import template
@@ -525,4 +526,70 @@ def key_roles_chart(rows, roles):
         'caption': ('Reportable pay by calendar year, as the federation\'s Form 990 lists it. Where a '
                     'job changed hands during a year, both people\'s pay is added together. Hover or '
                     'focus a point for the figure and who held the job.'),
+    }
+
+
+TENURE_LEFT = 170   # room for club names
+TENURE_ROW = 20
+TENURE_BAR = 14
+
+
+@register.inclusion_tag("money/_tenure_chart.html")
+def tenure_chart(coaches, label, today=None):
+    """
+    Each club's head coaches as bars along a timeline, a row per club. Stints
+    alternate two tones so neighbours read apart, which is all the tone means;
+    an interim is hatched. A date known only to the year is drawn from the
+    year's first day for a start and to its last day for an end. A bar wide
+    enough for the coach's surname carries it.
+    """
+    stints = [j for _, jobs in coaches for j in jobs]
+    if not stints:
+        return {}
+    today = today or datetime.date.today()
+    first = datetime.date(min(j.start.year for j in stints), 1, 1)
+    last = datetime.date(today.year + 1, 1, 1)
+    plot_w = WIDTH - TENURE_LEFT - 16
+    span = (last - first).days
+
+    def x(day):
+        return TENURE_LEFT + (day - first).days / span * plot_w
+
+    rows = []
+    for i, (team, jobs) in enumerate(coaches):
+        y = HEAD_H + i * TENURE_ROW
+        bars = []
+        for n, j in enumerate(jobs):
+            end = j.end or today
+            if j.end and j.end_precision == 'year':
+                end = datetime.date(j.end.year, 12, 31)
+            x0, x1 = x(j.start), max(x(end), x(j.start) + 2)
+            years = j.length_years(today)
+            surname = j.name.split()[-1]
+            bars.append({'x': x0, 'w': x1 - x0, 'mid': (x0 + x1) / 2,
+                         'tone': 'interim' if j.role == 'interim' else 'ab'[n % 2],
+                         'text': surname if (x1 - x0) >= len(surname) * 6.2 + 8 else '',
+                         'title': '%s: %s%s, %s–%s%s' % (
+                             team.name, j.name, ' (interim)' if j.role == 'interim' else '',
+                             j.display_start(), j.display_end() or 'now',
+                             ', %.1f years' % years if years is not None else '')})
+        rows.append({'name': team.name, 'href': team.get_absolute_url(), 'y': y,
+                     'bar_y': y + (TENURE_ROW - TENURE_BAR) / 2, 'text_y': y + TENURE_ROW / 2 + 4,
+                     'bars': bars})
+
+    base = HEAD_H + len(rows) * TENURE_ROW
+    step = 5 if last.year - first.year > 12 else 1
+    ticks = [{'x': x(datetime.date(year, 1, 1)), 'text': year}
+             for year in range(first.year, last.year + 1) if year % step == 0]
+    return {
+        'rows': rows,
+        'ticks': ticks,
+        'top': HEAD_H - 6,
+        'base': base,
+        'label_y': base + 18,
+        'width': WIDTH,
+        'height': base + LABEL_H,
+        'left': TENURE_LEFT,
+        'bar_h': TENURE_BAR,
+        'label': label,
     }

@@ -61,6 +61,17 @@ they say nothing about what anyone else was paid, so they are not added up.</p>
 </table>
 {% endif %}
 
+{% if longest_coach %}
+<h2><a href="{% url 'coaches_index' %}">Coaches</a></h2>
+
+<p class="prose">The longest-serving head coach in the league is {{ longest_coach.name }}, at
+<a href="{{ longest_coach.team.get_absolute_url }}">{{ longest_coach.team.name }}</a> since
+{{ longest_coach.display_start }}.{% if coach_changes %} In {{ coach_changes.year }},
+{{ coach_changes.left }} head coach{{ coach_changes.left|pluralize:"es" }} left their
+club{{ coach_changes.left|pluralize }}.{% endif %} <a href="{% url 'coaches_index' %}">Every club's coaches</a>,
+how long they lasted and what the press reported they were paid.</p>
+{% endif %}
+
 {% if recent_transfers %}
 <h2><a href="{% url 'transfers_index' %}">Transfers</a></h2>
 

@@ -67,6 +67,35 @@ more than the maximum budget charge: its Designated Players and those bought dow
 <a href="{% url 'transfers_index' %}">Every transfer on record</a>.</p>
 {% endif %}
 
+{% if coaches or gms or assistants %}
+<h2><a href="{% url 'coaches_index' %}">Coaches and front office</a></h2>
+
+{% if coaches %}
+<h3>Head coaches</h3>
+
+{% tenure_chart coaches "Head coaches of "|add:team.name %}
+
+{% include "money/_jobs.html" with jobs=coaches.0.1 %}
+{% endif %}
+
+{% if gms %}
+<h3>Running the soccer side</h3>
+
+{% include "money/_jobs.html" with jobs=gms title=True %}
+
+<p class="table-legend">The club's top soccer executive, under whatever title the club gave the job.</p>
+{% endif %}
+
+{% if assistants %}
+<h3>Assistant coaches</h3>
+
+{% include "money/_jobs.html" with jobs=assistants title=True %}
+
+<p class="table-legend">First-team assistants where a report names them; the record is thinner the
+further back it goes.</p>
+{% endif %}
+{% endif %}
+
 {% if valuations or ownership or worths.1 or stadiums %}
 <h2>Value &amp; ownership</h2>
 
