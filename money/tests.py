@@ -1110,3 +1110,12 @@ def test_reported_salaries_stay_out_of_totals_and_list_on_the_league_page(client
     assert 'NASL' not in client.get('/pay/').content.decode().split('<tbody>')[1].split('</tbody>')[0]
     assert 'title="reported in the press"' in player
     assert client.get('/c/north-american-soccer-league/1975/').status_code == 404
+
+
+
+def test_a_token_sale_price_is_not_a_club_value(db, mls, galaxy):
+    from money.views import deal_values
+    Sale.objects.create(team=galaxy, competition=mls, year=1971, seller='Erteguns', buyer='Warner', stake='100%', price=1)
+    Sale.objects.create(team=galaxy, competition=mls, year=1980, seller='Warner', buyer='X', stake='100%', price=5000000)
+
+    assert [r['value'] for r in deal_values([], Sale.objects.all())] == [5000000]

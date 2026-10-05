@@ -632,13 +632,17 @@ def money(value):
     return '$' + format(round(value), ',')
 
 
+TOKEN = 1000   # a sale price below this is nominal
+
+
 def deal_values(fees, sales):
     """
     The club values that expansion fees and sales put on record, as chart marks
     and table rows. A fee is what a new club cost. A sale counts when it stated
     the value it put on the whole club, or sold the whole club, so its price is
     that value; a partial stake with no stated valuation is left out rather than
-    scaled up.
+    scaled up, and so is a token price (Warner's $1 for the Cosmos in 1971),
+    which is a way of taking on a club's debts, not a value.
     """
     rows = []
     for f in fees:
@@ -650,7 +654,7 @@ def deal_values(fees, sales):
     for s in sales:
         if s.valuation is not None:
             value, what = s.valuation, '%s sold%s' % (s.stake or 'a stake', ' for %s' % money(s.price) if s.price else '')
-        elif s.price is not None and s.stake == '100%':
+        elif s.price is not None and s.stake == '100%' and s.price >= TOKEN:
             value, what = s.price, 'the whole club sold'
         else:
             continue
